@@ -125,8 +125,20 @@ class PrelaySpec < Minitest::Spec
     DB.transaction(rollback: :always, savepoint: true, auto_savepoint: true) { super }
   end
 
-  before do
+  def execute_query(graphql)
     $sqls.clear
+    $track_sqls = true
+    GraphQLSchema.execute(graphql, debug: true)
+  ensure
+    $track_sqls = false
+  end
+
+  def execute_invalid_query(graphql)
+    assert_raises(Prelay::InvalidGraphQLQuery) { execute_query(graphql) }
+  end
+
+  def encode(type, id)
+    Base64.strict_encode64 "#{type}:#{id}"
   end
 
   class Artist < Prelay::Model
