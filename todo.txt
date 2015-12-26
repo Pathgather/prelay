@@ -1,0 +1,110 @@
+Starter:
+
+Base models/objects/whatever on datasets, not models?
+
+Support/spec aliased queries, fields, and connections.
+
+Stop using model association hashes to track associations? Or set them, but
+only in certain cases when we can be sure they're complete?
+
+
+
+
+
+Minor stuff:
+
+Add Prelay::ID.for().
+
+Sequel associations with defined blocks (supported, need testing).
+
+Refactor association column logic into local_column, remote_column (or something like that).
+
+Cut down on retrieving key columns from the DB when it's not necessary.
+
+Spec introspection query.
+
+Spec custom dependent_columns.
+
+Rename ASTs?
+
+Come up with a better name than 'Model'. Also need a naming scheme.
+
+
+
+
+
+Other Relay features to support:
+
+Spec merging of repeat invocations of the same field/association, but nail
+down what differences in arguments mean.
+
+Spec fragment resolution everywhere it could occur.
+
+
+
+
+
+Associations:
+
+Support associated :through, to allow GraphQL queries that skip the
+intermediate associations. Should merge into other parts of the query that
+query the intermediate association.
+
+Figure out how to handle reciprocal associations.
+
+If no columns are requested at an association level (will commonly be the case
+when accessing :through associations), try to push that down to the DB as a
+join. Maybe do that sometimes when columns are requested anyway.
+
+
+
+
+
+Pagination:
+
+Require a 'first' or 'last' argument on connections.
+
+Support/spec pagination (via values, with cursors also encoding sort order)
+and add sequel-seek-pagination as a dependency. Including
+hasNextPage/hasPreviousPage.
+
+Support custom orders, and spec that they work with seek pagination.
+
+Use a custom class for connection pagination logic.
+
+Spec limited eager-loading via window functions.
+
+Support counts on connections. Should respect arguments, and just return
+counter caches when available and appropriate (no arguments). How should
+counts change when paginating?
+
+
+
+
+
+More:
+
+Freeze schema contents when they're generated.
+
+Support some configurable way to reject queries that have the potential to
+touch too many rows or generate queries of too severe complexity.
+
+Query and Mutation classes.
+
+Support top-level connection queries.
+
+Give attributes dataset dependencies? Of which dependent_columns would just be
+a special case?
+
+Permissions: visibility both for whole rows and individual fields within rows.
+May often need to modify queries to retrieve information to determine
+visibility.
+
+Add more checks that arguments are present and the right types.
+
+Delete arguments as they're used, make sure there are none left at the end.
+
+Plural identifying root fields:
+https://facebook.github.io/relay/graphql/objectidentification.htm#sec-Plural-identifying-root-fields
+
+Instrumentation?
