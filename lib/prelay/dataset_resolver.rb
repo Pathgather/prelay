@@ -118,7 +118,8 @@ module Prelay
 
         case type
         when :one_to_one
-          sub_records_hash = sub_records.index_by(&reflection[:key])
+          sub_records_hash = {}
+          sub_records.each{|r| sub_records_hash[r.send(reflection[:key])] = r}
           records.each do |r|
             associated_record = sub_records_hash[r.send(reflection.primary_key)]
             r.associations[reflection[:name]] = associated_record

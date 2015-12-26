@@ -49,6 +49,7 @@ end
 class Album < Sequel::Model
   many_to_one :artist
   one_to_many :tracks
+  one_to_one(:first_track, class_name: :Track){|ds| ds.where(number: 1)}
 end
 
 class Track < Sequel::Model
@@ -150,6 +151,7 @@ class PrelaySpec < Minitest::Spec
 
     association :artist
     association :tracks
+    association :first_track
   end
 
   class Track < Prelay::Model
