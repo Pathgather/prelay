@@ -192,5 +192,7 @@ class PrelaySpec < Minitest::Spec
     association :album
   end
 
-  GraphQLSchema = Prelay::Schema.new(models: [Artist, Album, Track, Publisher]).to_graphql_schema(prefix: 'Client')
+  GraphQLSchema = Prelay::Schema.new(
+    models: [Artist, Album, Track, Publisher]
+  ).to_graphql_schema(prefix: 'Client')
 end
