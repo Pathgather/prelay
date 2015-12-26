@@ -141,7 +141,8 @@ module Prelay
     end
 
     def ast_for_relay_connection(field)
-      s = field.selections.index_by(&:name)
+      s = {}
+      field.selections.each{|e| s[e.name] = e}
 
       arguments = arguments_from_field(field)
 
@@ -173,7 +174,8 @@ module Prelay
     end
 
     def ast_for_relay_edge(field)
-      s = field.selections.index_by(&:name)
+      s = {}
+      field.selections.each{|e| s[e.name] = e}
 
       unless field.arguments.empty?
         raise InvalidGraphQLQuery, "arguments for Relay edge fields are unsupported"

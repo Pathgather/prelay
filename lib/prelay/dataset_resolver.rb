@@ -33,7 +33,7 @@ module Prelay
     def resolve_via_association(association, ids)
       return EMPTY_ARRAY if ids.none?
 
-      reflection = association.reflection
+      reflection = association.sequel_association
 
       ds = @model.model.dataset
 
@@ -49,7 +49,7 @@ module Prelay
         end
 
       ds = apply_query_to_dataset(ds, supplemental_columns: [target_column])
-      ds = ds.where(target_column => ids)
+      ds = ds.where(Sequel.qualify(@model.model.table_name, target_column) => ids)
 
       if ids.length > 1 && limit = ds.opts.delete(:limit)
         # Steal Sequel's technique for limiting eager-loaded associations with
@@ -100,7 +100,7 @@ module Prelay
 
     def process_associations_for_records(records)
       @associations.each do |association, dataset_resolver|
-        reflection  = association.reflection
+        reflection = association.sequel_association
         type = reflection[:type]
 
         ids =
@@ -125,14 +125,19 @@ module Prelay
             associated_record.associations[reflection.reciprocal] = r if associated_record
           end
         when :many_to_one
-          sub_records_hash = sub_records.index_by(&reflection.primary_key)
+          sub_records_hash = {}
+          sub_records.each{|r| sub_records_hash[r.send(reflection.primary_key)] = r}
           records.each do |r|
             associated_record = sub_records_hash[r.send(reflection[:key])]
             r.associations[reflection[:name]] = associated_record
             associated_record.associations[reflection.reciprocal] = r
           end
         when :one_to_many
-          sub_records_hash = sub_records.group_by(&reflection[:key])
+          sub_records_hash = {}
+          sub_records.each do |r|
+            k = r.send(reflection[:key])
+            (sub_records_hash[k] ||= []) << r
+          end
           records.each do |r|
             associated_records = sub_records_hash[r.send(reflection.primary_key)]
             r.associations[reflection[:name]] = associated_records

@@ -18,12 +18,16 @@ module Prelay
         sequel_model.association_reflections[name]
       end
 
+      def target_model
+        Prelay::Model::BY_SEQUEL_MODEL.fetch(sequel_association.associated_class)
+      end
+
       def returns_array?
         sequel_association.returns_array?
       end
 
       def graphql_type
-        Prelay::Model::BY_SEQUEL_MODEL[sequel_association.associated_class].graphql_object
+        target_model.graphql_object
       end
 
       def dependent_columns
