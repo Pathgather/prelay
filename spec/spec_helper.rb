@@ -3,6 +3,7 @@ require 'prelay'
 
 require 'minitest/autorun'
 require 'minitest/pride'
+require 'minitest/hooks'
 
 DB = Sequel.connect(ENV['DATABASE_URL'] || 'postgres:///prelay-test')
 
@@ -66,8 +67,63 @@ end
 
 DB.loggers << logger
 
+music =
+  [
+    {
+      name: "Kaki King",
+      albums: [
+        {
+          name: "Glow",
+          tracks: ["Great Round Burn", "StreetLight In The Egg", "Bowen Island", "Cargo Cult", "Kelvinator, Kelvinator", "Fences", "No True Masterpiece Will Ever Be Complete", "Holding The Severed Self", "Skimming The Fractured Surface To A Place Of Endless Light", "King Pitzel", "The Fire Eater", "Marche Slav"]
+        },
+        {
+          name: "Dreaming of Revenge",
+          tracks: ["Bone Chaos In The Castle", "Life Being What It Is", "Sad American", "Pull Me Out Alive", "Montreal", "Open Mouth", "So Much For So Little", "Saving Days In A Frozen Head", "Air and Kilometers", "Can Anyone Who Has Heard This Music Really Be A Bad Person?", "2 O'Clock"]
+        },
+      ]
+    },
+    {
+      name: "The War On Drugs",
+      albums: [
+        {
+          name: "Lost in the Dream",
+          tracks: ["Under the Pressure", "Red Eyes", "Suffering", "An Ocean Between The Waves", "Disappearing", "Eyes to the Wind", "The Haunting Idle", "Burning", "Lost in the Dream", "In Reverse"]
+        }
+      ]
+    },
+    {
+      name: "Carly Rae Jepsen",
+      albums: [
+        {
+          name: "Emotion",
+          tracks: ["Run Away With Me", "Emotion", "I Really Like You", "Gimmie Love", "All That", "Boy Problems", "Making The Most Of The Night", "Your Type", "Let's Get Lost", "LA Hallucinations", "Warm Blood", "When I Needed You"]
+        },
+        {
+          name: "Kiss",
+          tracks: ["Tiny Little Bows", "This Kiss", "Call Me Maybe", "Curiosity", "Good Time", "More Than A Memory", "Turn Me Up", "Hurt So Good", "Beautiful", "Tonight I'm Getting Over You", "Guitar String/Wedding Ring", "Your Heart is a Muscle", "I Know You Have A Girlfriend"]
+        }
+      ]
+    }
+  ]
+
+music.each do |artist_attrs|
+  artist = Artist.create(name: artist_attrs[:name])
+  artist_attrs[:albums].each do |album_attrs|
+    album = Album.create(name: album_attrs[:name], artist: artist)
+    album_attrs[:tracks].each_with_index do |name, i|
+      Track.create(name: name, number: i + 1, album: album)
+    end
+  end
+end
+
 class PrelaySpec < Minitest::Spec
-  def setup
+  include Minitest::Hooks
+
+  def around
+    DB.transaction(rollback: :always, savepoint: true, auto_savepoint: true) { super }
+  end
+
+  before do
     $sqls.clear
   end
 

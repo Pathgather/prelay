@@ -14,14 +14,9 @@ class NodeQuerySpec < PrelaySpec
     Base64.strict_encode64 "#{type}:#{id}"
   end
 
-  def setup
-    @artist = ::Artist.create(name: "Kaki King")
-    @album  = ::Album.create(name: "Glow", artist: @artist)
-    @tracks = ["Great Round Burn", "StreetLight In The Egg", "Bowen Island", "Cargo Cult", "Kelvinator, Kelvinator", "Fences", "No True Masterpiece Will Ever Be Complete", "Holding The Severed Self", "Skimming The Fractured Surface To A Place Of Endless Light", "King Pitzel", "The Fire Eater", "Marche Slav"].map.with_index do |name, i|
-      ::Track.create(name: name, number: i + 1, album: @album)
-    end
-
-    super
+  before do
+    @album = ::Album.first
+    $sqls.clear
   end
 
   it "should support refetching an item by its relay id" do
