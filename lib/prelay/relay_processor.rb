@@ -28,7 +28,7 @@ module Prelay
     # The calling code should know if the field being passed in is a Relay
     # connection or edge call, so it must provide an :entry_point argument to
     # tell us how to start parsing.
-    def initialize(input, context: nil, model:, optimize: true, entry_point:)
+    def initialize(input, context: nil, model:, entry_point:)
       case input
       when GraphQL::Query::Context
         raise "Can't pass an additional context to RelayProcessor when giving it a GraphQL::Query::Context" if context
@@ -54,8 +54,6 @@ module Prelay
         when :edge       then Selection.new(name: root_field.name.to_sym, model: model, arguments: {}, selections: ast_for_relay_edge(root_field))
         else raise "Unsupported entry_point: #{entry_point}"
         end
-
-      @ast.optimize! if optimize
     end
 
     def to_resolver
