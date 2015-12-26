@@ -15,11 +15,16 @@ module Prelay
       end
 
       def sequel_association
-        sequel_model.association_reflections[name]
+        m = sequel_model
+        m.association_reflections.fetch(name) do
+          raise "Could not find an association '#{name}' on the Sequel model #{m}"
+        end
       end
 
       def target_model
-        Prelay::Model::BY_SEQUEL_MODEL.fetch(sequel_association.associated_class)
+        Prelay::Model::BY_SEQUEL_MODEL.fetch(sequel_association.associated_class) do
+          raise "Could not find a Prelay::Model for #{sequel_association.associated_class}"
+        end
       end
 
       def returns_array?

@@ -6,7 +6,7 @@ class GraphQLObjectSpec < PrelaySpec
 
     assert_instance_of GraphQL::ObjectType, object
     assert_equal 'Album', object.name
-    assert_equal ['id', 'name', 'artist', 'tracks', 'first_track'], object.fields.keys
+    assert_equal ['id', 'name', 'artist', 'tracks', 'publisher'], object.fields.keys
     assert_equal "An album released by a musician", object.description
   end
 
@@ -35,5 +35,14 @@ class GraphQLObjectSpec < PrelaySpec
     assert_instance_of GraphQL::Field, field
     assert_equal 'tracks', field.name
     assert_equal 'TrackConnection', field.type.to_s
+  end
+
+  it "should translate a model's one_to_one associations to GraphQL fields" do
+    object = PrelaySpec::Album.graphql_object
+    field  = object.fields['publisher']
+
+    assert_instance_of GraphQL::Field, field
+    assert_equal 'publisher', field.name
+    assert_equal 'Publisher', field.type.to_s
   end
 end

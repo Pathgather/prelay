@@ -33,7 +33,7 @@ module Prelay
       end
 
       def graphql_object
-        @graphql_object
+        @graphql_object || raise("GraphQL Object not defined for #{self} (was it included in the schema?)")
       end
 
       def define_graphql_object(node_identification)

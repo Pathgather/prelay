@@ -13,9 +13,7 @@ DB.run <<-SQL
   CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA pg_catalog;
 SQL
 
-DB.drop_table? :tracks
-DB.drop_table? :albums
-DB.drop_table? :artists
+DB.drop_table? :publishers, :tracks, :albums, :artists
 
 DB.create_table :artists do
   uuid :id, primary_key: true, default: Sequel.function(:uuid_generate_v4)
@@ -44,6 +42,18 @@ DB.create_table :tracks do
   integer :number, null: false
 end
 
+DB.create_table :publishers do
+  uuid :id, primary_key: true, default: Sequel.function(:uuid_generate_v4)
+
+  uuid :album_id, null: false
+
+  foreign_key [:album_id], :albums
+
+  text :name, null: false
+
+  unique :album_id
+end
+
 class Artist < Sequel::Model
   one_to_many :albums
 end
@@ -51,10 +61,14 @@ end
 class Album < Sequel::Model
   many_to_one :artist
   one_to_many :tracks
-  one_to_one(:first_track, class_name: :Track){|ds| ds.where(number: 1)}
+  one_to_one :publisher
 end
 
 class Track < Sequel::Model
+  many_to_one :album
+end
+
+class Publisher < Sequel::Model
   many_to_one :album
 end
 
@@ -104,6 +118,14 @@ track_ids = DB[:tracks].import(
   return: :primary_key
 )
 
+publisher_ids = DB[:publishers].import(
+  [:album_id, :name],
+  album_ids.map { |a_id|
+    [a_id, Faker::Company.name]
+  },
+  return: :primary_key
+)
+
 class PrelaySpec < Minitest::Spec
   include Minitest::Hooks
 
@@ -146,7 +168,7 @@ class PrelaySpec < Minitest::Spec
 
     association :artist
     association :tracks
-    association :first_track
+    association :publisher
   end
 
   class Track < Prelay::Model
@@ -160,5 +182,15 @@ class PrelaySpec < Minitest::Spec
     association :album
   end
 
-  GraphQLSchema = Prelay::Schema.new(models: [Artist, Album, Track]).to_graphql_schema(prefix: 'Client')
+  class Publisher < Prelay::Model
+    model ::Publisher
+
+    description "The publishing company for an album"
+
+    attribute :name, type: :string
+
+    association :album
+  end
+
+  GraphQLSchema = Prelay::Schema.new(models: [Artist, Album, Track, Publisher]).to_graphql_schema(prefix: 'Client')
 end

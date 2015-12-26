@@ -91,7 +91,7 @@ class AssociationQuerySpec < PrelaySpec
           id,
           ... on Album {
             name,
-            first_track {
+            publisher {
               id,
               name
             }
@@ -100,17 +100,15 @@ class AssociationQuerySpec < PrelaySpec
       }
     GRAPHQL
 
-    first_track = @album.tracks.find{|t| t.number == 1}
-
     assert_equal(
       {
         'data' => {
           'node' => {
             'id' => id,
             'name' => @album.name,
-            'first_track' => {
-              'id' => encode('Track', first_track.id),
-              'name' => first_track.name,
+            'publisher' => {
+              'id' => encode('Publisher', @album.publisher.id),
+              'name' => @album.publisher.name,
             }
           }
         }
@@ -120,7 +118,7 @@ class AssociationQuerySpec < PrelaySpec
 
     assert_equal [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{@album.id}') ORDER BY "albums"."id"),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" = 1) AND ("tracks"."album_id" IN ('#{@album.id}'))) ORDER BY "tracks"."id")
+      %(SELECT "publishers"."id", "publishers"."name", "publishers"."album_id" FROM "publishers" WHERE ("publishers"."album_id" IN ('#{@album.id}')) ORDER BY "publishers"."id")
     ], $sqls
   end
 end
