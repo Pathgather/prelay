@@ -56,7 +56,9 @@ end
 
 class PrelaySpec < Minitest::Spec
   class Artist < Prelay::Model
-    description "A musician with at least one released album"
+    model ::Artist
+
+    description "A musician"
 
     attribute :name, type: :string
 
@@ -64,6 +66,10 @@ class PrelaySpec < Minitest::Spec
   end
 
   class Album < Prelay::Model
+    model ::Album
+
+    description "An album released by a musician"
+
     attribute :name, type: :string
 
     association :artist
@@ -71,6 +77,10 @@ class PrelaySpec < Minitest::Spec
   end
 
   class Track < Prelay::Model
+    model ::Track
+
+    description "A song on an album"
+
     attribute :name,   type: :string
     attribute :number, type: :integer
 

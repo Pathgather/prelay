@@ -5,9 +5,10 @@ module Prelay
     class Attribute
       attr_reader :name, :type
 
-      def initialize(name, type:)
-        @name = name
-        @type = type
+      def initialize(model, name, type:)
+        @model = model
+        @name  = name
+        @type  = type
       end
 
       def graphql_type
