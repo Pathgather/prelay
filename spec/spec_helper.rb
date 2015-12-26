@@ -58,10 +58,11 @@ end
 
 # Simple way to spec what queries are being run.
 $sqls = []
+$track_sqls = false
 
 logger = Object.new
 def logger.info(sql)
-  if q = sql[/\(\d\.[\d]{6,6}s\) (.+)/, 1]
+  if $track_sqls && q = sql[/\(\d\.[\d]{6,6}s\) (.+)/, 1]
     $sqls << q
   end
 end
@@ -116,10 +117,6 @@ music.each do |artist_attrs|
     end
   end
 end
-
-TEST_ALBUM  = Album.eager(:artist, :tracks).where(name: "Glow").all.first.freeze
-TEST_ARTIST = TEST_ALBUM.artist.freeze
-TEST_TRACKS = TEST_ALBUM.tracks.each(&:freeze).freeze
 
 class PrelaySpec < Minitest::Spec
   include Minitest::Hooks

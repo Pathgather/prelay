@@ -3,7 +3,11 @@ require 'spec_helper'
 
 class NodeQuerySpec < PrelaySpec
   def execute_query(graphql)
+    $sqls.clear
+    $track_sqls = true
     GraphQLSchema.execute(graphql, debug: true)
+  ensure
+    $track_sqls = false
   end
 
   def execute_invalid_query(graphql)
@@ -14,8 +18,12 @@ class NodeQuerySpec < PrelaySpec
     Base64.strict_encode64 "#{type}:#{id}"
   end
 
+  before do
+    @album = ::Album.first
+  end
+
   it "should support refetching an item by its relay id" do
-    id = encode 'Album', TEST_ALBUM.id
+    id = encode 'Album', @album.id
 
     result = execute_query <<-GRAPHQL
       query Query {
@@ -26,13 +34,13 @@ class NodeQuerySpec < PrelaySpec
       }
     GRAPHQL
 
-    assert_equal({'data' => {'node' => {'id' => id, 'name' => "Glow"}}}, result)
+    assert_equal({'data' => {'node' => {'id' => id, 'name' => @album.name}}}, result)
 
-    assert_equal [%(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{TEST_ALBUM.id}') ORDER BY "albums"."id")], $sqls
+    assert_equal [%(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{@album.id}') ORDER BY "albums"."id")], $sqls
   end
 
   it "should return record typenames when requested" do
-    id = encode 'Album', TEST_ALBUM.id
+    id = encode 'Album', @album.id
 
     result = execute_query <<-GRAPHQL
       query Query {
@@ -44,9 +52,9 @@ class NodeQuerySpec < PrelaySpec
       }
     GRAPHQL
 
-    assert_equal({'data' => {'node' => {'id' => id, '__typename' => 'Album', 'name' => "Glow"}}}, result)
+    assert_equal({'data' => {'node' => {'id' => id, '__typename' => 'Album', 'name' => @album.name}}}, result)
 
-    assert_equal [%(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{TEST_ALBUM.id}') ORDER BY "albums"."id")], $sqls
+    assert_equal [%(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{@album.id}') ORDER BY "albums"."id")], $sqls
   end
 
   it "should return nil when a record by a given id doesn't exist" do
