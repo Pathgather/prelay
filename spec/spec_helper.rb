@@ -5,6 +5,8 @@ require 'minitest/autorun'
 require 'minitest/pride'
 require 'minitest/hooks'
 
+require 'faker'
+
 DB = Sequel.connect(ENV['DATABASE_URL'] || 'postgres:///prelay-test')
 
 DB.run <<-SQL
@@ -18,7 +20,7 @@ DB.drop_table? :artists
 DB.create_table :artists do
   uuid :id, primary_key: true, default: Sequel.function(:uuid_generate_v4)
 
-  text :name
+  text :name, null: false
 end
 
 DB.create_table :albums do
@@ -28,7 +30,7 @@ DB.create_table :albums do
 
   foreign_key [:artist_id], :artists
 
-  text :name
+  text :name, null: false
 end
 
 DB.create_table :tracks do
@@ -38,8 +40,8 @@ DB.create_table :tracks do
 
   foreign_key [:album_id], :albums
 
-  text :name
-  integer :number
+  text :name, null: false
+  integer :number, null: false
 end
 
 class Artist < Sequel::Model
@@ -61,62 +63,46 @@ $sqls = []
 $track_sqls = false
 
 logger = Object.new
+
 def logger.info(sql)
   if $track_sqls && q = sql[/\(\d\.[\d]{6,6}s\) (.+)/, 1]
     $sqls << q
   end
 end
 
+def logger.error(msg)
+  puts msg
+end
+
 DB.loggers << logger
 
-music =
-  [
-    {
-      name: "Kaki King",
-      albums: [
-        {
-          name: "Glow",
-          tracks: ["Great Round Burn", "StreetLight In The Egg", "Bowen Island", "Cargo Cult", "Kelvinator, Kelvinator", "Fences", "No True Masterpiece Will Ever Be Complete", "Holding The Severed Self", "Skimming The Fractured Surface To A Place Of Endless Light", "King Pitzel", "The Fire Eater", "Marche Slav"]
-        },
-        {
-          name: "Dreaming of Revenge",
-          tracks: ["Bone Chaos In The Castle", "Life Being What It Is", "Sad American", "Pull Me Out Alive", "Montreal", "Open Mouth", "So Much For So Little", "Saving Days In A Frozen Head", "Air and Kilometers", "Can Anyone Who Has Heard This Music Really Be A Bad Person?", "2 O'Clock"]
-        },
-      ]
-    },
-    {
-      name: "The War On Drugs",
-      albums: [
-        {
-          name: "Lost in the Dream",
-          tracks: ["Under the Pressure", "Red Eyes", "Suffering", "An Ocean Between The Waves", "Disappearing", "Eyes to the Wind", "The Haunting Idle", "Burning", "Lost in the Dream", "In Reverse"]
-        }
-      ]
-    },
-    {
-      name: "Carly Rae Jepsen",
-      albums: [
-        {
-          name: "Emotion",
-          tracks: ["Run Away With Me", "Emotion", "I Really Like You", "Gimmie Love", "All That", "Boy Problems", "Making The Most Of The Night", "Your Type", "Let's Get Lost", "LA Hallucinations", "Warm Blood", "When I Needed You"]
-        },
-        {
-          name: "Kiss",
-          tracks: ["Tiny Little Bows", "This Kiss", "Call Me Maybe", "Curiosity", "Good Time", "More Than A Memory", "Turn Me Up", "Hurt So Good", "Beautiful", "Tonight I'm Getting Over You", "Guitar String/Wedding Ring", "Your Heart is a Muscle", "I Know You Have A Girlfriend"]
-        }
-      ]
-    }
-  ]
+artist_ids = DB[:artists].import(
+  [:name],
+  25.times.map {
+    [Faker::Name.name]
+  },
+  return: :primary_key
+)
 
-music.each do |artist_attrs|
-  artist = Artist.create(name: artist_attrs[:name])
-  artist_attrs[:albums].each do |album_attrs|
-    album = Album.create(name: album_attrs[:name], artist: artist)
-    album_attrs[:tracks].each_with_index do |name, i|
-      Track.create(name: name, number: i + 1, album: album)
-    end
-  end
-end
+album_ids = DB[:albums].import(
+  [:artist_id, :name],
+  artist_ids.map { |a_id|
+    10.times.map {
+      [a_id, Faker::Lorem.sentence]
+    }
+  }.flatten(1),
+  return: :primary_key
+)
+
+track_ids = DB[:tracks].import(
+  [:album_id, :name, :number],
+  album_ids.map { |a_id|
+    10.times.map { |i|
+      [a_id, Faker::Lorem.sentence, i + 1]
+    }
+  }.flatten(1),
+  return: :primary_key
+)
 
 class PrelaySpec < Minitest::Spec
   include Minitest::Hooks
