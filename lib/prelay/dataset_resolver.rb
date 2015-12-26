@@ -13,6 +13,29 @@ module Prelay
     def initialize(ast:)
       @ast   = ast
       @model = ast.model
+
+      @columns      = []
+      @associations = {}
+
+      @ast.selections.each_value do |selection|
+        name = selection.name
+
+        if name == :id
+          # id isn't a true attribute, but we'll need it to generate the
+          # record's relay id.
+          @columns << :id
+        elsif attribute = @model.attributes[name]
+          @columns.push(*attribute.dependent_columns)
+        elsif association = @model.associations[name]
+          @columns.push(*association.dependent_columns)
+          @associations[association] = self.class.new(ast: selection)
+        else
+          # This should only happen if we've messed up the conversion from the
+          # model definition somehow - a client sending a weird request should
+          # be caught before this.
+          raise "Unrecognized selection for #{@model}: #{name}"
+        end
+      end
     end
 
     def resolve
@@ -21,11 +44,9 @@ module Prelay
       records
     end
 
-    def resolve_by_id(id)
-      # Make this is a valid uuid (and not nil) before we pass it to Postgres,
-      # which would produce an uglier error.
-      col = Sequel.qualify(@model.model.table_name, :id)
-      records = dataset.where(col => id).all
+    def resolve_by_pk(pk)
+      cond    = @model.model.qualified_primary_key_hash(pk)
+      records = dataset.where(cond).all
       process_associations_for_records(records)
       records.first
     end
@@ -74,7 +95,7 @@ module Prelay
       table_name = @model.model.table_name
       arguments = @ast.arguments
 
-      columns = (necessary_columns + supplemental_columns).uniq.map{|column| Sequel.qualify(table_name, column)}
+      columns = (@columns + supplemental_columns).uniq.map{|column| Sequel.qualify(table_name, column)}
       ds = ds.select(*columns).order(Sequel.qualify(table_name, :id))
 
       if limit = arguments[:first] || arguments[:last]
@@ -152,39 +173,6 @@ module Prelay
 
     def dataset
       apply_query_to_dataset(@model.model.dataset)
-    end
-
-    def necessary_columns
-      @columns || calculate_columns_and_associations && @columns
-    end
-
-    def associations
-      @associations || calculate_columns_and_associations && @associations
-    end
-
-    def calculate_columns_and_associations
-      @columns      = []
-      @associations = {}
-
-      @ast.selections.each_value do |selection|
-        name = selection.name
-
-        if name == :id
-          # Id isn't a true attribute, but we'll need the record's UUID to
-          # generate its opaque id.
-          @columns << :id
-        elsif attribute = @model.attributes[name]
-          @columns.push(*attribute.dependent_columns)
-        elsif association = @model.associations[name]
-          @columns.push(*association.dependent_columns)
-          @associations[association] = self.class.new(ast: selection)
-        else
-          # This should only happen if we've messed up the conversion from the
-          # model definition to the GraphQL type declaration somehow - a
-          # client sending a weird request should be caught before this.
-          raise "Unrecognized GraphQL selection for #{@model}: #{name}"
-        end
-      end
     end
   end
 end

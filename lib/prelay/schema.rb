@@ -31,7 +31,7 @@ module Prelay
             resolve -> (obj, args, ctx) {
               id = ID.parse(args['id'])
               RelayProcessor.new(ctx, model: id.model, entry_point: :field).
-                to_resolver.resolve_by_id(id.id)
+                to_resolver.resolve_by_pk(id.id)
             }
           }
         }
