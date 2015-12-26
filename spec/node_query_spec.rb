@@ -14,13 +14,8 @@ class NodeQuerySpec < PrelaySpec
     Base64.strict_encode64 "#{type}:#{id}"
   end
 
-  before do
-    @album = ::Album.first
-    $sqls.clear
-  end
-
   it "should support refetching an item by its relay id" do
-    id = encode 'Album', @album.id
+    id = encode 'Album', TEST_ALBUM.id
 
     result = execute_query <<-GRAPHQL
       query Query {
@@ -33,11 +28,11 @@ class NodeQuerySpec < PrelaySpec
 
     assert_equal({'data' => {'node' => {'id' => id, 'name' => "Glow"}}}, result)
 
-    assert_equal [%(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{@album.id}') ORDER BY "albums"."id")], $sqls
+    assert_equal [%(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{TEST_ALBUM.id}') ORDER BY "albums"."id")], $sqls
   end
 
   it "should return record typenames when requested" do
-    id = encode 'Album', @album.id
+    id = encode 'Album', TEST_ALBUM.id
 
     result = execute_query <<-GRAPHQL
       query Query {
@@ -51,7 +46,7 @@ class NodeQuerySpec < PrelaySpec
 
     assert_equal({'data' => {'node' => {'id' => id, '__typename' => 'Album', 'name' => "Glow"}}}, result)
 
-    assert_equal [%(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{@album.id}') ORDER BY "albums"."id")], $sqls
+    assert_equal [%(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{TEST_ALBUM.id}') ORDER BY "albums"."id")], $sqls
   end
 
   it "should return nil when a record by a given id doesn't exist" do

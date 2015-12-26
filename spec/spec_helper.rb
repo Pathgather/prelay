@@ -116,6 +116,10 @@ music.each do |artist_attrs|
   end
 end
 
+TEST_ALBUM  = Album.eager(:artist, :tracks).where(name: "Glow").all.first.freeze
+TEST_ARTIST = TEST_ALBUM.artist.freeze
+TEST_TRACKS = TEST_ALBUM.tracks.each(&:freeze).freeze
+
 class PrelaySpec < Minitest::Spec
   include Minitest::Hooks
 
