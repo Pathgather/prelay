@@ -54,7 +54,23 @@ class Track < Sequel::Model
   many_to_one :album
 end
 
+# Simple way to spec what queries are being run.
+$sqls = []
+
+logger = Object.new
+def logger.info(sql)
+  if q = sql[/\(\d\.[\d]{6,6}s\) (.+)/, 1]
+    $sqls << q
+  end
+end
+
+DB.loggers << logger
+
 class PrelaySpec < Minitest::Spec
+  def setup
+    $sqls.clear
+  end
+
   class Artist < Prelay::Model
     model ::Artist
 
@@ -86,4 +102,6 @@ class PrelaySpec < Minitest::Spec
 
     association :album
   end
+
+  GraphQLSchema = Prelay::Schema.new(models: [Artist, Album, Track]).to_graphql_schema(prefix: 'Client')
 end

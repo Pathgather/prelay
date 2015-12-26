@@ -1,0 +1,99 @@
+require 'securerandom'
+require 'spec_helper'
+
+class NodeQuerySpec < PrelaySpec
+  def execute_query(graphql)
+    GraphQLSchema.execute(graphql, debug: true)
+  end
+
+  def execute_invalid_query(graphql)
+    assert_raises(Prelay::InvalidGraphQLQuery) { execute_query(graphql) }
+  end
+
+  def encode(type, id)
+    Base64.strict_encode64 "#{type}:#{id}"
+  end
+
+  def setup
+    @artist = ::Artist.create(name: "Kaki King")
+    @album  = ::Album.create(name: "Glow", artist: @artist)
+    @tracks = ["Great Round Burn", "StreetLight In The Egg", "Bowen Island", "Cargo Cult", "Kelvinator, Kelvinator", "Fences", "No True Masterpiece Will Ever Be Complete", "Holding The Severed Self", "Skimming The Fractured Surface To A Place Of Endless Light", "King Pitzel", "The Fire Eater", "Marche Slav"].map.with_index do |name, i|
+      ::Track.create(name: name, number: i + 1, album: @album)
+    end
+
+    super
+  end
+
+  it "should support refetching an item by its relay id" do
+    id = encode 'Album', @album.id
+
+    result = execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id,
+          ... on Album { name }
+        }
+      }
+    GRAPHQL
+
+    assert_equal({'data' => {'node' => {'id' => id, 'name' => "Glow"}}}, result)
+
+    assert_equal [%(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{@album.id}') ORDER BY "albums"."id")], $sqls
+  end
+
+  it "should return record typenames when requested" do
+    id = encode 'Album', @album.id
+
+    result = execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id,
+          __typename,
+          ... on Album { name }
+        }
+      }
+    GRAPHQL
+
+    assert_equal({'data' => {'node' => {'id' => id, '__typename' => 'Album', 'name' => "Glow"}}}, result)
+
+    assert_equal [%(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{@album.id}') ORDER BY "albums"."id")], $sqls
+  end
+
+  it "should return nil when a record by a given id doesn't exist" do
+    uuid = SecureRandom.uuid
+    id = encode('Album', uuid)
+
+    result = execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id
+          ... on Album { name }
+        }
+      }
+    GRAPHQL
+
+    assert_equal({'data' => {'node' => nil}}, result)
+
+    assert_equal [%(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{uuid}') ORDER BY "albums"."id")], $sqls
+  end
+
+  it "should return an error when given a gibberish id" do
+    id = "RG9uJ3QgbG9vayBhdCB0aGlzISBJdCdzIGp1c3QgZ2liYmVyaXNoIQ=="
+    error = execute_invalid_query "query Query { node(id: \"#{id}\") { id ... on Album { name } } }"
+    assert_equal "Not a valid object id: \"#{id}\"", error.message
+    assert_equal [], $sqls
+  end
+
+  it "should return an error when given an id that refers to a nonexistent object type" do
+    id = encode('NonexistentObjectClass', SecureRandom.uuid)
+    error = execute_invalid_query "query Query { node(id: \"#{id}\") { id ... on Album { name } } }"
+    assert_equal "Not a valid object type: NonexistentObjectClass", error.message
+    assert_equal [], $sqls
+  end
+
+  it "should return an error when given an empty id" do
+    error = execute_invalid_query "query Query { node(id: \"\") { id ... on Album { name } } }"
+    assert_equal "Not a valid object id: \"\"", error.message
+    assert_equal [], $sqls
+  end
+end

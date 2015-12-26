@@ -6,8 +6,14 @@ require 'prelay/model/attribute'
 module Prelay
   class Model
     BY_SEQUEL_MODEL = {}
+    BY_TYPE = {}
 
     class << self
+      def inherited(subclass)
+        super
+        BY_TYPE[subclass.to_s.split('::').last] = subclass
+      end
+
       def attributes
         @attributes ||= {}
       end
@@ -27,11 +33,18 @@ module Prelay
       end
 
       def graphql_object
+        @graphql_object
+      end
+
+      def define_graphql_object(node_identification)
         model = self
 
-        ::GraphQL::ObjectType.define do
+        @graphql_object = ::GraphQL::ObjectType.define do
           name(model.name.split('::').last)
           description(model.description)
+
+          interfaces [node_identification.interface]
+          global_id_field :id
 
           model.attributes.each_value do |attribute|
             field attribute.name, attribute.graphql_type

@@ -3,12 +3,13 @@
 module Prelay
   class Model
     class Attribute
-      attr_reader :name, :type
+      attr_reader :name, :type, :dependent_columns
 
-      def initialize(model, name, type:)
+      def initialize(model, name, type:, dependent_columns: nil)
         @model = model
         @name  = name
         @type  = type
+        @dependent_columns = (dependent_columns || [name]).freeze
       end
 
       def graphql_type
