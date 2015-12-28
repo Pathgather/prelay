@@ -198,6 +198,7 @@ publisher_ids = DB[:publishers].multi_insert(
 class PrelaySpec < Minitest::Spec
   ENV['N'] = '4'
   parallelize_me!
+  make_my_diffs_pretty!
 
   include Minitest::Hooks
 
