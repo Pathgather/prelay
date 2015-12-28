@@ -11,31 +11,34 @@
 module Prelay
   class DatasetResolver
     def initialize(ast:)
-      @ast   = ast
-      @model = ast.model
+      @model     = ast.model
+      @arguments = ast.arguments
 
       @columns      = []
       @associations = {}
 
-      @ast.selections.each_value do |selection|
-        name = selection.name
+      selections = ast.selections.dup
 
-        if name == :id
-          # id isn't a true attribute, but we'll need it to generate the
-          # record's relay id.
-          @columns << :id
-        elsif attribute = @model.attributes[name]
-          @columns.push(*attribute.dependent_columns)
-        elsif association = @model.associations[name]
-          @columns.push(*association.dependent_columns)
-          @associations[association] = self.class.new(ast: selection)
-        else
-          # This should only happen if we've messed up the conversion from the
-          # model definition somehow - a client sending a weird request should
-          # be caught before this.
-          raise "Unrecognized selection for #{@model}: #{name}"
+      # id isn't a true attribute, but we'll need it to generate the record's
+      # relay id.
+      if selections.delete(:id)
+        @columns << :id
+      end
+
+      @model.attributes.each do |name, attribute|
+        if selections.delete(name)
+          @columns.push *attribute.dependent_columns
         end
       end
+
+      @model.associations.each do |name, association|
+        if s = selections.delete(name)
+          @columns.push *association.dependent_columns
+          @associations[association] = self.class.new(ast: s)
+        end
+      end
+
+      raise "Unrecognized selections for #{@model}: #{selections.inspect}" if selections.any?
     end
 
     def resolve
@@ -93,7 +96,7 @@ module Prelay
 
     def apply_query_to_dataset(ds, supplemental_columns: [])
       table_name = @model.model.table_name
-      arguments = @ast.arguments
+      arguments = @arguments
 
       columns = (@columns + supplemental_columns).uniq.map{|column| Sequel.qualify(table_name, column)}
       ds = ds.select(*columns).order(Sequel.qualify(table_name, :id))
