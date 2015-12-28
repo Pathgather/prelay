@@ -38,8 +38,6 @@ Other Relay features to support:
 Spec merging of repeat invocations of the same field/association, but nail
 down what differences in arguments mean.
 
-Spec fragment resolution everywhere it could occur.
-
 
 
 
@@ -66,7 +64,8 @@ Require a 'first' or 'last' argument on connections.
 
 Support/spec pagination (via values, with cursors also encoding sort order)
 and add sequel-seek-pagination as a dependency. Including
-hasNextPage/hasPreviousPage.
+hasNextPage/hasPreviousPage. Make sure to add a spec for cursors/pageInfo in
+fragments.
 
 Support custom orders, and spec that they work with seek pagination.
 
