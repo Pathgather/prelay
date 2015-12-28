@@ -83,6 +83,12 @@ counts change when paginating?
 
 More:
 
+Support marking attributes (and association fields) not-null.
+
+Support descriptions on attributes.
+
+Support deprecation warnings on fields (and whole objects?).
+
 Freeze schema contents when they're generated.
 
 Support some configurable way to reject queries that have the potential to
