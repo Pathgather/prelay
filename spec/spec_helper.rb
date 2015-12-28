@@ -254,7 +254,7 @@ class PrelaySpec < Minitest::Spec
 
     attribute :name,         type: :string
     attribute :upvotes,      type: :integer
-    attribute :high_quality, type: :string
+    attribute :high_quality, type: :boolean
     attribute :popularity,   type: :float
 
     association :artist
@@ -269,7 +269,7 @@ class PrelaySpec < Minitest::Spec
 
     attribute :name,         type: :string
     attribute :number,       type: :integer
-    attribute :high_quality, type: :string
+    attribute :high_quality, type: :boolean
     attribute :popularity,   type: :float
 
     association :album

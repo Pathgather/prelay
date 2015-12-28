@@ -13,8 +13,6 @@ only in certain cases when we can be sure they're complete?
 
 Minor stuff:
 
-Figure out why boolean values are strings in some cases but not in others.
-
 Add Prelay::ID.for().
 
 Sequel associations with defined blocks (supported, need testing).

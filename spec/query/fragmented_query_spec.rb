@@ -250,7 +250,7 @@ class FragmentedQuerySpec < PrelaySpec
             'id' => encode('Album', album.id),
             'name' => album.name,
             'upvotes' => album.upvotes,
-            'high_quality' => album.high_quality.to_s,
+            'high_quality' => album.high_quality,
             'artist' => {
               'id' => encode('Artist', album.artist.id),
               'name' => album.artist.name,
@@ -264,7 +264,7 @@ class FragmentedQuerySpec < PrelaySpec
                     'id' => encode('Track', track.id),
                     'name' => track.name,
                     'number' => track.number,
-                    'high_quality' => track.high_quality.to_s,
+                    'high_quality' => track.high_quality,
                   }
                 }
               }
