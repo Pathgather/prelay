@@ -200,8 +200,6 @@ class FragmentedQuerySpec < PrelaySpec
 
   queries.each do |name, query|
     it "should handle a #{name} query" do
-      skip if [:fragment_inside_association_connection, :fragment_inside_association_edge].include?(name)
-
       result = execute_query(query % {id: encode('Album', album.id)})
 
       expected = {

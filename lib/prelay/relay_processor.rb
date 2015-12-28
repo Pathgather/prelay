@@ -137,7 +137,7 @@ module Prelay
 
     def ast_for_relay_connection(field)
       s = {}
-      field.selections.each{|e| s[e.name] = e}
+      resolve_fragments(field).each{|e| s[e.name] = e}
 
       arguments = arguments_from_field(field)
 
@@ -170,7 +170,7 @@ module Prelay
 
     def ast_for_relay_edge(field)
       s = {}
-      field.selections.each{|e| s[e.name] = e}
+      resolve_fragments(field).each{|e| s[e.name] = e}
 
       unless field.arguments.empty?
         raise InvalidGraphQLQuery, "arguments for Relay edge fields are unsupported"
@@ -195,6 +195,22 @@ module Prelay
         end
       end
 
+      selections
+    end
+
+    def resolve_fragments(field)
+      selections = []
+      field.selections.each do |selection|
+        case selection
+        when GraphQL::Language::Nodes::FragmentSpread
+          fragment = @fragments.fetch(selection.name) { raise InvalidGraphQLQuery, "fragment not found with name #{selection.name}" }
+          selections.push *fragment.selections
+        when GraphQL::Language::Nodes::Field
+          selections.push selection
+        else
+          raise "Unsupported selection class: #{selection.class}"
+        end
+      end
       selections
     end
 
