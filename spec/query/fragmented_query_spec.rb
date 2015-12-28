@@ -11,15 +11,21 @@ class FragmentedQuerySpec < PrelaySpec
             id,
             ... on Album {
               name,
+              upvotes,
+              high_quality,
               artist {
                 id,
-                name
+                name,
+                upvotes,
+                active,
               }
               tracks {
                 edges {
                   node {
                     id,
-                    name
+                    name,
+                    number,
+                    high_quality,
                   }
                 }
               }
@@ -40,15 +46,21 @@ class FragmentedQuerySpec < PrelaySpec
           id,
           ... on Album {
             name,
+            upvotes,
+            high_quality,
             artist {
               id,
-              name
+              name,
+              upvotes,
+              active,
             }
             tracks {
               edges {
                 node {
                   id,
-                  name
+                  name,
+                  number,
+                  high_quality,
                 }
               }
             }
@@ -69,15 +81,21 @@ class FragmentedQuerySpec < PrelaySpec
 
         fragment __RelayQueryFragment0hansolo on Album {
           name,
+          upvotes,
+          high_quality,
           artist {
             id,
-            name
+            name,
+            upvotes,
+            active,
           }
           tracks {
             edges {
               node {
                 id,
-                name
+                name,
+                number,
+                high_quality,
               }
             }
           }
@@ -91,6 +109,8 @@ class FragmentedQuerySpec < PrelaySpec
             id,
             ... on Album {
               name,
+              upvotes,
+              high_quality,
               artist {
                 ...__RelayQueryFragment0hansolo
               }
@@ -98,7 +118,9 @@ class FragmentedQuerySpec < PrelaySpec
                 edges {
                   node {
                     id,
-                    name
+                    name,
+                    number,
+                    high_quality,
                   }
                 }
               }
@@ -108,7 +130,9 @@ class FragmentedQuerySpec < PrelaySpec
 
         fragment __RelayQueryFragment0hansolo on Artist {
           id,
-          name
+          name,
+          upvotes,
+          active,
         }
       GRAPHQL
     ),
@@ -119,9 +143,13 @@ class FragmentedQuerySpec < PrelaySpec
             id,
             ... on Album {
               name,
+              upvotes,
+              high_quality,
               artist {
                 id,
-                name
+                name,
+                upvotes,
+                active,
               }
               tracks {
                 ...__RelayQueryFragment0hansolo
@@ -134,7 +162,9 @@ class FragmentedQuerySpec < PrelaySpec
           edges {
             node {
               id,
-              name
+              name,
+              number,
+              high_quality,
             }
           }
         }
@@ -147,9 +177,13 @@ class FragmentedQuerySpec < PrelaySpec
             id,
             ... on Album {
               name,
+              upvotes,
+              high_quality,
               artist {
                 id,
-                name
+                name,
+                upvotes,
+                active,
               }
               tracks {
                 edges {
@@ -163,7 +197,9 @@ class FragmentedQuerySpec < PrelaySpec
         fragment __RelayQueryFragment0hansolo on TrackEdge {
           node {
             id,
-            name
+            name,
+            number,
+            high_quality,
           }
         }
       GRAPHQL
@@ -175,9 +211,13 @@ class FragmentedQuerySpec < PrelaySpec
             id,
             ... on Album {
               name,
+              upvotes,
+              high_quality,
               artist {
                 id,
-                name
+                name,
+                upvotes,
+                active,
               }
               tracks {
                 edges {
@@ -192,7 +232,9 @@ class FragmentedQuerySpec < PrelaySpec
 
         fragment __RelayQueryFragment0hansolo on Track {
           id,
-          name
+          name,
+          number,
+          high_quality,
         }
       GRAPHQL
     ),
@@ -207,9 +249,13 @@ class FragmentedQuerySpec < PrelaySpec
           'node' => {
             'id' => encode('Album', album.id),
             'name' => album.name,
+            'upvotes' => album.upvotes,
+            'high_quality' => album.high_quality.to_s,
             'artist' => {
               'id' => encode('Artist', album.artist.id),
               'name' => album.artist.name,
+              'upvotes' => album.artist.upvotes,
+              'active' => album.artist.active,
             },
             'tracks' => {
               'edges' => album.tracks.sort_by(&:id).map { |track|
@@ -217,6 +263,8 @@ class FragmentedQuerySpec < PrelaySpec
                   'node' => {
                     'id' => encode('Track', track.id),
                     'name' => track.name,
+                    'number' => track.number,
+                    'high_quality' => track.high_quality.to_s,
                   }
                 }
               }
@@ -228,9 +276,9 @@ class FragmentedQuerySpec < PrelaySpec
       assert_equal expected, result
 
       assert_equal [
-        %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
-        %(SELECT "artists"."id", "artists"."name" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
-        %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "tracks"."id")
+        %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."high_quality", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
+        %(SELECT "artists"."id", "artists"."name", "artists"."upvotes", "artists"."active" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
+        %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "tracks"."id")
       ], sqls
     end
   end
