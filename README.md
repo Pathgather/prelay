@@ -5,6 +5,7 @@ WIP mini-framework for defining logic to service Relay/GraphQL requests in a com
 Notes:
 - Assumes MRI 2.3.0.
 - Assumes the use of Sequel as a DB connection layer.
+- Assumes the use of PostgreSQL, version 9.1+ (for window functions).
 - Assumes the use of the 'graphql' and 'graphql-relay' gems.
 - May be fundamentally misguided.
 - All of the above may change at any time, without warning.
