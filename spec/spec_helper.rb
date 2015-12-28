@@ -238,7 +238,10 @@ class PrelaySpec < Minitest::Spec
 
     description "A musician"
 
-    attribute :name, type: :string
+    attribute :name,       type: :string
+    attribute :upvotes,    type: :integer
+    attribute :active,     type: :boolean
+    attribute :popularity, type: :float
 
     association :albums
   end
@@ -248,7 +251,10 @@ class PrelaySpec < Minitest::Spec
 
     description "An album released by a musician"
 
-    attribute :name, type: :string
+    attribute :name,         type: :string
+    attribute :upvotes,      type: :integer
+    attribute :high_quality, type: :string
+    attribute :popularity,   type: :float
 
     association :artist
     association :tracks
@@ -260,8 +266,10 @@ class PrelaySpec < Minitest::Spec
 
     description "A song on an album"
 
-    attribute :name,   type: :string
-    attribute :number, type: :integer
+    attribute :name,         type: :string
+    attribute :number,       type: :integer
+    attribute :high_quality, type: :string
+    attribute :popularity,   type: :float
 
     association :album
   end

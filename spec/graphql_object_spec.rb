@@ -6,7 +6,7 @@ class GraphQLObjectSpec < PrelaySpec
 
     assert_instance_of GraphQL::ObjectType, object
     assert_equal 'Album', object.name
-    assert_equal ['id', 'name', 'artist', 'tracks', 'publisher'], object.fields.keys
+    assert_equal ['id', 'name', 'upvotes', 'high_quality', 'popularity', 'artist', 'tracks', 'publisher'], object.fields.keys
     assert_equal "An album released by a musician", object.description
   end
 
