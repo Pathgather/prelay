@@ -73,14 +73,11 @@ class Publisher < Sequel::Model
 end
 
 # Simple way to spec what queries are being run.
-$sqls = []
-$track_sqls = false
-
 logger = Object.new
 
 def logger.info(sql)
-  if $track_sqls && q = sql[/\(\d\.[\d]{6,6}s\) (.+)/, 1]
-    $sqls << q
+  if Thread.current[:track_sqls] && q = sql[/\(\d\.[\d]{6,6}s\) (.+)/, 1]
+    Thread.current[:sqls] << q
   end
 end
 
@@ -127,6 +124,9 @@ publisher_ids = DB[:publishers].import(
 )
 
 class PrelaySpec < Minitest::Spec
+  ENV['N'] = '4'
+  parallelize_me!
+
   include Minitest::Hooks
 
   def around
@@ -134,11 +134,23 @@ class PrelaySpec < Minitest::Spec
   end
 
   def execute_query(graphql)
-    $sqls.clear
-    $track_sqls = true
+    sqls.clear
+    self.track_sqls = true
     GraphQLSchema.execute(graphql, debug: true)
   ensure
-    $track_sqls = false
+    self.track_sqls = false
+  end
+
+  def sqls
+    Thread.current[:sqls] ||= []
+  end
+
+  def track_sqls?
+    Thread.current[:track_sqls]
+  end
+
+  def track_sqls=(boolean)
+    Thread.current[:track_sqls] = boolean
   end
 
   def execute_invalid_query(graphql)
