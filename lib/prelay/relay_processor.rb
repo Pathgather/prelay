@@ -109,9 +109,6 @@ module Prelay
               return
             else
               # Whatever field was requested, it ain't good.
-              require 'pry'
-              binding.pry
-              0
               raise InvalidGraphQLQuery, "unsupported field '#{name}'"
             end
           end
