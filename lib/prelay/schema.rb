@@ -30,7 +30,7 @@ module Prelay
             argument :id, !GraphQL::ID_TYPE
             resolve -> (obj, args, ctx) {
               id = ID.parse(args['id'])
-              RelayProcessor.new(ctx, model: id.model, entry_point: :field).
+              RelayProcessor.new(ctx, model: id.model).
                 to_resolver.resolve_by_pk(id.id)
             }
           }

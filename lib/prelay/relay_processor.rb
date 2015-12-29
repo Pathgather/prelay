@@ -25,21 +25,8 @@ module Prelay
     # one another, so we support passing in a field object and supplying the
     # query context separately for us to look up fragments on.
 
-    # The calling code should know if the field being passed in is a Relay
-    # connection or edge call, so it must provide an :entry_point argument to
-    # tell us how to start parsing.
-    def initialize(input, context: nil, model:, entry_point:)
-      case input
-      when GraphQL::Query::Context
-        raise "Can't pass an additional context to RelayProcessor when giving it a GraphQL::Query::Context" if context
-        context = input
-        root_field = context.ast_node
-      when GraphQL::Language::Nodes::Field
-        raise "Must pass an additional GraphQL::Query::Context to RelayProcessor when giving it a GraphQL::Language::Nodes::Field" unless GraphQL::Query::Context === context
-        root_field = input
-      else
-        raise "Unsupported input: #{input.class}"
-      end
+    def initialize(context, model:)
+      root_field = context.ast_node
 
       @fragments = context.query.fragments
 
@@ -47,13 +34,7 @@ module Prelay
       # tree.
       @model_stack = [model]
 
-      @ast =
-        case entry_point
-        when :field      then ast_for_field(root_field, model: model)
-        when :connection then ast_for_relay_connection(root_field)
-        when :edge       then Selection.new(name: root_field.name.to_sym, model: model, arguments: {}, selections: ast_for_relay_edge(root_field))
-        else raise "Unsupported entry_point: #{entry_point}"
-        end
+      @ast = ast_for_field(root_field, model: model)
     end
 
     def to_resolver
