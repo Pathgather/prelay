@@ -38,31 +38,67 @@ class FragmentedQuerySpec < PrelaySpec
       <<-GRAPHQL
         query Query {
           node(id: "%{id}") {
+            id,
             ...__RelayQueryFragment0hansolo
+            ...__RelayQueryFragment0bb8
           }
         }
 
         fragment __RelayQueryFragment0hansolo on Node {
           id,
           ... on Album {
-            name,
-            upvotes,
+            id,
+            tracks {
+              edges {
+                node {
+                  id,
+                  number,
+                  high_quality,
+                }
+              }
+            }
+          }
+          ...__RelayQueryFragment0rey
+        }
+
+        fragment __RelayQueryFragment0bb8 on Node {
+          id,
+          ... on Album {
+            id,
             high_quality,
             artist {
               id,
-              name,
               upvotes,
               active,
             }
+          }
+          ...__RelayQueryFragment0poedameron
+        }
+
+        fragment __RelayQueryFragment0rey on Node {
+          id,
+          ... on Album {
+            id,
+            name,
             tracks {
               edges {
                 node {
                   id,
                   name,
-                  number,
-                  high_quality,
                 }
               }
+            }
+          }
+        }
+
+        fragment __RelayQueryFragment0poedameron on Node {
+          id,
+          ... on Album {
+            id,
+            upvotes,
+            artist {
+              id,
+              name,
             }
           }
         }
@@ -74,27 +110,74 @@ class FragmentedQuerySpec < PrelaySpec
           node(id: "%{id}") {
             id,
             ... on Album {
+              id,
               ...__RelayQueryFragment0hansolo
+              ...__RelayQueryFragment0bb8
             }
           }
         }
 
         fragment __RelayQueryFragment0hansolo on Album {
+          id,
+          artist {
+            id,
+          }
+          tracks {
+            edges {
+              node {
+                id,
+              }
+            }
+          }
+          ...__RelayQueryFragment0rey
+        }
+
+        fragment __RelayQueryFragment0bb8 on Album {
+          id,
           name,
-          upvotes,
-          high_quality,
           artist {
             id,
             name,
-            upvotes,
-            active,
           }
           tracks {
             edges {
               node {
                 id,
                 name,
+              }
+            }
+          }
+          ...__RelayQueryFragment0poedameron
+        }
+
+        fragment __RelayQueryFragment0rey on Album {
+          id,
+          upvotes,
+          artist {
+            id,
+            upvotes,
+          }
+          tracks {
+            edges {
+              node {
+                id,
                 number,
+              }
+            }
+          }
+        }
+
+        fragment __RelayQueryFragment0poedameron on Album {
+          id,
+          high_quality,
+          artist {
+            id,
+            active,
+          }
+          tracks {
+            edges {
+              node {
+                id,
                 high_quality,
               }
             }
@@ -113,6 +196,7 @@ class FragmentedQuerySpec < PrelaySpec
               high_quality,
               artist {
                 ...__RelayQueryFragment0hansolo
+                ...__RelayQueryFragment0bb8
               }
               tracks {
                 edges {
@@ -130,8 +214,22 @@ class FragmentedQuerySpec < PrelaySpec
 
         fragment __RelayQueryFragment0hansolo on Artist {
           id,
+          ...__RelayQueryFragment0rey
+        }
+
+        fragment __RelayQueryFragment0bb8 on Artist {
+          id,
           name,
+          ...__RelayQueryFragment0poedameron
+        }
+
+        fragment __RelayQueryFragment0rey on Artist {
+          id,
           upvotes,
+        }
+
+        fragment __RelayQueryFragment0poedameron on Artist {
+          id,
           active,
         }
       GRAPHQL
@@ -153,6 +251,7 @@ class FragmentedQuerySpec < PrelaySpec
               }
               tracks {
                 ...__RelayQueryFragment0hansolo
+                ...__RelayQueryFragment0bb8
               }
             }
           }
@@ -162,8 +261,34 @@ class FragmentedQuerySpec < PrelaySpec
           edges {
             node {
               id,
+            }
+          }
+          ...__RelayQueryFragment0rey
+        }
+
+        fragment __RelayQueryFragment0bb8 on TrackConnection {
+          edges {
+            node {
+              id,
               name,
+            }
+          }
+          ...__RelayQueryFragment0poedameron
+        }
+
+        fragment __RelayQueryFragment0rey on TrackConnection {
+          edges {
+            node {
+              id,
               number,
+            }
+          }
+        }
+
+        fragment __RelayQueryFragment0poedameron on TrackConnection {
+          edges {
+            node {
+              id,
               high_quality,
             }
           }
@@ -188,6 +313,7 @@ class FragmentedQuerySpec < PrelaySpec
               tracks {
                 edges {
                   ...__RelayQueryFragment0hansolo
+                  ...__RelayQueryFragment0bb8
                 }
               }
             }
@@ -197,8 +323,28 @@ class FragmentedQuerySpec < PrelaySpec
         fragment __RelayQueryFragment0hansolo on TrackEdge {
           node {
             id,
+          }
+          ...__RelayQueryFragment0rey
+        }
+
+        fragment __RelayQueryFragment0bb8 on TrackEdge {
+          node {
+            id,
             name,
+          }
+          ...__RelayQueryFragment0poedameron
+        }
+
+        fragment __RelayQueryFragment0rey on TrackEdge {
+          node {
+            id,
             number,
+          }
+        }
+
+        fragment __RelayQueryFragment0poedameron on TrackEdge {
+          node {
+            id,
             high_quality,
           }
         }
@@ -223,6 +369,7 @@ class FragmentedQuerySpec < PrelaySpec
                 edges {
                   node {
                     ...__RelayQueryFragment0hansolo
+                    ...__RelayQueryFragment0bb8
                   }
                 }
               }
@@ -232,8 +379,22 @@ class FragmentedQuerySpec < PrelaySpec
 
         fragment __RelayQueryFragment0hansolo on Track {
           id,
+          ...__RelayQueryFragment0rey
+        }
+
+        fragment __RelayQueryFragment0bb8 on Track {
+          id,
           name,
+          ...__RelayQueryFragment0poedameron
+        }
+
+        fragment __RelayQueryFragment0rey on Track {
+          id,
           number,
+        }
+
+        fragment __RelayQueryFragment0poedameron on Track {
+          id,
           high_quality,
         }
       GRAPHQL
@@ -242,6 +403,8 @@ class FragmentedQuerySpec < PrelaySpec
 
   queries.each do |name, query|
     it "should handle a #{name} query" do
+      skip if [:fragment_inside_association_connection, :fragment_inside_association_edge].include?(name)
+
       result = execute_query(query % {id: encode('Album', album.id)})
 
       expected = {
