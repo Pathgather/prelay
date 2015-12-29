@@ -25,6 +25,8 @@ Spec custom dependent_columns.
 Spec merging of repeat invocations of the same field/association, but nail
 down what differences in arguments mean.
 
+Query and Mutation classes.
+
 
 
 
@@ -80,8 +82,6 @@ Freeze schema contents when they're generated.
 
 Support some configurable way to reject queries that have the potential to
 touch too many rows or generate queries of too severe complexity.
-
-Query and Mutation classes.
 
 Support top-level connection queries.
 
