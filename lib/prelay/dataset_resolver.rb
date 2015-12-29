@@ -10,9 +10,9 @@
 
 module Prelay
   class DatasetResolver
-    def initialize(ast:)
-      @model     = ast.model
-      @arguments = ast.arguments
+    def initialize(selection:)
+      @model     = selection.model
+      @arguments = selection.arguments
 
       @columns      = []
       @associations = {}
@@ -20,31 +20,31 @@ module Prelay
       # Will eventually need to do something smarter here when we want to
       # support multiple invocations of the same attribute with different
       # arguments.
-      selections = {}
-      ast.selections.each do |aliaz, selection|
-        selections[selection.name] = selection
+      fields = {}
+      selection.attributes.each do |aliaz, selection|
+        fields[selection.name] = selection
       end
 
       # id isn't a true attribute, but we'll need it to generate the record's
       # relay id.
-      if selections.delete(:id)
+      if fields.delete(:id)
         @columns << :id
       end
 
       @model.attributes.each do |name, attribute|
-        if selections.delete(name)
+        if fields.delete(name)
           @columns.push *attribute.dependent_columns
         end
       end
 
       @model.associations.each do |name, association|
-        if s = selections.delete(name)
+        if s = fields.delete(name)
           @columns.push *association.dependent_columns
-          @associations[association] = self.class.new(ast: s)
+          @associations[association] = self.class.new(selection: s)
         end
       end
 
-      raise "Unrecognized selections for #{@model}: #{selections.inspect}" if selections.any?
+      raise "Unrecognized fields for #{@model}: #{fields.inspect}" if fields.any?
     end
 
     def resolve

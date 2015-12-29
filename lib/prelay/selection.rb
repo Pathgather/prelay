@@ -2,13 +2,13 @@
 
 module Prelay
   class Selection
-    attr_reader :name, :model, :arguments, :selections
+    attr_reader :name, :model, :arguments, :attributes
 
-    def initialize(name:, model: nil, arguments: {}, selections: {})
+    def initialize(name:, model: nil, arguments: {}, attributes: {})
       @name       = name
       @model      = model
       @arguments  = arguments
-      @selections = selections
+      @attributes = attributes
     end
 
     def ==(other)
@@ -16,7 +16,7 @@ module Prelay
       self.name       == other.name &&
       self.model      == other.model &&
       self.arguments  == other.arguments &&
-      self.selections == other.selections
+      self.attributes == other.attributes
     end
 
     # Merges together two selections. Is recursive, so also merges
@@ -28,9 +28,7 @@ module Prelay
         raise InvalidGraphQLQuery.new("This query invokes the same field twice with arguments")
       end
 
-      return other_selection if frozen?
-
-      @selections = selections.merge(other_selection.selections) do |k, o, n|
+      @attributes = attributes.merge(other_selection.attributes) do |k, o, n|
         o.merge!(n, fail_on_argument_difference: fail_on_argument_difference)
       end
 

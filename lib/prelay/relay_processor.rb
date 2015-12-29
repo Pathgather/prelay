@@ -16,7 +16,7 @@
 
 module Prelay
   class RelayProcessor
-    attr_reader :ast
+    attr_accessor :current_model, :current_context
 
     # For most queries we'll be passing in the context object for the entire
     # query, and we'll just process it from the top level. In some places
@@ -26,53 +26,104 @@ module Prelay
     # query context separately for us to look up fragments on.
 
     def initialize(context, model:)
-      root_field = context.ast_node
-
       @fragments = context.query.fragments
-
-      # We use a stack to track the currently relevant model as we walk the
-      # tree.
-      @model_stack = [model]
-
-      @ast = ast_for_field(root_field, model: model)
+      @selection = scope_model(model) { field_to_selection(context.ast_node) }
     end
 
     def to_resolver
-      DatasetResolver.new(ast: @ast)
+      DatasetResolver.new(selection: @selection)
     end
 
     private
 
-    def ast_for_field(field, model: nil)
+    def field_to_selection(field)
       Selection.new name:       field.name.to_sym,
-                    model:      model,
+                    model:      current_model,
                     arguments:  arguments_from_field(field),
-                    selections: selections_from_field(field)
+                    attributes: attributes_from_field(field)
+    end
+
+    def scope_model(model)
+      previous_model = current_model
+      self.current_model = model
+      yield
+    ensure
+      self.current_model = previous_model
     end
 
     def arguments_from_field(field)
       field.arguments.each_with_object({}){|a, hash| hash[a.name.to_sym] = a.value}
     end
 
-    def selections_from_field(field, ast = {})
-      field.selections.each_with_object(ast){|s, ast| append_ast_for_selection(s, ast)}
+    def attributes_from_field(field, attributes = {})
+      field.selections.each_with_object(attributes){|s, attrs| append_attribute_for_selection(s, attrs)}
     end
 
-    def append_ast_for_selection(thing, ast)
+    def process_fragments(thing, &block)
       case thing
-      when GraphQL::Language::Nodes::Field
-        name = thing.name.to_sym
-        key  = (thing.alias || name).to_sym
+      when GraphQL::Language::Nodes::FragmentSpread
+        fragment = @fragments.fetch(thing.name) do
+          raise InvalidGraphQLQuery, "fragment not found with name #{thing.name}"
+        end
 
-        new_ast =
+        fragment.selections.each do |selection|
+          process_fragments(selection, &block)
+        end
+      when GraphQL::Language::Nodes::InlineFragment
+        if Model::BY_TYPE.fetch(thing.type) == current_model
+          thing.selections.each do |selection|
+            process_fragments(selection, &block)
+          end
+        else
+          # Fragment is on a different type than this is, so ignore it.
+        end
+      when GraphQL::Language::Nodes::Field
+        yield thing
+      else
+        raise "Unsupported GraphQL input: #{thing.class}"
+      end
+    end
+
+    def append_attribute_for_selection(thing, attrs)
+      process_fragments(thing) do |field|
+        name = field.name.to_sym
+        key  = field.alias&.to_sym || name
+
+        new_attr =
           if attribute = current_model.attributes[name]
-            ast_for_field(thing)
+            field_to_selection(field)
           elsif association = current_model.associations[name]
-            push_model(association.target_model) do
+            scope_model(association.target_model) do
               if association.returns_array?
-                ast_for_relay_connection(thing)
+                arguments  = {}
+                attributes = {}
+
+                field.selections.each do |s1|
+                  process_fragments(s1) do |f1|
+                    case f1.name
+                    when 'edges'
+                      f1.selections.each do |s2|
+                        process_fragments(s2) do |f2|
+                          case f2.name
+                          when 'node'
+                            attributes_from_field(f2, attributes)
+                          else
+                            raise InvalidGraphQLQuery, "unsupported field '#{f2.name}'"
+                          end
+                        end
+                      end
+                    else
+                      raise InvalidGraphQLQuery, "unsupported field '#{f1.name}'"
+                    end
+                  end
+                end
+
+                Selection.new name:       name,
+                              model:      current_model,
+                              arguments:  arguments,
+                              attributes: attributes
               else
-                ast_for_field(thing, model: current_model)
+                field_to_selection(field)
               end
             end
           else
@@ -94,116 +145,15 @@ module Prelay
             end
           end
 
-        if old_ast = ast[name]
+        if old_attr = attrs[name]
           # This field was already declared, so merge this ast with the
           # previous one. We don't yet support declaring the same field twice
           # with different arguments, so fail in that case.
-          old_ast.merge!(new_ast, fail_on_argument_difference: true) if old_ast != new_ast
+          old_attr.merge!(new_attr, fail_on_argument_difference: true) if old_attr != new_attr
         else
-          ast[key] = new_ast
-        end
-      when GraphQL::Language::Nodes::FragmentSpread
-        fragment = @fragments.fetch(thing.name) { raise InvalidGraphQLQuery, "fragment not found with name #{thing.name}" }
-        selections_from_field(fragment, ast)
-      when GraphQL::Language::Nodes::InlineFragment
-        if Model::BY_TYPE.fetch(thing.type) == current_model
-          selections_from_field(thing, ast)
-        else
-          # Fragment is on a different type than this is, so ignore it.
-        end
-      else
-        raise InvalidGraphQLQuery, "unsupported GraphQL component: #{thing.class}"
-      end
-    end
-
-    def ast_for_relay_connection(field)
-      s = {}
-      resolve_fragments(field).each{|e| s[e.name] = e}
-
-      arguments = arguments_from_field(field)
-
-      unless edge = s.delete('edges'.freeze)
-        raise InvalidGraphQLQuery, "can't specify a Relay connection without an 'edges' field"
-      end
-
-      selections = ast_for_relay_edge(edge)
-
-      s.each do |name, field|
-        case name
-        when 'pageInfo'.freeze
-          field.selections.each do |field|
-            case field.name
-            when 'hasNextPage'.freeze     then arguments[:has_next_page]     = true
-            when 'hasPreviousPage'.freeze then arguments[:has_previous_page] = true
-            else raise InvalidGraphQLQuery, "unsupported field for Relay pageInfo: #{field.name}"
-            end
-          end
-        else
-          raise InvalidGraphQLQuery, "unsupported field for Relay connection: '#{name}'"
+          attrs[key] = new_attr
         end
       end
-
-      Selection.new name:       field.name.to_sym,
-                    model:      current_model,
-                    arguments:  arguments,
-                    selections: selections
-    end
-
-    def ast_for_relay_edge(field)
-      s = {}
-      resolve_fragments(field).each{|e| s[e.name] = e}
-
-      unless field.arguments.empty?
-        raise InvalidGraphQLQuery, "arguments for Relay edge fields are unsupported"
-      end
-
-      unless node = s.delete('node'.freeze)
-        raise InvalidGraphQLQuery, "can't specify a Relay edge without a 'node' field"
-      end
-
-      selections = selections_from_field(node)
-
-      s.each do |name, field|
-        case name
-        when 'cursor'.freeze
-          # Cursors are currently just the object's relay_id, but we want to
-          # roll pagination information into the cursor at some point. But for
-          # now, if the client wants the cursor, have to be sure we fetch the
-          # object's uuid.
-          selections[:id] ||= Selection.new(name: :id)
-        else
-          raise InvalidGraphQLQuery, "unsupported field for Relay edge: '#{name}'"
-        end
-      end
-
-      selections
-    end
-
-    def resolve_fragments(field)
-      selections = []
-      field.selections.each do |selection|
-        case selection
-        when GraphQL::Language::Nodes::FragmentSpread
-          fragment = @fragments.fetch(selection.name) { raise InvalidGraphQLQuery, "fragment not found with name #{selection.name}" }
-          selections.push *fragment.selections
-        when GraphQL::Language::Nodes::Field
-          selections.push selection
-        else
-          raise "Unsupported selection class: #{selection.class}"
-        end
-      end
-      selections
-    end
-
-    def current_model
-      @model_stack.last
-    end
-
-    def push_model(model)
-      @model_stack.push model
-      yield
-    ensure
-      @model_stack.pop
     end
   end
 end
