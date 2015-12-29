@@ -43,49 +43,38 @@ module Prelay
                     attributes: attributes_from_field(field)
     end
 
-    def scope_model(model)
-      previous_model = current_model
-      self.current_model = model
-      yield
-    ensure
-      self.current_model = previous_model
+    def connection_to_selection(field)
+      arguments  = {}
+      attributes = {}
+
+      process_field_selections(field) do |f1|
+        case f1.name
+        when 'edges'
+          process_field_selections(f1) do |f2|
+            case f2.name
+            when 'node'
+              attributes_from_field(f2, attributes)
+            else
+              raise InvalidGraphQLQuery, "unsupported field '#{f2.name}'"
+            end
+          end
+        else
+          raise InvalidGraphQLQuery, "unsupported field '#{f1.name}'"
+        end
+      end
+
+      Selection.new name:       field.name.to_sym,
+                    model:      current_model,
+                    arguments:  arguments,
+                    attributes: attributes
     end
 
     def arguments_from_field(field)
       field.arguments.each_with_object({}){|a, hash| hash[a.name.to_sym] = a.value}
     end
 
-    def attributes_from_field(field, attributes = {})
-      field.selections.each_with_object(attributes){|s, attrs| append_attribute_for_selection(s, attrs)}
-    end
-
-    def process_fragments(thing, &block)
-      case thing
-      when GraphQL::Language::Nodes::FragmentSpread
-        fragment = @fragments.fetch(thing.name) do
-          raise InvalidGraphQLQuery, "fragment not found with name #{thing.name}"
-        end
-
-        fragment.selections.each do |selection|
-          process_fragments(selection, &block)
-        end
-      when GraphQL::Language::Nodes::InlineFragment
-        if Model::BY_TYPE.fetch(thing.type) == current_model
-          thing.selections.each do |selection|
-            process_fragments(selection, &block)
-          end
-        else
-          # Fragment is on a different type than this is, so ignore it.
-        end
-      when GraphQL::Language::Nodes::Field
-        yield thing
-      else
-        raise "Unsupported GraphQL input: #{thing.class}"
-      end
-    end
-
-    def append_attribute_for_selection(thing, attrs)
-      process_fragments(thing) do |field|
+    def attributes_from_field(field, attrs = {})
+      process_field_selections(field) do |field|
         name = field.name.to_sym
         key  = field.alias&.to_sym || name
 
@@ -95,33 +84,7 @@ module Prelay
           elsif association = current_model.associations[name]
             scope_model(association.target_model) do
               if association.returns_array?
-                arguments  = {}
-                attributes = {}
-
-                field.selections.each do |s1|
-                  process_fragments(s1) do |f1|
-                    case f1.name
-                    when 'edges'
-                      f1.selections.each do |s2|
-                        process_fragments(s2) do |f2|
-                          case f2.name
-                          when 'node'
-                            attributes_from_field(f2, attributes)
-                          else
-                            raise InvalidGraphQLQuery, "unsupported field '#{f2.name}'"
-                          end
-                        end
-                      end
-                    else
-                      raise InvalidGraphQLQuery, "unsupported field '#{f1.name}'"
-                    end
-                  end
-                end
-
-                Selection.new name:       name,
-                              model:      current_model,
-                              arguments:  arguments,
-                              attributes: attributes
+                connection_to_selection(field)
               else
                 field_to_selection(field)
               end
@@ -138,7 +101,7 @@ module Prelay
             when :clientMutationId, :__typename
               # These are acceptable fields to request, but the GraphQL gem
               # handles them, so we can just ignore them.
-              return
+              next
             else
               # Whatever field was requested, it ain't good.
               raise InvalidGraphQLQuery, "unsupported field '#{name}'"
@@ -154,6 +117,39 @@ module Prelay
           attrs[key] = new_attr
         end
       end
+
+      attrs
+    end
+
+    # Takes care of flattening fragment invocations, and only yields actual
+    # field nodes to the given block.
+    def process_field_selections(field, &block)
+      field.selections.each do |thing|
+        case thing
+        when GraphQL::Language::Nodes::FragmentSpread
+          fragment = @fragments.fetch(thing.name) { raise InvalidGraphQLQuery, "fragment not found with name #{thing.name}" }
+          process_field_selections(fragment, &block)
+        when GraphQL::Language::Nodes::InlineFragment
+          if Model::BY_TYPE.fetch(thing.type) == current_model
+            process_field_selections(thing, &block)
+          else
+            # Fragment is on a different type than this is, so ignore it.
+          end
+        when GraphQL::Language::Nodes::Field
+          yield thing
+        else
+          raise "Unsupported GraphQL input: #{thing.class}"
+        end
+      end
+    end
+
+    # Super-simple scoping of the current model class as we walk the AST.
+    def scope_model(model)
+      previous_model = current_model
+      self.current_model = model
+      yield
+    ensure
+      self.current_model = previous_model
     end
   end
 end
