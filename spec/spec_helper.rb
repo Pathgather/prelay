@@ -77,6 +77,15 @@ DB.create_table :publishers do
   unique :album_id
 end
 
+# # A little helper to raise a nice error if any of our specs try to access a
+# # model attribute that wasn't loaded from the DB. Probably not a good idea
+# # to use it all the time, but it's useful for linting every once in a while.
+# Sequel::Model.send :include, Module.new {
+#   def [](k)
+#     @values.fetch(k) { raise "column '#{k}' not loaded for object #{inspect}" }
+#   end
+# }
+
 class Artist < Sequel::Model
   one_to_many :albums
 end
