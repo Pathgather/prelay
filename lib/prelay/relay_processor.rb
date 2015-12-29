@@ -146,7 +146,7 @@ module Prelay
           end
 
         if old_attr = attrs[name]
-          # This field was already declared, so merge this ast with the
+          # This field was already declared, so merge this selection with the
           # previous one. We don't yet support declaring the same field twice
           # with different arguments, so fail in that case.
           old_attr.merge!(new_attr, fail_on_argument_difference: true) if old_attr != new_attr
