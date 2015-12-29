@@ -142,7 +142,7 @@ module Prelay
       arguments = arguments_from_field(field)
 
       unless edge = s.delete('edges'.freeze)
-        raise InvalidGraphQLQuery, "can't specify a relay connection without an 'edges' field"
+        raise InvalidGraphQLQuery, "can't specify a Relay connection without an 'edges' field"
       end
 
       selections = ast_for_relay_edge(edge)
