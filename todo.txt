@@ -15,6 +15,8 @@ Minor stuff:
 
 Add Prelay::ID.for().
 
+Handle fragments with the wrong target object.
+
 Sequel associations with defined blocks (supported, need testing).
 
 Refactor association column logic into local_column, remote_column (or something like that).
