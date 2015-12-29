@@ -444,7 +444,7 @@ class FragmentedQuerySpec < PrelaySpec
     end
   end
 
-  it "should ignore inline fragments on the wrong model" do
+  it "should ignore inline fragments on the wrong type" do
     id = encode('Album', album.id)
 
     result = execute_query <<-GRAPHQL

@@ -1,29 +1,29 @@
 # frozen-string-literal: true
 
 module Prelay
-  class Model
+  class Type
     class Association
       attr_reader :name
 
-      def initialize(model, name)
-        @model = model
-        @name  = name
+      def initialize(type, name)
+        @type = type
+        @name = name
       end
 
-      def sequel_model
-        @model.model
+      def model
+        @type.model
       end
 
       def sequel_association
-        m = sequel_model
+        m = model
         m.association_reflections.fetch(name) do
           raise "Could not find an association '#{name}' on the Sequel model #{m}"
         end
       end
 
-      def target_model
-        Prelay::Model::BY_SEQUEL_MODEL.fetch(sequel_association.associated_class) do
-          raise "Could not find a Prelay::Model for #{sequel_association.associated_class}"
+      def target_type
+        Type::BY_MODEL.fetch(sequel_association.associated_class) do
+          raise "Could not find a Prelay::Type for #{sequel_association.associated_class}"
         end
       end
 
@@ -32,7 +32,7 @@ module Prelay
       end
 
       def graphql_type
-        target_model.graphql_object
+        target_type.graphql_object
       end
 
       def dependent_columns

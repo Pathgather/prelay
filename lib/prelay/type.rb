@@ -1,17 +1,17 @@
 # frozen-string-literal: true
 
-require 'prelay/model/association'
-require 'prelay/model/attribute'
+require 'prelay/type/association'
+require 'prelay/type/attribute'
 
 module Prelay
-  class Model
-    BY_SEQUEL_MODEL = {}
-    BY_TYPE = {}
+  class Type
+    BY_MODEL = {}
+    BY_NAME  = {}
 
     class << self
       def inherited(subclass)
         super
-        BY_TYPE[subclass.to_s.split('::').last] = subclass
+        BY_NAME[subclass.to_s.split('::').last] = subclass
       end
 
       def attributes
@@ -37,20 +37,20 @@ module Prelay
       end
 
       def define_graphql_object(node_identification)
-        model = self
+        type = self
 
         @graphql_object = ::GraphQL::ObjectType.define do
-          name(model.name.split('::').last)
-          description(model.description)
+          name(type.name.split('::').last)
+          description(type.description)
 
           interfaces [node_identification.interface]
           global_id_field :id
 
-          model.attributes.each_value do |attribute|
+          type.attributes.each_value do |attribute|
             field attribute.name, attribute.graphql_type
           end
 
-          model.associations.each_value do |association|
+          type.associations.each_value do |association|
             if association.returns_array?
               connection association.name do
                 type -> { association.graphql_type.connection_type }
@@ -71,7 +71,7 @@ module Prelay
       def model(m = nil)
         if m
           @model = m
-          BY_SEQUEL_MODEL[m] = self
+          BY_MODEL[m] = self
         else
           @model
         end

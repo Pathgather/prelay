@@ -23,15 +23,15 @@ module Prelay
       end
     end
 
-    attr_reader :model, :id
+    attr_reader :type, :id
 
     def initialize(type:, id:)
-      @id = id
-      @model = Model::BY_TYPE.fetch(type) { raise InvalidGraphQLQuery, "Not a valid object type: #{type}" }
+      @id   = id
+      @type = Type::BY_NAME.fetch(type) { raise InvalidGraphQLQuery, "Not a valid object type: #{type}" }
     end
 
     def get
-      @model.model[@id]
+      @type.model[@id]
     end
   end
 end

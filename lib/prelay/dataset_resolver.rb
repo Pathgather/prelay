@@ -11,7 +11,7 @@
 module Prelay
   class DatasetResolver
     def initialize(selection:)
-      @model     = selection.model
+      @type      = selection.type
       @arguments = selection.arguments
 
       @columns      = []
@@ -31,20 +31,20 @@ module Prelay
         @columns << :id
       end
 
-      @model.attributes.each do |name, attribute|
+      @type.attributes.each do |name, attribute|
         if fields.delete(name)
           @columns.push *attribute.dependent_columns
         end
       end
 
-      @model.associations.each do |name, association|
+      @type.associations.each do |name, association|
         if s = fields.delete(name)
           @columns.push *association.dependent_columns
           @associations[association] = self.class.new(selection: s)
         end
       end
 
-      raise "Unrecognized fields for #{@model}: #{fields.inspect}" if fields.any?
+      raise "Unrecognized fields for #{@type}: #{fields.inspect}" if fields.any?
     end
 
     def resolve
@@ -54,7 +54,7 @@ module Prelay
     end
 
     def resolve_by_pk(pk)
-      cond    = @model.model.qualified_primary_key_hash(pk)
+      cond    = @type.model.qualified_primary_key_hash(pk)
       records = dataset.where(cond).all
       process_associations_for_records(records)
       records.first
@@ -65,7 +65,7 @@ module Prelay
 
       reflection = association.sequel_association
 
-      ds = @model.model.dataset
+      ds = @type.model.dataset
 
       if b = reflection[:block]
         ds = b.call(ds)
@@ -79,7 +79,7 @@ module Prelay
         end
 
       ds = apply_query_to_dataset(ds, supplemental_columns: [target_column])
-      ds = ds.where(Sequel.qualify(@model.model.table_name, target_column) => ids)
+      ds = ds.where(Sequel.qualify(@type.model.table_name, target_column) => ids)
 
       if ids.length > 1 && limit = ds.opts.delete(:limit)
         # Steal Sequel's technique for limiting eager-loaded associations with
@@ -101,7 +101,7 @@ module Prelay
     protected
 
     def apply_query_to_dataset(ds, supplemental_columns: [])
-      table_name = @model.model.table_name
+      table_name = @type.model.table_name
       arguments = @arguments
 
       columns = (@columns + supplemental_columns).uniq.map{|column| Sequel.qualify(table_name, column)}
@@ -116,7 +116,7 @@ module Prelay
 
         ds =
           if relay_id = arguments[:after] || arguments[:before]
-            pk = RelayID.parse(relay_id, expected_type: @model.graphql_name).uuid
+            pk = RelayID.parse(relay_id, expected_type: @type.graphql_name).uuid
             ds.seek_paginate(limit, after_pk: pk)
           else
             ds.seek_paginate(limit)
@@ -181,7 +181,7 @@ module Prelay
     end
 
     def dataset
-      apply_query_to_dataset(@model.model.dataset)
+      apply_query_to_dataset(@type.model.dataset)
     end
   end
 end

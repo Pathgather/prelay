@@ -243,58 +243,58 @@ class PrelaySpec < Minitest::Spec
     Base64.strict_encode64 "#{type}:#{id}"
   end
 
-  class Artist < Prelay::Model
+  class Artist < Prelay::Type
     model ::Artist
 
     description "A musician"
 
-    attribute :name,       type: :string
-    attribute :upvotes,    type: :integer
-    attribute :active,     type: :boolean
-    attribute :popularity, type: :float
+    attribute :name,       datatype: :string
+    attribute :upvotes,    datatype: :integer
+    attribute :active,     datatype: :boolean
+    attribute :popularity, datatype: :float
 
     association :albums
   end
 
-  class Album < Prelay::Model
+  class Album < Prelay::Type
     model ::Album
 
     description "An album released by a musician"
 
-    attribute :name,         type: :string
-    attribute :upvotes,      type: :integer
-    attribute :high_quality, type: :boolean
-    attribute :popularity,   type: :float
+    attribute :name,         datatype: :string
+    attribute :upvotes,      datatype: :integer
+    attribute :high_quality, datatype: :boolean
+    attribute :popularity,   datatype: :float
 
     association :artist
     association :tracks
     association :publisher
   end
 
-  class Track < Prelay::Model
+  class Track < Prelay::Type
     model ::Track
 
     description "A song on an album"
 
-    attribute :name,         type: :string
-    attribute :number,       type: :integer
-    attribute :high_quality, type: :boolean
-    attribute :popularity,   type: :float
+    attribute :name,         datatype: :string
+    attribute :number,       datatype: :integer
+    attribute :high_quality, datatype: :boolean
+    attribute :popularity,   datatype: :float
 
     association :album
   end
 
-  class Publisher < Prelay::Model
+  class Publisher < Prelay::Type
     model ::Publisher
 
     description "The publishing company for an album"
 
-    attribute :name, type: :string
+    attribute :name, datatype: :string
 
     association :album
   end
 
   GraphQLSchema = Prelay::Schema.new(
-    models: [Artist, Album, Track, Publisher]
+    types: [Artist, Album, Track, Publisher]
   ).to_graphql_schema(prefix: 'Client')
 end

@@ -6,7 +6,7 @@
 #     the query-servicing logic is insulated from changes to the GraphQL gem.
 #   - Inline GraphQL fragments, including ones that are type-dependent.
 #   - Validate that all the attributes and associations being accessed exist
-#     on the given models.
+#     on the given types.
 #   - Return sensible errors if any of the frontend peeps sends us a malformed
 #     GraphQL/Relay query or tries to invoke GraphQL/Relay features that we
 #     don't support yet.
@@ -16,7 +16,7 @@
 
 module Prelay
   class RelayProcessor
-    attr_accessor :current_model, :current_context
+    attr_accessor :current_type, :current_context
 
     # For most queries we'll be passing in the context object for the entire
     # query, and we'll just process it from the top level. In some places
@@ -25,9 +25,9 @@ module Prelay
     # one another, so we support passing in a field object and supplying the
     # query context separately for us to look up fragments on.
 
-    def initialize(context, model:)
+    def initialize(context, type:)
       @fragments = context.query.fragments
-      @selection = scope_model(model) { field_to_selection(context.ast_node) }
+      @selection = scope_type(type) { field_to_selection(context.ast_node) }
     end
 
     def to_resolver
@@ -38,7 +38,7 @@ module Prelay
 
     def field_to_selection(field)
       Selection.new name:       field.name.to_sym,
-                    model:      current_model,
+                    type:       current_type,
                     arguments:  arguments_from_field(field),
                     attributes: attributes_from_field(field)
     end
@@ -64,7 +64,7 @@ module Prelay
       end
 
       Selection.new name:       field.name.to_sym,
-                    model:      current_model,
+                    type:       current_type,
                     arguments:  arguments,
                     attributes: attributes
     end
@@ -79,10 +79,10 @@ module Prelay
         key  = field.alias&.to_sym || name
 
         new_attr =
-          if attribute = current_model.attributes[name]
+          if attribute = current_type.attributes[name]
             field_to_selection(field)
-          elsif association = current_model.associations[name]
-            scope_model(association.target_model) do
+          elsif association = current_type.associations[name]
+            scope_type(association.target_type) do
               if association.returns_array?
                 connection_to_selection(field)
               else
@@ -94,7 +94,7 @@ module Prelay
             when :id
               # id' isn't one of our declared attributes because it's handled
               # via the node identification interface included into all the
-              # GraphQL objects derived from our models, but it still needs to
+              # GraphQL objects derived from our types, but it still needs to
               # be retrieved from the DB, so we include it in our selection.
 
               Selection.new(name: name)
@@ -130,7 +130,7 @@ module Prelay
           fragment = @fragments.fetch(thing.name) { raise InvalidGraphQLQuery, "fragment not found with name #{thing.name}" }
           process_field_selections(fragment, &block)
         when GraphQL::Language::Nodes::InlineFragment
-          if Model::BY_TYPE.fetch(thing.type) == current_model
+          if Type::BY_NAME.fetch(thing.type) == current_type
             process_field_selections(thing, &block)
           else
             # Fragment is on a different type than this is, so ignore it.
@@ -143,13 +143,13 @@ module Prelay
       end
     end
 
-    # Super-simple scoping of the current model class as we walk the AST.
-    def scope_model(model)
-      previous_model = current_model
-      self.current_model = model
+    # Super-simple scoping of the current type class as we walk the AST.
+    def scope_type(type)
+      previous_type = current_type
+      self.current_type = type
       yield
     ensure
-      self.current_model = previous_model
+      self.current_type = previous_type
     end
   end
 end

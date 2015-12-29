@@ -2,14 +2,14 @@
 
 module Prelay
   class Schema
-    def initialize(models: [])
-      @models = models
+    def initialize(types: [])
+      @types = types
     end
 
     def to_graphql_schema(prefix:)
       node_identification = GraphQL::Relay::GlobalNodeIdentification.define do
         type_from_object -> (object) do
-          Prelay::Model::BY_SEQUEL_MODEL.fetch(object.class){|k| raise "No Prelay model found for class #{k}"}.graphql_object
+          Prelay::Type::BY_MODEL.fetch(object.class){|k| raise "No Prelay type found for class #{k}"}.graphql_object
         end
       end
 
@@ -17,8 +17,8 @@ module Prelay
         ID.encode(type: type, id: id)
       end
 
-      @models.each do |model|
-        model.define_graphql_object(node_identification)
+      @types.each do |type|
+        type.define_graphql_object(node_identification)
       end
 
       GraphQL::Schema.new(
@@ -30,7 +30,7 @@ module Prelay
             argument :id, !GraphQL::ID_TYPE
             resolve -> (obj, args, ctx) {
               id = ID.parse(args['id'])
-              RelayProcessor.new(ctx, model: id.model).
+              RelayProcessor.new(ctx, type: id.type).
                 to_resolver.resolve_by_pk(id.id)
             }
           }

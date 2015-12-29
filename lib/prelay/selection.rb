@@ -2,11 +2,11 @@
 
 module Prelay
   class Selection
-    attr_reader :name, :model, :arguments, :attributes
+    attr_reader :name, :type, :arguments, :attributes
 
-    def initialize(name:, model: nil, arguments: {}, attributes: {})
+    def initialize(name:, type: nil, arguments: {}, attributes: {})
       @name       = name
-      @model      = model
+      @type       = type
       @arguments  = arguments
       @attributes = attributes
     end
@@ -14,7 +14,7 @@ module Prelay
     def ==(other)
       self.class      == other.class &&
       self.name       == other.name &&
-      self.model      == other.model &&
+      self.type       == other.type &&
       self.arguments  == other.arguments &&
       self.attributes == other.attributes
     end

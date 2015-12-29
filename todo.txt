@@ -1,7 +1,5 @@
 Soon:
 
-Rename Prelay::Model -> Prelay::Type.
-
 Support marking attributes (and association fields) not-null.
 
 Support descriptions on attributes.
@@ -11,6 +9,8 @@ inverse association referencing with additional queries (though spec that
 case, of course).
 
 Add Prelay::ID.for().
+
+Rename 'id' to 'pk' in the appropriate places (Prelay::ID).
 
 Sequel associations with defined blocks (supported, need testing).
 
@@ -75,6 +75,8 @@ join. Maybe do that sometimes when columns are requested anyway.
 Future miscellaneous stuff:
 
 Base types on datasets, in addition to or instead of models?
+
+Support introspecting datatypes from models/datasets.
 
 Support deprecation warnings on fields (and whole objects?).
 
