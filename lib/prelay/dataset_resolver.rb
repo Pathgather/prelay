@@ -17,7 +17,13 @@ module Prelay
       @columns      = []
       @associations = {}
 
-      selections = ast.selections.dup
+      # Will eventually need to do something smarter here when we want to
+      # support multiple invocations of the same attribute with different
+      # arguments.
+      selections = {}
+      ast.selections.each do |aliaz, selection|
+        selections[selection.name] = selection
+      end
 
       # id isn't a true attribute, but we'll need it to generate the record's
       # relay id.
