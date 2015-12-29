@@ -443,4 +443,37 @@ class FragmentedQuerySpec < PrelaySpec
       ], sqls
     end
   end
+
+  it "should ignore inline fragments on the wrong model" do
+    id = encode('Album', album.id)
+
+    result = execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id,
+          ... on Artist {
+            name,
+            upvotes,
+            active,
+          }
+          ... on Album {
+            name,
+            high_quality,
+          }
+        }
+      }
+    GRAPHQL
+
+    expected = {
+      'data' => {
+        'node' => {
+          'id' => encode('Album', album.id),
+          'name' => album.name,
+          'high_quality' => album.high_quality,
+        }
+      }
+    }
+
+    assert_equal expected, result
+  end
 end
