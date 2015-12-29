@@ -16,7 +16,7 @@
 
 module Prelay
   class RelayProcessor
-    attr_accessor :current_type, :current_context
+    attr_accessor :current_type
 
     # For most queries we'll be passing in the context object for the entire
     # query, and we'll just process it from the top level. In some places
