@@ -125,45 +125,33 @@ module Prelay
 
     def process_associations_for_records(records)
       @associations.each do |association, dataset_resolver|
-        reflection = association.sequel_association
-        type = reflection[:type]
-
-        local_column  = association.local_column
-        remote_column = association.remote_column
+        reflection       = association.sequel_association
+        association_name = reflection[:name]
+        reciprocal       = reflection.reciprocal
+        local_column     = association.local_column
+        remote_column    = association.remote_column
 
         ids = records.map(&local_column).uniq
-        sub_records = dataset_resolver.resolve_via_association(association, ids)
 
-        case type
-        when :one_to_one
-          sub_records_hash = {}
-          sub_records.each{|r| sub_records_hash[r.send(remote_column)] = r}
-          records.each do |r|
-            associated_record = sub_records_hash[r.send(local_column)]
-            r.associations[reflection[:name]] = associated_record
-            associated_record.associations[reflection.reciprocal] = r if associated_record
-          end
-        when :many_to_one
-          sub_records_hash = {}
-          sub_records.each{|r| sub_records_hash[r.send(remote_column)] = r}
-          records.each do |r|
-            associated_record = sub_records_hash[r.send(local_column)]
-            r.associations[reflection[:name]] = associated_record
-            associated_record.associations[reflection.reciprocal] = r if associated_record
-          end
-        when :one_to_many
-          sub_records_hash = {}
-          sub_records.each do |r|
-            k = r.send(remote_column)
-            (sub_records_hash[k] ||= []) << r
-          end
+        sub_records = dataset_resolver.resolve_via_association(association, ids)
+        sub_records_hash = {}
+
+        if association.returns_array?
+          sub_records.each { |r| (sub_records_hash[r.send(remote_column)] ||= []) << r }
+
           records.each do |r|
             associated_records = sub_records_hash[r.send(local_column)] || []
-            r.associations[reflection[:name]] = associated_records
-            associated_records.each {|ar| ar.associations[reflection.reciprocal] = r}
+            r.associations[association_name] = associated_records
+            associated_records.each {|ar| ar.associations[reciprocal] = r}
           end
         else
-          raise "Unsupported reflection type: #{type}"
+          sub_records.each{|r| sub_records_hash[r.send(remote_column)] = r}
+
+          records.each do |r|
+            associated_record = sub_records_hash[r.send(local_column)]
+            r.associations[association_name] = associated_record
+            associated_record.associations[reciprocal] = r if associated_record
+          end
         end
       end
     end
