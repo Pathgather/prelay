@@ -243,9 +243,22 @@ class PrelaySpec < Minitest::Spec
   def execute_query(graphql)
     sqls.clear
     self.track_sqls = true
-    GraphQLSchema.execute(graphql, debug: true)
+    @result = GraphQLSchema.execute(graphql, debug: true)
   ensure
     self.track_sqls = false
+  end
+
+  def assert_invalid_query(message, graphql)
+    error = assert_raises(Prelay::InvalidGraphQLQuery) { execute_query(graphql) }
+    assert_equal message, error.message
+  end
+
+  def assert_result(data)
+    assert_equal data, @result
+  end
+
+  def assert_sqls(expected)
+    assert_equal expected, sqls
   end
 
   def sqls
@@ -258,10 +271,6 @@ class PrelaySpec < Minitest::Spec
 
   def track_sqls=(boolean)
     Thread.current[:track_sqls] = boolean
-  end
-
-  def execute_invalid_query(graphql)
-    assert_raises(Prelay::InvalidGraphQLQuery) { execute_query(graphql) }
   end
 
   def encode(type, id)

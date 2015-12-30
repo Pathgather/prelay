@@ -403,9 +403,9 @@ class FragmentedQuerySpec < PrelaySpec
 
   queries.each do |name, query|
     it "should handle a #{name} query" do
-      result = execute_query(query % {id: encode('Album', album.id)})
+      execute_query(query % {id: encode('Album', album.id)})
 
-      expected = {
+      assert_result \
         'data' => {
           'node' => {
             'id' => encode('Album', album.id),
@@ -432,22 +432,19 @@ class FragmentedQuerySpec < PrelaySpec
             }
           }
         }
-      }
 
-      assert_equal expected, result
-
-      assert_equal [
+      assert_sqls [
         %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."high_quality", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
         %(SELECT "artists"."id", "artists"."name", "artists"."upvotes", "artists"."active" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
         %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "tracks"."id")
-      ], sqls
+      ]
     end
   end
 
   it "should ignore inline fragments on the wrong type" do
     id = encode('Album', album.id)
 
-    result = execute_query <<-GRAPHQL
+    execute_query <<-GRAPHQL
       query Query {
         node(id: "#{id}") {
           id,
@@ -464,7 +461,7 @@ class FragmentedQuerySpec < PrelaySpec
       }
     GRAPHQL
 
-    expected = {
+    assert_result \
       'data' => {
         'node' => {
           'id' => encode('Album', album.id),
@@ -472,8 +469,5 @@ class FragmentedQuerySpec < PrelaySpec
           'high_quality' => album.high_quality,
         }
       }
-    }
-
-    assert_equal expected, result
   end
 end
