@@ -61,7 +61,7 @@ module Prelay
     end
 
     def resolve_via_association(association, ids)
-      return EMPTY_ARRAY if ids.none?
+      return [] if ids.none?
 
       reflection = association.sequel_association
 
@@ -161,7 +161,7 @@ module Prelay
           records.each do |r|
             associated_record = sub_records_hash[r.send(reflection[:key])]
             r.associations[reflection[:name]] = associated_record
-            associated_record.associations[reflection.reciprocal] = r
+            associated_record.associations[reflection.reciprocal] = r if associated_record
           end
         when :one_to_many
           sub_records_hash = {}
@@ -170,7 +170,7 @@ module Prelay
             (sub_records_hash[k] ||= []) << r
           end
           records.each do |r|
-            associated_records = sub_records_hash[r.send(reflection.primary_key)]
+            associated_records = sub_records_hash[r.send(reflection.primary_key)] || []
             r.associations[reflection[:name]] = associated_records
             associated_records.each {|ar| ar.associations[reflection.reciprocal] = r}
           end
