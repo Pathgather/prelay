@@ -14,8 +14,6 @@ Rename 'id' to 'pk' in the appropriate places (Prelay::ID).
 
 Sequel associations with defined blocks (supported, need testing).
 
-Refactor association column logic into local_column, remote_column (or something like that).
-
 Cut down on retrieving key columns from the DB when it's not necessary.
 
 Spec introspection query.
