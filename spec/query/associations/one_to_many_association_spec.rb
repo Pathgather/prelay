@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-class ConnectionQuerySpec < PrelaySpec
+class OneToManyAssociationSpec < PrelaySpec
   let(:album) { ::Album.first! }
 
   it "should support fetching associated items through a one-to-many association" do
