@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 class OneToOneAssociationSpec < PrelaySpec
-  let(:album) { ::Album.first! }
+  let(:album) { Album.first! }
 
   it "should support fetching an associated item through a one-to-one association" do
     id = encode 'Album', album.id

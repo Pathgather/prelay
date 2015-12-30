@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 class AliasQuerySpec < PrelaySpec
-  let(:albums) { ::Album.limit(2).all }
+  let(:albums) { Album.limit(2).all }
   let(:album1) { albums[0] }
   let(:album2) { albums[1] }
 

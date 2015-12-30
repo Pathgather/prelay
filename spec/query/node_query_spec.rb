@@ -2,7 +2,7 @@ require 'securerandom'
 require 'spec_helper'
 
 class NodeQuerySpec < PrelaySpec
-  let(:album) { ::Album.first }
+  let(:album) { Album.first }
 
   it "should support refetching an item by its relay id" do
     id = encode 'Album', album.id

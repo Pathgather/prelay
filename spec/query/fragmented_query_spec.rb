@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 class FragmentedQuerySpec < PrelaySpec
-  let(:album) { ::Album.first! }
+  let(:album) { Album.first! }
 
   queries = {
     control: (

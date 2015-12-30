@@ -268,8 +268,8 @@ class PrelaySpec < Minitest::Spec
     Base64.strict_encode64 "#{type}:#{id}"
   end
 
-  class Genre < Prelay::Type
-    model ::Genre
+  class GenreType < Prelay::Type
+    model Genre
 
     description "A genre of music"
 
@@ -278,8 +278,8 @@ class PrelaySpec < Minitest::Spec
     association :artists
   end
 
-  class Artist < Prelay::Type
-    model ::Artist
+  class ArtistType < Prelay::Type
+    model Artist
 
     description "A musician"
 
@@ -292,8 +292,8 @@ class PrelaySpec < Minitest::Spec
     association :albums
   end
 
-  class Album < Prelay::Type
-    model ::Album
+  class AlbumType < Prelay::Type
+    model Album
 
     description "An album released by a musician"
 
@@ -307,8 +307,8 @@ class PrelaySpec < Minitest::Spec
     association :publisher
   end
 
-  class Track < Prelay::Type
-    model ::Track
+  class TrackType < Prelay::Type
+    model Track
 
     description "A song on an album"
 
@@ -320,8 +320,8 @@ class PrelaySpec < Minitest::Spec
     association :album
   end
 
-  class Publisher < Prelay::Type
-    model ::Publisher
+  class PublisherType < Prelay::Type
+    model Publisher
 
     description "The publishing company for an album"
 
@@ -331,6 +331,6 @@ class PrelaySpec < Minitest::Spec
   end
 
   GraphQLSchema = Prelay::Schema.new(
-    types: [Artist, Album, Track, Publisher, Genre]
+    types: [ArtistType, AlbumType, TrackType, PublisherType, GenreType]
   ).to_graphql_schema(prefix: 'Client')
 end

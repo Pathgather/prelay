@@ -2,7 +2,7 @@ require 'spec_helper'
 
 class ManyToOneAssociationSpec < PrelaySpec
   it "should support fetching an associated item through a many-to-one association" do
-    artist = ::Artist.exclude(genre_id: nil).first!
+    artist = Artist.exclude(genre_id: nil).first!
 
     id = encode 'Artist', artist.id
 
@@ -30,7 +30,7 @@ class ManyToOneAssociationSpec < PrelaySpec
   end
 
   it "should support attempting to fetch an associated item through a many-to-one association when one does not exist" do
-    artist = ::Artist.where(genre_id: nil).first!
+    artist = Artist.where(genre_id: nil).first!
 
     id = encode 'Artist', artist.id
 

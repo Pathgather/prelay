@@ -2,7 +2,7 @@ require 'spec_helper'
 
 class GraphQLObjectSpec < PrelaySpec
   it "should translate a type to a GraphQL object" do
-    object = PrelaySpec::Album.graphql_object
+    object = AlbumType.graphql_object
 
     assert_instance_of GraphQL::ObjectType, object
     assert_equal 'Album', object.name
@@ -11,7 +11,7 @@ class GraphQLObjectSpec < PrelaySpec
   end
 
   it "should translate a type's attributes to GraphQL fields" do
-    object = PrelaySpec::Album.graphql_object
+    object = AlbumType.graphql_object
     field  = object.fields['name']
 
     assert_instance_of GraphQL::Field, field
@@ -20,7 +20,7 @@ class GraphQLObjectSpec < PrelaySpec
   end
 
   it "should translate a type's many_to_one associations to GraphQL fields" do
-    object = PrelaySpec::Album.graphql_object
+    object = AlbumType.graphql_object
     field  = object.fields['artist']
 
     assert_instance_of GraphQL::Field, field
@@ -29,7 +29,7 @@ class GraphQLObjectSpec < PrelaySpec
   end
 
   it "should translate a type's one_to_many associations to GraphQL connections" do
-    object = PrelaySpec::Album.graphql_object
+    object = AlbumType.graphql_object
     field  = object.fields['tracks']
 
     assert_instance_of GraphQL::Field, field
@@ -38,7 +38,7 @@ class GraphQLObjectSpec < PrelaySpec
   end
 
   it "should translate a type's one_to_one associations to GraphQL fields" do
-    object = PrelaySpec::Album.graphql_object
+    object = AlbumType.graphql_object
     field  = object.fields['publisher']
 
     assert_instance_of GraphQL::Field, field

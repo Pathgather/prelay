@@ -11,7 +11,7 @@ module Prelay
     class << self
       def inherited(subclass)
         super
-        BY_NAME[subclass.to_s.split('::').last] = subclass
+        BY_NAME[subclass.to_s.split('::').last.chomp('Type')] = subclass
       end
 
       def attributes
@@ -40,7 +40,7 @@ module Prelay
         type = self
 
         @graphql_object = ::GraphQL::ObjectType.define do
-          name(type.name.split('::').last)
+          name(type.name.split('::').last.chomp('Type'))
           description(type.description)
 
           interfaces [node_identification.interface]

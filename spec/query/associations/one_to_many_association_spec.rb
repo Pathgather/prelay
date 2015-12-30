@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 class OneToManyAssociationSpec < PrelaySpec
-  let(:album) { ::Album.first! }
+  let(:album) { Album.first! }
 
   it "should support fetching associated items through a one-to-many association" do
     id = encode 'Album', album.id
