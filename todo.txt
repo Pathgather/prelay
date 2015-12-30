@@ -27,6 +27,8 @@ down what differences in arguments mean.
 
 Query and Mutation classes.
 
+Add 'Type' suffix to type classes.
+
 
 
 
