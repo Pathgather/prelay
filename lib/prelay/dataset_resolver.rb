@@ -39,7 +39,7 @@ module Prelay
 
       @type.associations.each do |name, association|
         if s = fields.delete(name)
-          @columns.push *association.dependent_columns
+          @columns << association.local_column
           @associations[association] = self.class.new(selection: s)
         end
       end
@@ -71,12 +71,7 @@ module Prelay
         ds = b.call(ds)
       end
 
-      target_column =
-        case reflection[:type]
-        when :one_to_one, :one_to_many then reflection[:key]
-        when :many_to_one              then reflection.primary_key
-        else raise "Unsupported Sequel association type: #{reflection[:type].inspect}"
-        end
+      target_column = association.remote_column
 
       ds = apply_query_to_dataset(ds, supplemental_columns: [target_column])
       ds = ds.where(Sequel.qualify(@type.model.table_name, target_column) => ids)
@@ -133,44 +128,37 @@ module Prelay
         reflection = association.sequel_association
         type = reflection[:type]
 
-        ids =
-          case type
-          when :one_to_one, :one_to_many
-            records.map(&reflection.primary_key)
-          when :many_to_one
-            # TODO: Make sure that this key column was loaded in the initial record load.
-            records.map(&reflection[:key]).uniq
-          else
-            raise "Unsupported reflection type: #{type}"
-          end
+        local_column  = association.local_column
+        remote_column = association.remote_column
 
+        ids = records.map(&local_column).uniq
         sub_records = dataset_resolver.resolve_via_association(association, ids)
 
         case type
         when :one_to_one
           sub_records_hash = {}
-          sub_records.each{|r| sub_records_hash[r.send(reflection[:key])] = r}
+          sub_records.each{|r| sub_records_hash[r.send(remote_column)] = r}
           records.each do |r|
-            associated_record = sub_records_hash[r.send(reflection.primary_key)]
+            associated_record = sub_records_hash[r.send(local_column)]
             r.associations[reflection[:name]] = associated_record
             associated_record.associations[reflection.reciprocal] = r if associated_record
           end
         when :many_to_one
           sub_records_hash = {}
-          sub_records.each{|r| sub_records_hash[r.send(reflection.primary_key)] = r}
+          sub_records.each{|r| sub_records_hash[r.send(remote_column)] = r}
           records.each do |r|
-            associated_record = sub_records_hash[r.send(reflection[:key])]
+            associated_record = sub_records_hash[r.send(local_column)]
             r.associations[reflection[:name]] = associated_record
             associated_record.associations[reflection.reciprocal] = r if associated_record
           end
         when :one_to_many
           sub_records_hash = {}
           sub_records.each do |r|
-            k = r.send(reflection[:key])
+            k = r.send(remote_column)
             (sub_records_hash[k] ||= []) << r
           end
           records.each do |r|
-            associated_records = sub_records_hash[r.send(reflection.primary_key)] || []
+            associated_records = sub_records_hash[r.send(local_column)] || []
             r.associations[reflection[:name]] = associated_records
             associated_records.each {|ar| ar.associations[reflection.reciprocal] = r}
           end
