@@ -15,10 +15,18 @@ DB.run <<-SQL
   CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA pg_catalog;
 SQL
 
-DB.drop_table? :publishers, :tracks, :albums, :artists
+DB.drop_table? :publishers, :tracks, :albums, :artists, :genres
+
+DB.create_table :genres do
+  uuid :id, primary_key: true, default: Sequel.function(:uuid_generate_v4)
+
+  text :name, null: false
+end
 
 DB.create_table :artists do
   uuid :id, primary_key: true, default: Sequel.function(:uuid_generate_v4)
+
+  uuid :genre_id # Nullable
 
   text        :name,       null: false
   integer     :upvotes,    null: false
@@ -28,6 +36,8 @@ DB.create_table :artists do
   numeric     :money_made, null: false
   jsonb       :other,      null: false
   timestamptz :created_at, null: false
+
+  foreign_key [:genre_id], :genres
 end
 
 DB.create_table :albums do
@@ -86,7 +96,12 @@ end
 #   end
 # }
 
+class Genre < Sequel::Model
+  one_to_many :artists
+end
+
 class Artist < Sequel::Model
+  many_to_one :genre
   one_to_many :albums
 end
 
@@ -140,9 +155,19 @@ def random_json_doc
   output
 end
 
+genre_ids = DB[:genres].multi_insert(
+  Faker::Lorem.words(5).map { |word|
+    {
+      name: word
+    }
+  },
+  return: :primary_key
+)
+
 artist_ids = DB[:artists].multi_insert(
   25.times.map {
     {
+      genre_id:   (genre_ids.sample if rand > 0.5),
       name:       Faker::Name.name,
       upvotes:    rand(10000),
       active:     rand > 0.5,
@@ -243,6 +268,16 @@ class PrelaySpec < Minitest::Spec
     Base64.strict_encode64 "#{type}:#{id}"
   end
 
+  class Genre < Prelay::Type
+    model ::Genre
+
+    description "A genre of music"
+
+    attribute :name, datatype: :string
+
+    association :artists
+  end
+
   class Artist < Prelay::Type
     model ::Artist
 
@@ -253,6 +288,7 @@ class PrelaySpec < Minitest::Spec
     attribute :active,     datatype: :boolean
     attribute :popularity, datatype: :float
 
+    association :genre
     association :albums
   end
 
@@ -295,6 +331,6 @@ class PrelaySpec < Minitest::Spec
   end
 
   GraphQLSchema = Prelay::Schema.new(
-    types: [Artist, Album, Track, Publisher]
+    types: [Artist, Album, Track, Publisher, Genre]
   ).to_graphql_schema(prefix: 'Client')
 end
