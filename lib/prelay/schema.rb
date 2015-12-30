@@ -13,8 +13,8 @@ module Prelay
         end
       end
 
-      def node_identification.to_global_id(type, id)
-        ID.encode(type: type, id: id)
+      def node_identification.to_global_id(type, pk)
+        ID.encode(type: type, pk: pk)
       end
 
       @types.each do |type|
@@ -31,7 +31,7 @@ module Prelay
             resolve -> (obj, args, ctx) {
               id = ID.parse(args['id'])
               RelayProcessor.new(ctx, type: id.type).
-                to_resolver.resolve_by_pk(id.id)
+                to_resolver.resolve_by_pk(id.pk)
             }
           }
         }

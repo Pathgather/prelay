@@ -10,8 +10,6 @@ case, of course).
 
 Add Prelay::ID.for().
 
-Rename 'id' to 'pk' in the appropriate places (Prelay::ID).
-
 Sequel associations with defined blocks (supported, need testing).
 
 Cut down on retrieving key columns from the DB when it's not necessary.
