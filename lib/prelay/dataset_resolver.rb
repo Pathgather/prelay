@@ -69,18 +69,19 @@ module Prelay
       end
 
       target_column = association.remote_column
+      qualified_target_column = Sequel.qualify(@type.model.table_name, target_column)
 
       ds = apply_query_to_dataset(ds, supplemental_columns: [target_column])
-      ds = ds.where(Sequel.qualify(@type.model.table_name, target_column) => ids)
+      ds = ds.where(qualified_target_column => ids)
 
       if ids.length > 1 && limit = ds.opts.delete(:limit)
         # Steal Sequel's technique for limiting eager-loaded associations with
         # a window function.
         ds = ds.
               unordered.
-              select_append{|o| o.row_number{}.over(partition: target_column, order: ds.opts[:order]).as(:row_number)}.
+              select_append{|o| o.row_number{}.over(partition: qualified_target_column, order: ds.opts[:order]).as(:prelay_row_number)}.
               from_self.
-              where{ |r| r.row_number <= limit}
+              where{ |r| r.prelay_row_number <= limit}
       end
 
       ds.all.tap { |records| process_associations_for_records(records) }
