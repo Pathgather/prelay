@@ -13,6 +13,7 @@ module Prelay
     def initialize(selection:)
       @type      = selection.type
       @arguments = selection.arguments
+      @metadata  = selection.metadata
 
       @columns      = []
       @associations = {}
@@ -99,7 +100,7 @@ module Prelay
 
         # If has_next_page was requested, bump the limit by one so we know
         # whether there's another page coming up.
-        limit += 1 if arguments[:has_next_page] || arguments[:has_previous_page]
+        limit += 1 if @metadata[:has_next_page] || @metadata[:has_previous_page]
 
         ds =
           if id = arguments[:after] || arguments[:before]

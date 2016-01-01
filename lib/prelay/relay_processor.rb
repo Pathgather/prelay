@@ -46,6 +46,7 @@ module Prelay
     def connection_to_selection(field)
       arguments  = arguments_from_field(field)
       attributes = {}
+      metadata   = {}
 
       # It's against the Relay spec for connections to be invoked without either
       # a 'first' or 'last' argument, but since the gem doesn't stop it from
@@ -71,8 +72,8 @@ module Prelay
         when 'pageInfo'
           # TODO: Error on unexpected pageInfo fields.
           s = f1.selections.map(&:name)
-          arguments[:has_next_page]     = true if s.include?('hasNextPage')
-          arguments[:has_previous_page] = true if s.include?('hasPreviousPage')
+          metadata[:has_next_page]     = true if s.include?('hasNextPage')
+          metadata[:has_previous_page] = true if s.include?('hasPreviousPage')
         else
           raise InvalidGraphQLQuery, "unsupported field '#{f1.name}'"
         end
@@ -81,7 +82,8 @@ module Prelay
       Selection.new name:       field.name.to_sym,
                     type:       current_type,
                     arguments:  arguments,
-                    attributes: attributes
+                    attributes: attributes,
+                    metadata:   metadata
     end
 
     def arguments_from_field(field)

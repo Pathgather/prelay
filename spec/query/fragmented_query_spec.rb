@@ -28,6 +28,10 @@ class FragmentedQuerySpec < PrelaySpec
                     high_quality,
                   }
                 }
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                }
               }
             }
           }
@@ -55,6 +59,9 @@ class FragmentedQuerySpec < PrelaySpec
                   number,
                   high_quality,
                 }
+              }
+              pageInfo {
+                hasPreviousPage
               }
             }
           }
@@ -86,6 +93,9 @@ class FragmentedQuerySpec < PrelaySpec
                   id,
                   name,
                 }
+              }
+              pageInfo {
+                hasNextPage
               }
             }
           }
@@ -128,6 +138,9 @@ class FragmentedQuerySpec < PrelaySpec
                 id,
               }
             }
+            pageInfo {
+              hasPreviousPage
+            }
           }
           ...__RelayQueryFragment0rey
         }
@@ -145,6 +158,9 @@ class FragmentedQuerySpec < PrelaySpec
                 id,
                 name,
               }
+            }
+            pageInfo {
+              hasNextPage
             }
           }
           ...__RelayQueryFragment0poedameron
@@ -207,6 +223,10 @@ class FragmentedQuerySpec < PrelaySpec
                     high_quality,
                   }
                 }
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                }
               }
             }
           }
@@ -263,6 +283,9 @@ class FragmentedQuerySpec < PrelaySpec
               id,
             }
           }
+          pageInfo {
+            hasPreviousPage
+          }
           ...__RelayQueryFragment0rey
         }
 
@@ -272,6 +295,9 @@ class FragmentedQuerySpec < PrelaySpec
               id,
               name,
             }
+          }
+          pageInfo {
+            hasNextPage
           }
           ...__RelayQueryFragment0poedameron
         }
@@ -314,6 +340,10 @@ class FragmentedQuerySpec < PrelaySpec
                 edges {
                   ...__RelayQueryFragment0hansolo
                   ...__RelayQueryFragment0bb8
+                }
+                pageInfo {
+                  hasPreviousPage
+                  hasNextPage
                 }
               }
             }
@@ -372,6 +402,10 @@ class FragmentedQuerySpec < PrelaySpec
                     ...__RelayQueryFragment0bb8
                   }
                 }
+                pageInfo {
+                  hasPreviousPage
+                  hasNextPage
+                }
               }
             }
           }
@@ -428,6 +462,10 @@ class FragmentedQuerySpec < PrelaySpec
                     'high_quality' => track.high_quality,
                   }
                 }
+              },
+              'pageInfo' => {
+                'hasNextPage' => false,
+                'hasPreviousPage' => false,
               }
             }
           }
@@ -436,7 +474,7 @@ class FragmentedQuerySpec < PrelaySpec
       assert_sqls [
         %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."high_quality", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
         %(SELECT "artists"."id", "artists"."name", "artists"."upvotes", "artists"."active" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
-        %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "tracks"."id" LIMIT 50)
+        %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "tracks"."id" LIMIT 51)
       ]
     end
   end
