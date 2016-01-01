@@ -29,9 +29,7 @@ Query and Mutation classes.
 
 Pagination:
 
-Encode values and connection orders in cursors.
-
-Add a spec for cursors/pageInfo in fragments.
+Encode values and connection orders in cursors. Spec them in fragments.
 
 Support custom orders, and spec that they work with seek pagination.
 

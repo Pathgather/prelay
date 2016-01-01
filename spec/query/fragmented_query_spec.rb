@@ -433,6 +433,112 @@ class FragmentedQuerySpec < PrelaySpec
         }
       GRAPHQL
     ),
+    fragment_inside_page_info: (
+      <<-GRAPHQL
+        query Query {
+          node(id: "%{id}") {
+            id,
+            ... on Album {
+              name,
+              upvotes,
+              high_quality,
+              artist {
+                id,
+                name,
+                upvotes,
+                active,
+              }
+              tracks(first: 50) {
+                edges {
+                  node {
+                    id,
+                    name,
+                    number,
+                    high_quality,
+                  }
+                }
+                pageInfo {
+                  ...__RelayQueryFragment0hansolo
+                  ...__RelayQueryFragment0bb8
+                }
+              }
+            }
+          }
+        }
+
+        fragment __RelayQueryFragment0hansolo on PageInfo {
+          hasPreviousPage
+          ...__RelayQueryFragment0rey
+        }
+
+        fragment __RelayQueryFragment0bb8 on PageInfo {
+          hasNextPage
+          ...__RelayQueryFragment0poedameron
+        }
+
+        fragment __RelayQueryFragment0rey on PageInfo {
+          hasNextPage
+        }
+
+        fragment __RelayQueryFragment0poedameron on PageInfo {
+          hasNextPage
+          hasNextPage
+        }
+      GRAPHQL
+    ),
+    deeply_nested_fragments: (
+      <<-GRAPHQL
+        query Query {
+          node(id: "%{id}") {
+            ...__RelayQueryFragment0hansolo
+            id
+          }
+        }
+
+        fragment __RelayQueryFragment0hansolo on Node {
+          id,
+          ... on Album {
+            name,
+            ...__RelayQueryFragment0bb8
+            upvotes,
+          }
+        }
+
+        fragment __RelayQueryFragment0bb8 on Album {
+          upvotes,
+          high_quality,
+          artist {
+            id,
+            ...__RelayQueryFragment0rey
+          }
+          tracks(first: 50) {
+            edges {
+              node {
+                id,
+                name,
+                ...__RelayQueryFragment0poedameron
+              }
+            }
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+            }
+          }
+        }
+
+        fragment __RelayQueryFragment0rey on Artist {
+          name,
+          upvotes,
+          active,
+        }
+
+        fragment __RelayQueryFragment0poedameron on Track {
+          name,
+          number,
+          high_quality,
+        }
+      GRAPHQL
+    ),
   }
 
   queries.each do |name, query|

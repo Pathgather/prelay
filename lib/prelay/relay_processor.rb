@@ -66,16 +66,19 @@ module Prelay
             when 'node'
               attributes_from_field(f2, attributes)
             else
-              raise InvalidGraphQLQuery, "unsupported field '#{f2.name}'"
+              raise InvalidGraphQLQuery, "unsupported Edge field '#{f2.name}'"
             end
           end
         when 'pageInfo'
-          # TODO: Error on unexpected pageInfo fields.
-          s = f1.selections.map(&:name)
-          metadata[:has_next_page]     = true if s.include?('hasNextPage')
-          metadata[:has_previous_page] = true if s.include?('hasPreviousPage')
+          process_field_selections(f1) do |f2|
+            case f2.name
+            when 'hasNextPage'     then metadata[:has_next_page]     = true
+            when 'hasPreviousPage' then metadata[:has_previous_page] = true
+            else raise InvalidGraphQLQuery, "unsupported PageInfo field '#{f2.name}'"
+            end
+          end
         else
-          raise InvalidGraphQLQuery, "unsupported field '#{f1.name}'"
+          raise InvalidGraphQLQuery, "unsupported Connection field '#{f1.name}'"
         end
       end
 
