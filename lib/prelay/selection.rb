@@ -22,9 +22,8 @@ module Prelay
     # Merges together two selections. Is recursive, so also merges
     # subselections, and their subselections, and...
     def merge!(other_selection, fail_on_argument_difference:)
-      # We could be smarter about this (it's probably fine if the arguments
-      # are identical), but don't add the complexity until we need it.
-      if fail_on_argument_difference && (arguments.any? || other_selection.arguments.any?)
+      # We could be smarter about this, but don't add the complexity until we need it.
+      if fail_on_argument_difference && arguments != other_selection.arguments
         raise InvalidGraphQLQuery.new("This query invokes the same field twice with arguments")
       end
 

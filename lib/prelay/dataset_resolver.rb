@@ -102,8 +102,8 @@ module Prelay
         limit += 1 if arguments[:has_next_page] || arguments[:has_previous_page]
 
         ds =
-          if relay_id = arguments[:after] || arguments[:before]
-            pk = RelayID.parse(relay_id, expected_type: @type.graphql_name).uuid
+          if id = arguments[:after] || arguments[:before]
+            pk = ID.parse(id, expected_type: @type.graphql_object.name).pk
             ds.seek_paginate(limit, after_pk: pk)
           else
             ds.seek_paginate(limit)

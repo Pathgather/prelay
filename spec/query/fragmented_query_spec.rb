@@ -19,7 +19,7 @@ class FragmentedQuerySpec < PrelaySpec
                 upvotes,
                 active,
               }
-              tracks {
+              tracks(first: 50) {
                 edges {
                   node {
                     id,
@@ -48,7 +48,7 @@ class FragmentedQuerySpec < PrelaySpec
           id,
           ... on Album {
             id,
-            tracks {
+            tracks(first: 50) {
               edges {
                 node {
                   id,
@@ -80,7 +80,7 @@ class FragmentedQuerySpec < PrelaySpec
           ... on Album {
             id,
             name,
-            tracks {
+            tracks(first: 50) {
               edges {
                 node {
                   id,
@@ -122,7 +122,7 @@ class FragmentedQuerySpec < PrelaySpec
           artist {
             id,
           }
-          tracks {
+          tracks(first: 50) {
             edges {
               node {
                 id,
@@ -139,7 +139,7 @@ class FragmentedQuerySpec < PrelaySpec
             id,
             name,
           }
-          tracks {
+          tracks(first: 50) {
             edges {
               node {
                 id,
@@ -157,7 +157,7 @@ class FragmentedQuerySpec < PrelaySpec
             id,
             upvotes,
           }
-          tracks {
+          tracks(first: 50) {
             edges {
               node {
                 id,
@@ -174,7 +174,7 @@ class FragmentedQuerySpec < PrelaySpec
             id,
             active,
           }
-          tracks {
+          tracks(first: 50) {
             edges {
               node {
                 id,
@@ -198,7 +198,7 @@ class FragmentedQuerySpec < PrelaySpec
                 ...__RelayQueryFragment0hansolo
                 ...__RelayQueryFragment0bb8
               }
-              tracks {
+              tracks(first: 50) {
                 edges {
                   node {
                     id,
@@ -249,7 +249,7 @@ class FragmentedQuerySpec < PrelaySpec
                 upvotes,
                 active,
               }
-              tracks {
+              tracks(first: 50) {
                 ...__RelayQueryFragment0hansolo
                 ...__RelayQueryFragment0bb8
               }
@@ -310,7 +310,7 @@ class FragmentedQuerySpec < PrelaySpec
                 upvotes,
                 active,
               }
-              tracks {
+              tracks(first: 50) {
                 edges {
                   ...__RelayQueryFragment0hansolo
                   ...__RelayQueryFragment0bb8
@@ -365,7 +365,7 @@ class FragmentedQuerySpec < PrelaySpec
                 upvotes,
                 active,
               }
-              tracks {
+              tracks(first: 50) {
                 edges {
                   node {
                     ...__RelayQueryFragment0hansolo
@@ -436,7 +436,7 @@ class FragmentedQuerySpec < PrelaySpec
       assert_sqls [
         %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."high_quality", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
         %(SELECT "artists"."id", "artists"."name", "artists"."upvotes", "artists"."active" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
-        %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "tracks"."id")
+        %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "tracks"."id" LIMIT 50)
       ]
     end
   end

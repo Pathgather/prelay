@@ -44,8 +44,18 @@ module Prelay
     end
 
     def connection_to_selection(field)
-      arguments  = {}
+      arguments  = arguments_from_field(field)
       attributes = {}
+
+      # It's against the Relay spec for connections to be invoked without either
+      # a 'first' or 'last' argument, but since the gem doesn't stop it from
+      # happening, throw an error when/if that happens, just to be safe. If we
+      # want to support that at some point (allowing the client to load all
+      # records in a connection) we could, but that behavior should be thought
+      # through, and a limit should probably still be applied to prevent abuse.
+      unless arguments[:first] || arguments[:last]
+        raise InvalidGraphQLQuery, "Tried to access a connection without a 'first' or 'last' argument."
+      end
 
       process_field_selections(field) do |f1|
         case f1.name
@@ -58,6 +68,11 @@ module Prelay
               raise InvalidGraphQLQuery, "unsupported field '#{f2.name}'"
             end
           end
+        when 'pageInfo'
+          # TODO: Error on unexpected pageInfo fields.
+          s = f1.selections.map(&:name)
+          arguments[:has_next_page]     = true if s.include?('hasNextPage')
+          arguments[:has_previous_page] = true if s.include?('hasPreviousPage')
         else
           raise InvalidGraphQLQuery, "unsupported field '#{f1.name}'"
         end

@@ -277,6 +277,17 @@ class PrelaySpec < Minitest::Spec
     Base64.strict_encode64 "#{type}:#{id}"
   end
 
+  def graphql_args(input)
+    # GraphQL input syntax is basically JSON with unquoted keys.
+    "#{input.map{|k,v| "#{k}: #{v.inspect}"}.join(', ')}"
+  end
+
+  class << self
+    def encode(type, id)
+      Base64.strict_encode64 "#{type}:#{id}"
+    end
+  end
+
   class GenreType < Prelay::Type
     model Genre
 

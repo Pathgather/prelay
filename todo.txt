@@ -29,16 +29,11 @@ Query and Mutation classes.
 
 Pagination:
 
-Require a 'first' or 'last' argument on connections.
+Encode values and connection orders in cursors.
 
-Support/spec pagination (via values, with cursors also encoding sort order)
-and add sequel-seek-pagination as a dependency. Including
-hasNextPage/hasPreviousPage. Make sure to add a spec for cursors/pageInfo in
-fragments.
+Add a spec for cursors/pageInfo in fragments.
 
 Support custom orders, and spec that they work with seek pagination.
-
-Use a custom class for connection pagination logic.
 
 Spec limited eager-loading via window functions.
 
@@ -47,6 +42,8 @@ counter caches when available and appropriate (no arguments). How should
 counts change when paginating?
 
 Support and spec aliased connections (with different arguments).
+
+Move seek pagination invocation out of DatasetResolver, probably.
 
 
 
