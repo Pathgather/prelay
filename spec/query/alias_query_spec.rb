@@ -90,5 +90,4 @@ class AliasQuerySpec < PrelaySpec
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album1.id}') ORDER BY "albums"."id"),
     ]
   end
-
 end
