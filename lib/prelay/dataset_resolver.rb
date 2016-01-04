@@ -49,12 +49,11 @@ module Prelay
     end
 
     def resolve
-      ResultArray.new(dataset.all).tap { |records| process_associations_for_records(records) }
+      results_for_dataset(dataset)
     end
 
     def resolve_by_pk(pk)
-      cond = @type.model.qualified_primary_key_hash(pk)
-      ResultArray.new(dataset.where(cond).all).tap{|records| process_associations_for_records(records)}.first
+      results_for_dataset(dataset.where(@type.model.qualified_primary_key_hash(pk))).first
     end
 
     def resolve_via_association(association, ids)
@@ -84,7 +83,7 @@ module Prelay
               where{ |r| r.prelay_row_number <= limit}
       end
 
-      ResultArray.new(ds.all).tap { |records| process_associations_for_records(records) }
+      results_for_dataset(ds)
     end
 
     protected
@@ -116,6 +115,10 @@ module Prelay
     end
 
     private
+
+    def results_for_dataset(ds)
+      ResultArray.new(ds.all).tap { |records| process_associations_for_records(records) }
+    end
 
     def process_associations_for_records(records)
       @associations.each do |association, dataset_resolver|
