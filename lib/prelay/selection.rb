@@ -12,16 +12,6 @@ module Prelay
       @metadata   = metadata
     end
 
-    # TODO: Remove this?
-    def ==(other)
-      self.class      == other.class &&
-      self.name       == other.name &&
-      self.type       == other.type &&
-      self.arguments  == other.arguments &&
-      self.attributes == other.attributes &&
-      self.metadata   == other.metadata
-    end
-
     # Merges together two selections. Is recursive, so also merges
     # subselections, and their subselections, and...
     def merge!(other_selection, fail_on_argument_difference:)
