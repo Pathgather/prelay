@@ -92,8 +92,6 @@ class AliasQuerySpec < PrelaySpec
   end
 
   it "should support aliases for multiple invocations of the same connection" do
-    skip
-
     id = encode 'Album', album1.id
 
     execute_query <<-GRAPHQL
@@ -140,7 +138,9 @@ class AliasQuerySpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album1.id}') ORDER BY "albums"."id"),
+      %(SELECT "albums"."id" FROM "albums" WHERE ("albums"."id" = '#{album1.id}') ORDER BY "albums"."id"),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album1.id}')) ORDER BY "tracks"."id" LIMIT 5),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album1.id}')) ORDER BY "tracks"."id" DESC LIMIT 5),
     ]
   end
 end

@@ -9,7 +9,7 @@ module Prelay
     def to_graphql_schema(prefix:)
       node_identification = GraphQL::Relay::GlobalNodeIdentification.define do
         type_from_object -> (object) do
-          Prelay::Type::BY_MODEL.fetch(object.class){|k| raise "No Prelay type found for class #{k}"}.graphql_object
+          Prelay::Type::BY_MODEL.fetch(object.record.class){|k| raise "No Prelay type found for class #{k}"}.graphql_object
         end
       end
 

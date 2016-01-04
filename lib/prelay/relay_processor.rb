@@ -39,6 +39,7 @@ module Prelay
     def field_to_selection(field)
       Selection.new name:       field.name.to_sym,
                     type:       current_type,
+                    aliaz:      field.alias&.to_sym,
                     arguments:  arguments_from_field(field),
                     attributes: attributes_from_field(field)
     end
@@ -84,6 +85,7 @@ module Prelay
 
       Selection.new name:       field.name.to_sym,
                     type:       current_type,
+                    aliaz:      field.alias&.to_sym,
                     arguments:  arguments,
                     attributes: attributes,
                     metadata:   metadata

@@ -2,11 +2,12 @@
 
 module Prelay
   class Selection
-    attr_reader :name, :type, :arguments, :attributes, :metadata
+    attr_reader :name, :type, :aliaz, :arguments, :attributes, :metadata
 
-    def initialize(name:, type: nil, arguments: {}, attributes: {}, metadata: {})
+    def initialize(name:, type: nil, aliaz: nil, arguments: {}, attributes: {}, metadata: {})
       @name       = name
       @type       = type
+      @aliaz      = aliaz
       @arguments  = arguments
       @attributes = attributes
       @metadata   = metadata

@@ -8,6 +8,17 @@ module Prelay
     BY_MODEL = {}
     BY_NAME  = {}
 
+    attr_reader :record, :associations
+
+    def initialize(record)
+      @record = record
+      @associations = {}
+    end
+
+    def id
+      @record.id
+    end
+
     class << self
       def inherited(subclass)
         super
@@ -24,12 +35,16 @@ module Prelay
 
       def attribute(*args)
         attribute = Attribute.new(self, *args)
-        attributes[attribute.name] = attribute
+        name = attribute.name
+        attributes[name] = attribute
+        define_method(name){@record.send(name)}
       end
 
       def association(*args)
         association = Association.new(self, *args)
-        associations[association.name] = association
+        name = association.name
+        associations[name] = association
+        define_method(name) { @associations.fetch(name) { raise "Association #{name} not loaded for #{inspect}" } }
       end
 
       def graphql_object
@@ -54,6 +69,11 @@ module Prelay
             if association.returns_array?
               connection association.name do
                 type -> { association.graphql_type.connection_type }
+                resolve -> (obj, args, ctx) {
+                  node = ctx.ast_node
+                  key = (node.alias || node.name).to_sym
+                  obj.associations.fetch(key) { raise "Association #{key} not loaded for #{obj.inspect}" }
+                }
               end
             else
               field association.name do

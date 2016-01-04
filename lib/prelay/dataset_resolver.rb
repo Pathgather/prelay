@@ -11,6 +11,7 @@
 module Prelay
   class DatasetResolver
     def initialize(selection:)
+      @selection = selection
       @type      = selection.type
       @arguments = selection.arguments
       @metadata  = selection.metadata
@@ -18,12 +19,11 @@ module Prelay
       @columns      = []
       @associations = {}
 
-      # Will eventually need to do something smarter here when we want to
-      # support multiple invocations of the same attribute with different
-      # arguments.
       fields = {}
       selection.attributes.each do |aliaz, selection|
-        fields[selection.name] = selection
+        name = selection.name
+        fields[name] ||= []
+        fields[name] << selection
       end
 
       # id isn't a true attribute, but we'll need it to generate the record's
@@ -33,15 +33,20 @@ module Prelay
       end
 
       @type.attributes.each do |name, attribute|
+        # Will need to be a little smarter here if we want to support fields
+        # with arguments that need to be pushed down to the DB.
         if fields.delete(name)
           @columns.push *attribute.dependent_columns
         end
       end
 
       @type.associations.each do |name, association|
-        if s = fields.delete(name)
-          @columns << association.local_column
-          @associations[association] = self.class.new(selection: s)
+        if selections = fields.delete(name)
+          selections.each do |selection|
+            key = selection.aliaz || selection.name
+            @columns << association.local_column
+            @associations[key] = [association, self.class.new(selection: selection)]
+          end
         end
       end
 
@@ -117,35 +122,35 @@ module Prelay
     private
 
     def results_for_dataset(ds)
-      ResultArray.new(ds.all).tap { |records| process_associations_for_records(records) }
+      objects = ds.all.map{|r| @type.new(r)}
+      ResultArray.new(objects).tap { |results| process_associations_for_results(results) }
     end
 
-    def process_associations_for_records(records)
-      @associations.each do |association, dataset_resolver|
+    def process_associations_for_results(results)
+      @associations.each do |key, (association, dataset_resolver)|
         reflection       = association.sequel_association
-        association_name = reflection[:name]
         reciprocal       = reflection.reciprocal
         local_column     = association.local_column
         remote_column    = association.remote_column
 
-        ids = records.map(&local_column).uniq
+        ids = results.map{|r| r.record.send(local_column)}.uniq
 
         sub_records = dataset_resolver.resolve_via_association(association, ids)
         sub_records_hash = {}
 
         if association.returns_array?
-          sub_records.each { |r| (sub_records_hash[r.send(remote_column)] ||= ResultArray.new([])) << r }
+          sub_records.each { |r| (sub_records_hash[r.record.send(remote_column)] ||= ResultArray.new([])) << r }
 
-          records.each do |r|
-            associated_records = sub_records_hash[r.send(local_column)] || ResultArray.new([])
-            r.associations[association_name] = associated_records
+          results.each do |r|
+            associated_records = sub_records_hash[r.record.send(local_column)] || ResultArray.new([])
+            r.associations[key] = associated_records
           end
         else
-          sub_records.each{|r| sub_records_hash[r.send(remote_column)] = r}
+          sub_records.each{|r| sub_records_hash[r.record.send(remote_column)] = r}
 
-          records.each do |r|
-            associated_record = sub_records_hash[r.send(local_column)]
-            r.associations[association_name] = associated_record
+          results.each do |r|
+            associated_record = sub_records_hash[r.record.send(local_column)]
+            r.associations[key] = associated_record
           end
         end
       end
