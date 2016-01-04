@@ -90,4 +90,57 @@ class AliasQuerySpec < PrelaySpec
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album1.id}') ORDER BY "albums"."id"),
     ]
   end
+
+  it "should support aliases for multiple invocations of the same connection" do
+    skip
+
+    id = encode 'Album', album1.id
+
+    execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id,
+          ... on Album {
+            first_half: tracks(first: 5) { edges { node { id, name } } }
+            last_half:  tracks(last: 5)  { edges { node { id, name } } }
+          }
+        }
+      }
+    GRAPHQL
+
+    tracks = album1.tracks.sort_by(&:id)
+    first_half = tracks[0..4]
+    last_half  = tracks[5..9]
+
+    assert_result \
+      'data' => {
+        'node' => {
+          'id' => encode("Album", album1.id),
+          'first_half' => {
+            'edges' => first_half.map { |t|
+              {
+                'node' => {
+                  'id' => encode("Track", t.id),
+                  'name' => t.name,
+                }
+              }
+            }
+          },
+          'last_half' => {
+            'edges' => last_half.map { |t|
+              {
+                'node' => {
+                  'id' => encode("Track", t.id),
+                  'name' => t.name,
+                }
+              }
+            }
+          },
+        }
+      }
+
+    assert_sqls [
+      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album1.id}') ORDER BY "albums"."id"),
+    ]
+  end
 end
