@@ -23,6 +23,8 @@ down what differences in arguments mean.
 
 Query and Mutation classes.
 
+Figure out where custom query logic (like full-text search) should live.
+
 
 
 
