@@ -4,9 +4,7 @@ Support marking attributes (and association fields) not-null.
 
 Support descriptions on attributes.
 
-Stop using model association hashes to track associations. For now handle
-inverse association referencing with additional queries (though spec that
-case, of course).
+Spec inverse associations, make sure they do the right thing.
 
 Add Prelay::ID.for().
 
@@ -18,12 +16,11 @@ Spec introspection query.
 
 Spec custom dependent_columns.
 
-Spec merging of repeat invocations of the same field/association, but nail
-down what differences in arguments mean.
-
 Query and Mutation classes.
 
 Figure out where custom query logic (like full-text search) should live.
+
+Only wrap Query::Base subclasses that are connections.
 
 
 
@@ -38,8 +35,6 @@ Support custom orders, and spec that they work with seek pagination.
 Support counts on connections. Should respect arguments, and just return
 counter caches when available and appropriate (no arguments). How should
 counts change when paginating?
-
-Support and spec aliased connections (with different arguments).
 
 Move seek pagination invocation out of DatasetResolver, probably.
 
@@ -78,8 +73,6 @@ Freeze schema contents when they're generated.
 Support some configurable way to reject queries that have the potential to
 touch too many rows or generate queries of too severe complexity.
 
-Support top-level connection queries.
-
 Give attributes dataset dependencies? Of which dependent_columns would just be
 a special case?
 
@@ -98,3 +91,5 @@ Instrumentation?
 
 Set loaded associations in model objects? Would only be in certain cases when
 we can be sure they're complete.
+
+Spec/support multiple invocations of the same field with different arguments.
