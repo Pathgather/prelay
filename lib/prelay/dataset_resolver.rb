@@ -49,16 +49,16 @@ module Prelay
     end
 
     def resolve
-      dataset.all.tap { |records| process_associations_for_records(records) }
+      ResultArray.new(dataset.all).tap { |records| process_associations_for_records(records) }
     end
 
     def resolve_by_pk(pk)
       cond = @type.model.qualified_primary_key_hash(pk)
-      dataset.where(cond).all.tap{|records| process_associations_for_records(records)}.first
+      ResultArray.new(dataset.where(cond).all).tap{|records| process_associations_for_records(records)}.first
     end
 
     def resolve_via_association(association, ids)
-      return [] if ids.none?
+      return ResultArray.new([]) if ids.none?
 
       reflection = association.sequel_association
 
@@ -84,7 +84,7 @@ module Prelay
               where{ |r| r.prelay_row_number <= limit}
       end
 
-      ds.all.tap { |records| process_associations_for_records(records) }
+      ResultArray.new(ds.all).tap { |records| process_associations_for_records(records) }
     end
 
     protected
@@ -131,12 +131,11 @@ module Prelay
         sub_records_hash = {}
 
         if association.returns_array?
-          sub_records.each { |r| (sub_records_hash[r.send(remote_column)] ||= []) << r }
+          sub_records.each { |r| (sub_records_hash[r.send(remote_column)] ||= ResultArray.new([])) << r }
 
           records.each do |r|
-            associated_records = sub_records_hash[r.send(local_column)] || []
+            associated_records = sub_records_hash[r.send(local_column)] || ResultArray.new([])
             r.associations[association_name] = associated_records
-            associated_records.each {|ar| ar.associations[reciprocal] = r}
           end
         else
           sub_records.each{|r| sub_records_hash[r.send(remote_column)] = r}
@@ -144,7 +143,6 @@ module Prelay
           records.each do |r|
             associated_record = sub_records_hash[r.send(local_column)]
             r.associations[association_name] = associated_record
-            associated_record.associations[reciprocal] = r if associated_record
           end
         end
       end
