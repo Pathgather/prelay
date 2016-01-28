@@ -1,7 +1,5 @@
 Soon:
 
-Support "nodes" queries.
-
 Sequel associations with defined blocks (supported, need testing).
 
 Support types based on models that are based on arbitrary datasets, and not just models. Cache oid->type relationships and retrieved sample rows.
@@ -65,6 +63,8 @@ Set associated objects in Sequel object association caches when possible? Only w
 
 
 Future miscellaneous stuff:
+
+Figure out how to handle records that don't exist in the 'nodes' query (should return null in the JSON) (maybe requires opening issue with graphql-ruby).
 
 Support types based on arbitrary datasets, no model necessary?
 

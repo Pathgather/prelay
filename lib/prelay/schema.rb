@@ -34,6 +34,18 @@ module Prelay
                 to_resolver.resolve_by_pk(id.pk)
             }
           }
+
+          field :nodes, field: GraphQL::Field.define {
+            type(node_identification.interface.to_list_type)
+            argument :ids, !GraphQL::ID_TYPE.to_list_type
+            resolve -> (obj, args, ctx) {
+              ids = args['ids'].map { |id| ID.parse(id) }
+              ids.map do |id|
+                RelayProcessor.new(ctx, type: id.type).
+                  to_resolver.resolve_by_pk(id.pk)
+              end
+            }
+          }
         }
       )
     end
