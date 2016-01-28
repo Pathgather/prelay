@@ -65,13 +65,17 @@ module Prelay
           global_id_field :id
 
           type.attributes.each_value do |attribute|
-            field attribute.name, attribute.graphql_type
+            field attribute.name do
+              description(attribute.description)
+              type(attribute.graphql_type)
+            end
           end
 
           type.associations.each_value do |association|
             if association.returns_array?
               connection association.name do
                 type -> { association.graphql_type.connection_type }
+                description(association.description)
                 resolve -> (obj, args, ctx) {
                   node = ctx.ast_node
                   key = (node.alias || node.name).to_sym
@@ -80,6 +84,7 @@ module Prelay
               end
             else
               field association.name do
+                description(association.description)
                 type -> { association.graphql_type }
               end
             end

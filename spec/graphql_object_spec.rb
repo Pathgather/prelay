@@ -19,6 +19,7 @@ class GraphQLObjectSpec < PrelaySpec
     assert_instance_of GraphQL::Field, field
     assert_equal 'name', field.name
     assert_equal 'String', field.type.to_s
+    assert_equal "The name of the album", field.description
   end
 
   it "should translate a type's many_to_one associations to GraphQL fields" do
@@ -28,6 +29,7 @@ class GraphQLObjectSpec < PrelaySpec
     assert_instance_of GraphQL::Field, field
     assert_equal 'artist', field.name
     assert_equal 'Artist', field.type.to_s
+    assert_equal "The artist who released the album.", field.description
   end
 
   it "should translate a type's one_to_many associations to GraphQL connections" do
@@ -37,6 +39,7 @@ class GraphQLObjectSpec < PrelaySpec
     assert_instance_of GraphQL::Field, field
     assert_equal 'tracks', field.name
     assert_equal 'TrackConnection', field.type.to_s
+    assert_equal "The tracks on this album.", field.description
   end
 
   it "should translate a type's one_to_one associations to GraphQL fields" do
@@ -46,5 +49,6 @@ class GraphQLObjectSpec < PrelaySpec
     assert_instance_of GraphQL::Field, field
     assert_equal 'publisher', field.name
     assert_equal 'Publisher', field.type.to_s
+    assert_equal "The publisher responsible for releasing the album.", field.description
   end
 end

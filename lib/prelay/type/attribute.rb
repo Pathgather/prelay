@@ -3,12 +3,13 @@
 module Prelay
   class Type
     class Attribute
-      attr_reader :name, :type, :dependent_columns
+      attr_reader :name, :type, :dependent_columns, :description
 
-      def initialize(type, name, datatype:, dependent_columns: nil)
-        @type = type
-        @name = name
-        @datatype = datatype
+      def initialize(type, name, description, datatype:, dependent_columns: nil)
+        @type              = type
+        @name              = name
+        @description       = description
+        @datatype          = datatype
         @dependent_columns = (dependent_columns || [name]).freeze
       end
 

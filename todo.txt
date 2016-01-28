@@ -2,8 +2,6 @@ Soon:
 
 Support marking attributes (and association fields) not-null.
 
-Support descriptions on attributes.
-
 Spec inverse associations, make sure they do the right thing.
 
 Add Prelay::ID.for().
