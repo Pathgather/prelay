@@ -18,7 +18,7 @@ class GraphQLObjectSpec < PrelaySpec
 
     assert_instance_of GraphQL::Field, field
     assert_equal 'name', field.name
-    assert_equal 'String', field.type.to_s
+    assert_equal 'String!', field.type.to_s
     assert_equal "The name of the album", field.description
   end
 
@@ -28,7 +28,7 @@ class GraphQLObjectSpec < PrelaySpec
 
     assert_instance_of GraphQL::Field, field
     assert_equal 'artist', field.name
-    assert_equal 'Artist', field.type.to_s
+    assert_equal 'Artist!', field.type.to_s
     assert_equal "The artist who released the album.", field.description
   end
 

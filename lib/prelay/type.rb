@@ -85,7 +85,10 @@ module Prelay
             else
               field association.name do
                 description(association.description)
-                type -> { association.graphql_type }
+                type -> {
+                  t = association.graphql_type
+                  association.nullable ? t : t.to_non_null_type
+                }
               end
             end
           end

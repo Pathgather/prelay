@@ -3,12 +3,13 @@
 module Prelay
   class Type
     class Association
-      attr_reader :name, :sequel_association, :description
+      attr_reader :name, :sequel_association, :description, :nullable
 
-      def initialize(type, association_type, name, description)
-        @type = type
-        @name = name
+      def initialize(type, association_type, name, description, nullable: nil)
+        @type        = type
+        @name        = name
         @description = description
+        @nullable    = nullable
 
         @sequel_association = @type.model.association_reflections.fetch(name) do
           raise "Could not find an association '#{name}' on the Sequel model #{@type.model}"
@@ -16,6 +17,12 @@ module Prelay
 
         unless @sequel_association[:type] == association_type
           raise "Association #{name} on #{type} declared as #{association_type}, but the underlying Sequel association is #{@sequel_association[:type]}"
+        end
+
+        case association_type
+        when :one_to_many              then raise "Specified a #{association_type} association (#{type}##{name}) with a :nullable option, which is not allowed" unless nullable.nil?
+        when :many_to_one, :one_to_one then raise "Specified a #{association_type} association (#{type}##{name}) without a :nullable option, which is required" if nullable.nil?
+        else raise "Unsupported association type: #{association_type}"
         end
       end
 

@@ -310,7 +310,7 @@ class PrelaySpec < Minitest::Spec
     attribute :active,     "Whether the artist is still making music", datatype: :boolean
     attribute :popularity, "The artist's relative popularity, normalized between 0 and 1.", datatype: :float
 
-    many_to_one :genre,  "The genre of music the artist predominantly worked in"
+    many_to_one :genre,  "The genre of music the artist predominantly worked in", nullable: false
     one_to_many :albums, "Albums released by the artist"
   end
 
@@ -324,9 +324,9 @@ class PrelaySpec < Minitest::Spec
     attribute :high_quality, "Whether the album is good or not.", datatype: :boolean
     attribute :popularity,   "The normalized popularity of the album, on a scale from 0 to 1.", datatype: :float
 
-    many_to_one :artist,    "The artist who released the album."
+    many_to_one :artist,    "The artist who released the album.", nullable: false
     one_to_many :tracks,    "The tracks on this album."
-    one_to_one  :publisher, "The publisher responsible for releasing the album."
+    one_to_one  :publisher, "The publisher responsible for releasing the album.", nullable: true
   end
 
   class TrackType < Prelay::Type
@@ -339,7 +339,7 @@ class PrelaySpec < Minitest::Spec
     attribute :high_quality, "Whether the track is good or not.", datatype: :boolean
     attribute :popularity,   "The normalized popularity of the track, on a scale from 0 to 1.", datatype: :float
 
-    many_to_one :album, "The album the track belongs to."
+    many_to_one :album, "The album the track belongs to.", nullable: false
   end
 
   class PublisherType < Prelay::Type
@@ -349,7 +349,7 @@ class PrelaySpec < Minitest::Spec
 
     attribute :name, "The name of the company.", datatype: :string
 
-    many_to_one :album, "The album this company was responsible for."
+    many_to_one :album, "The album this company was responsible for.", nullable: false
   end
 
   GraphQLSchema = Prelay::Schema.new(
