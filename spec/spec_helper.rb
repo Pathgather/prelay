@@ -117,10 +117,16 @@ class Album < Sequel::Model
   many_to_one :artist
   one_to_many :tracks
   one_to_one :publisher
+
+  one_to_one  :first_track,       class_name: :Track, &:is_first
+  one_to_many :first_five_tracks, class_name: :Track, &:in_first_five
 end
 
 class Track < Sequel::Model
   many_to_one :album
+
+  subset :is_first,      number: 1
+  subset :in_first_five, number: 1..5
 end
 
 class Publisher < Sequel::Model
@@ -334,6 +340,9 @@ class PrelaySpec < Minitest::Spec
     many_to_one :artist,    "The artist who released the album.", nullable: false
     one_to_many :tracks,    "The tracks on this album."
     one_to_one  :publisher, "The publisher responsible for releasing the album.", nullable: true
+
+    one_to_one  :first_track,       "The first track on the album.", nullable: true
+    one_to_many :first_five_tracks, "The first five tracks on the album"
   end
 
   class TrackType < Prelay::Type
