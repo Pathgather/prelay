@@ -1,8 +1,8 @@
 Soon:
 
-Sequel associations with defined blocks (supported, need testing).
-
 Support types based on models that are based on arbitrary datasets, and not just models. Cache oid->type relationships and retrieved sample rows.
+
+Respect orders in sequel associations.
 
 Add Prelay::ID.for().
 
