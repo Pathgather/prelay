@@ -1,6 +1,6 @@
 Soon:
 
-Support marking attributes (and association fields) not-null.
+Support "nodes" queries.
 
 Sequel associations with defined blocks (supported, need testing).
 
