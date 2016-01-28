@@ -40,11 +40,14 @@ module Prelay
         define_method(name){@record.send(name)}
       end
 
-      def association(*args)
-        association = Association.new(self, *args)
-        name = association.name
-        associations[name] = association
-        define_method(name) { @associations.fetch(name) { raise "Association #{name} not loaded for #{inspect}" } }
+
+      [:one_to_one, :one_to_many, :many_to_one].each do |association_type|
+        define_method(association_type) do |*args|
+          association = Association.new(self, association_type, *args)
+          name = association.name
+          associations[name] = association
+          define_method(name) { @associations.fetch(name) { raise "Association #{name} not loaded for #{inspect}" } }
+        end
       end
 
       def graphql_object

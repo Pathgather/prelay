@@ -297,7 +297,7 @@ class PrelaySpec < Minitest::Spec
 
     attribute :name, datatype: :string
 
-    association :artists
+    one_to_many :artists
   end
 
   class ArtistType < Prelay::Type
@@ -310,8 +310,8 @@ class PrelaySpec < Minitest::Spec
     attribute :active,     datatype: :boolean
     attribute :popularity, datatype: :float
 
-    association :genre
-    association :albums
+    many_to_one :genre
+    one_to_many :albums
   end
 
   class AlbumType < Prelay::Type
@@ -324,9 +324,9 @@ class PrelaySpec < Minitest::Spec
     attribute :high_quality, datatype: :boolean
     attribute :popularity,   datatype: :float
 
-    association :artist
-    association :tracks
-    association :publisher
+    many_to_one :artist
+    one_to_many :tracks
+    one_to_one  :publisher
   end
 
   class TrackType < Prelay::Type
@@ -339,7 +339,7 @@ class PrelaySpec < Minitest::Spec
     attribute :high_quality, datatype: :boolean
     attribute :popularity,   datatype: :float
 
-    association :album
+    many_to_one :album
   end
 
   class PublisherType < Prelay::Type
@@ -349,7 +349,7 @@ class PrelaySpec < Minitest::Spec
 
     attribute :name, datatype: :string
 
-    association :album
+    many_to_one :album
   end
 
   GraphQLSchema = Prelay::Schema.new(

@@ -3,22 +3,23 @@
 module Prelay
   class Type
     class Association
-      attr_reader :name
+      attr_reader :name, :sequel_association
 
-      def initialize(type, name)
+      def initialize(type, association_type, name)
         @type = type
         @name = name
+
+        @sequel_association = @type.model.association_reflections.fetch(name) do
+          raise "Could not find an association '#{name}' on the Sequel model #{@type.model}"
+        end
+
+        unless @sequel_association[:type] == association_type
+          raise "Association #{name} on #{type} declared as #{association_type}, but the underlying Sequel association is #{@sequel_association[:type]}"
+        end
       end
 
       def model
         @type.model
-      end
-
-      def sequel_association
-        m = model
-        m.association_reflections.fetch(name) do
-          raise "Could not find an association '#{name}' on the Sequel model #{m}"
-        end
       end
 
       def target_type
