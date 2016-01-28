@@ -116,6 +116,73 @@ class FragmentedQuerySpec < PrelaySpec
         }
       GRAPHQL
     ),
+    fragment_at_node_level_with_type: (
+      <<-GRAPHQL
+        query Query {
+          node(id: "%{id}") {
+            id,
+            ...__RelayQueryFragment0kyloren
+            ...__RelayQueryFragment0hansolo
+            ...__RelayQueryFragment0bb8
+          }
+        }
+
+        fragment __RelayQueryFragment0hansolo on Album {
+          id,
+          tracks(first: 50) {
+            edges {
+              node {
+                id,
+                number,
+                high_quality,
+              }
+            }
+            pageInfo {
+              hasPreviousPage
+            }
+          }
+          ...__RelayQueryFragment0rey
+        }
+
+        fragment __RelayQueryFragment0bb8 on Album {
+          high_quality,
+          artist {
+            id,
+            upvotes,
+            active,
+          }
+          ...__RelayQueryFragment0poedameron
+        }
+
+        fragment __RelayQueryFragment0rey on Album {
+          name,
+          tracks(first: 50) {
+            edges {
+              node {
+                id,
+                name,
+              }
+            }
+            pageInfo {
+              hasNextPage
+            }
+          }
+        }
+
+        fragment __RelayQueryFragment0poedameron on Album {
+          upvotes,
+          artist {
+            id,
+            name,
+          }
+        }
+
+        fragment __RelayQueryFragment0kyloren on Track {
+          number,
+          high_quality
+        }
+      GRAPHQL
+    ),
     fragment_at_node_fields_level: (
       <<-GRAPHQL
         query Query {
