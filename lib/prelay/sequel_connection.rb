@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Prelay
   class SequelConnection < GraphQL::Relay::BaseConnection
     def cursor_from_node(node)
