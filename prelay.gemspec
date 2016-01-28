@@ -19,9 +19,8 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'sequel',                 '~> 4.29'
-  spec.add_dependency 'graphql',                '~> 0.10.7'
   spec.add_dependency 'graphql-relay',          '~> 0.6.1'
+  spec.add_dependency 'sequel',                 '~> 4.29'
   spec.add_dependency 'sequel-seek-pagination', '~> 0.2.1'
 
   spec.add_development_dependency 'bundler',        '~> 1.11'
