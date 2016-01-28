@@ -1,28 +1,30 @@
 Soon:
 
+Spec introspection query.
+
 Support types based on models that are based on arbitrary datasets, and not just models. Cache oid->type relationships and retrieved sample rows.
+
+Encode values in cursors. Spec them in fragments.
+
+Support cursors that are things other than id.
 
 Respect orders in sequel associations.
 
-Add Prelay::ID.for().
+Support top-level fragments on types.
 
-Spec introspection query.
+Add Prelay::ID.for().
 
 Force explicit specification of reciprocals.
 
 Validate that reciprocals all point to each other.
 
-Encode values in cursors. Spec them in fragments.
-
-Support top-level fragments on types.
-
 Support interfaces.
 
 Basic Query and Mutation classes.
 
-Figure out where custom query logic (like full-text search) should live.
-
 Only wrap Query::Base subclasses that are connections.
+
+Figure out where custom query logic (like full-text search) should live.
 
 
 
