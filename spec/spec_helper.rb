@@ -8,6 +8,7 @@ require 'minitest/pride'
 require 'minitest/hooks'
 
 require 'faker'
+require 'pry'
 
 DB = Sequel.connect(ENV['DATABASE_URL'] || 'postgres:///prelay-test')
 
