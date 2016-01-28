@@ -1,4 +1,4 @@
-# frozen-string-literal: true
+# frozen_string_literal: true
 
 # The purpose of the DatasetResolver class is to take a GraphQL AST describing
 # the attributes and associations that are desired in a query, and then
