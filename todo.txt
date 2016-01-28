@@ -1,7 +1,5 @@
 Soon:
 
-Spec introspection query.
-
 Support types based on models that are based on arbitrary datasets, and not just models. Cache oid->type relationships and retrieved sample rows.
 
 Encode values in cursors. Spec them in fragments.
