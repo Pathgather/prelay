@@ -29,4 +29,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'minitest',       '~> 5.0'
   spec.add_development_dependency 'minitest-hooks', '~> 1.4'
   spec.add_development_dependency 'faker',          '~> 1.6.1'
+  spec.add_development_dependency 'pg',             '~> 0.18.4'
 end
