@@ -58,9 +58,9 @@ class AliasQuerySpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album1.id}') ORDER BY "albums"."id"),
-      %(SELECT "artists"."id", "artists"."name" FROM "artists" WHERE ("artists"."id" IN ('#{album1.artist.id}')) ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN ('#{album1.artist.id}')) ORDER BY "artists"."id"),
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album2.id}') ORDER BY "albums"."id"),
-      %(SELECT "artists"."id", "artists"."name" FROM "artists" WHERE ("artists"."id" IN ('#{album2.artist.id}')) ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN ('#{album2.artist.id}')) ORDER BY "artists"."id"),
     ]
   end
 

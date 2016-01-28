@@ -36,7 +36,7 @@ class ManyToOneAssociationSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "artists"."id", "artists"."name", "artists"."genre_id" FROM "artists" WHERE ("artists"."id" = '#{artist.id}') ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."genre_id" FROM "artists" WHERE ("artists"."id" = '#{artist.id}') ORDER BY "artists"."id"),
       %(SELECT "genres"."id", "genres"."name" FROM "genres" WHERE ("genres"."id" IN ('#{artist.genre_id}')) ORDER BY "genres"."id")
     ]
   end
@@ -71,7 +71,7 @@ class ManyToOneAssociationSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "artists"."id", "artists"."name", "artists"."genre_id" FROM "artists" WHERE ("artists"."id" = '#{artist.id}') ORDER BY "artists"."id")
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."genre_id" FROM "artists" WHERE ("artists"."id" = '#{artist.id}') ORDER BY "artists"."id")
     ]
   end
 end

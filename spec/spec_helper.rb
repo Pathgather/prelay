@@ -31,7 +31,8 @@ DB.create_table :artists do
 
   uuid :genre_id # Nullable
 
-  text        :name,       null: false
+  text        :first_name, null: false
+  text        :last_name,  null: false
   integer     :upvotes,    null: false
   boolean     :active,     null: false
   float       :popularity, null: false
@@ -106,6 +107,10 @@ end
 class Artist < Sequel::Model
   many_to_one :genre
   one_to_many :albums
+
+  def name
+    "#{first_name} #{last_name}"
+  end
 end
 
 class Album < Sequel::Model
@@ -171,7 +176,8 @@ artist_ids = DB[:artists].multi_insert(
   25.times.map {
     {
       genre_id:   (genre_ids.sample if rand > 0.5),
-      name:       Faker::Name.name,
+      first_name: Faker::Name.first_name,
+      last_name:  Faker::Name.last_name,
       upvotes:    rand(10000),
       active:     rand > 0.5,
       popularity: rand,
@@ -306,7 +312,7 @@ class PrelaySpec < Minitest::Spec
 
     description "A musician"
 
-    attribute :name,       "The full name of the artist", datatype: :string
+    attribute :name,       "The full name of the artist", datatype: :string, dependent_columns: [:first_name, :last_name]
     attribute :upvotes,    "How many upvotes the artist got", datatype: :integer
     attribute :active,     "Whether the artist is still making music", datatype: :boolean
     attribute :popularity, "The artist's relative popularity, normalized between 0 and 1.", datatype: :float

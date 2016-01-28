@@ -4,8 +4,6 @@ Support "nodes" queries.
 
 Sequel associations with defined blocks (supported, need testing).
 
-Spec custom dependent_columns.
-
 Support types based on models that are based on arbitrary datasets, and not just models. Cache oid->type relationships and retrieved sample rows.
 
 Add Prelay::ID.for().
