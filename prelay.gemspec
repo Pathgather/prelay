@@ -30,4 +30,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'faker',          '~> 1.6.1'
   spec.add_development_dependency 'pg',             '~> 0.18.4'
   spec.add_development_dependency 'pry'
+  spec.add_development_dependency 'm'
 end
