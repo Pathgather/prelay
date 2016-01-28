@@ -8,20 +8,19 @@
 # only the columns we need from the DB and manually eager-loading the
 # appropriate associations.
 
+require 'prelay/result_array'
+
 module Prelay
   class DatasetResolver
     ZERO_OR_ONE = 0..1
+    EMPTY_RESULT_ARRAY = ResultArray.new(EMPTY_ARRAY).freeze
 
     def initialize(ast:)
-      @ast       = ast
       @types     = {}
       @arguments = ast.arguments
       @metadata  = ast.metadata
 
-      @columns      = {}
-      @associations = {}
-
-      @ast.selections.each do |type, selections|
+      ast.selections.each do |type, selections|
         type_data    = @types[type] ||= {}
         columns      = type_data[:columns] ||= []
         associations = type_data[:associations] ||= {}
@@ -63,17 +62,13 @@ module Prelay
       end
     end
 
-    def resolve
-      results_for_dataset(dataset)
-    end
-
     def resolve_by_pk(pk)
       records = []
 
       @types.each_key do |type|
         ds = dataset_for_type(type)
-        results = results_for_dataset(ds.where(Sequel.qualify(ds.model.table_name, :id) => pk), type: type)
-        records += results
+        ds = ds.where(Sequel.qualify(type.model.table_name, :id) => pk)
+        records += results_for_dataset(ds, type: type)
       end
 
       raise "Too many records!" unless ZERO_OR_ONE === records.length
@@ -82,33 +77,31 @@ module Prelay
     end
 
     def resolve_via_association(association, ids)
-      return ResultArray.new([]) if ids.none?
+      return EMPTY_RESULT_ARRAY if ids.none?
 
+      block = association.sequel_association&.dig(:block)
       records = []
+      remote_column = association.remote_column
 
-      @types.each do |type, type_data|
+      @types.each_key do |type|
+        qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
+
         ds = type.model.dataset
-        ds = apply_query_to_dataset(ds, type: type, supplemental_columns: [association.remote_column])
-        column = association.remote_column
-
-        if block = association.sequel_association&.dig(:block)
-          ds = block.call(ds)
-        end
-
-        ds = ds.where(Sequel.qualify(ds.model.table_name, column) => ids)
+        ds = apply_query_to_dataset(ds, type: type, supplemental_columns: [remote_column])
+        ds = block.call(ds) if block
+        ds = ds.where(qualified_remote_column => ids)
 
         if ids.length > 1 && limit = ds.opts.delete(:limit)
           # Steal Sequel's technique for limiting eager-loaded associations with
           # a window function.
           ds = ds.
                 unordered.
-                select_append{|o| o.row_number{}.over(partition: Sequel.qualify(ds.model.table_name, column), order: ds.opts[:order]).as(:prelay_row_number)}.
+                select_append(Sequel.function(:row_number).over(partition: qualified_remote_column, order: ds.opts[:order]).as(:prelay_row_number)).
                 from_self.
-                where{|r| r.prelay_row_number <= limit}
+                where { |r| r.<=(:prelay_row_number, limit) }
         end
 
-        results = results_for_dataset(ds, type: type)
-        records += results
+        records += results_for_dataset(ds, type: type)
       end
 
       ResultArray.new(records)
@@ -117,32 +110,29 @@ module Prelay
     protected
 
     def apply_query_to_dataset(ds, type:, order: nil, supplemental_columns: EMPTY_ARRAY)
-      arguments = @ast.arguments
+      table_name = ds.model.table_name
 
-      order ||= Sequel.qualify(ds.model.table_name, :id)
-
-      ds = ds.order(order)
+      ds = ds.order(order || Sequel.qualify(table_name, :id))
 
       columns = @types[type][:columns] + supplemental_columns
-
       columns.uniq!
 
-      if columns.delete(:cursor)
-        exp = ds.opts[:order].only.expression
-        columns << exp.as(:cursor)
-      end
+      # if columns.delete(:cursor)
+      #   exp = ds.opts[:order].only.expression
+      #   columns << exp.as(:cursor)
+      # end
 
-      ds = ds.select(*columns.map{|c| Sequel.qualify(ds.model.table_name, c)})
+      ds = ds.select(*columns.map{|c| Sequel.qualify(table_name, c)})
 
-      if limit = arguments[:first] || arguments[:last]
-        ds = ds.reverse_order if arguments[:last]
+      if limit = @arguments[:first] || @arguments[:last]
+        ds = ds.reverse_order if @arguments[:last]
 
         # If has_next_page or has_previous_page was requested, bump the limit
         # by one so we know whether there's another page coming up.
         limit += 1 if @metadata[:has_next_page] || @metadata[:has_previous_page]
 
         ds =
-          if cursor = arguments[:after] || arguments[:before]
+          if cursor = @arguments[:after] || @arguments[:before]
             # values = JSON.parse(Base64.decode64(cursor))
 
             # expressions = ds.opts[:order].zip(values).map do |o, v|
@@ -170,36 +160,10 @@ module Prelay
       ds
     end
 
-    # def apply_query_to_dataset(ds, supplemental_columns: [])
-    #   table_name = @type.model.table_name
-    #   arguments = @arguments
-
-    #   columns = (@columns + supplemental_columns).uniq.map{|column| Sequel.qualify(table_name, column)}
-    #   ds = ds.select(*columns).order(Sequel.qualify(table_name, :id))
-
-    #   if limit = arguments[:first] || arguments[:last]
-    #     ds = ds.reverse_order if arguments[:last]
-
-    #     # If has_next_page was requested, bump the limit by one so we know
-    #     # whether there's another page coming up.
-    #     limit += 1 if @metadata[:has_next_page] || @metadata[:has_previous_page]
-
-    #     ds =
-    #       if id = arguments[:after] || arguments[:before]
-    #         pk = ID.parse(id, expected_type: @type.graphql_object.name).pk
-    #         ds.seek_paginate(limit, after_pk: pk)
-    #       else
-    #         ds.seek_paginate(limit)
-    #       end
-    #   end
-
-    #   ds
-    # end
-
     private
 
     def dataset_for_type(type)
-      apply_query_to_dataset(type.model.dataset, order: Sequel.qualify(type.model.table_name, :id), type: type)
+      apply_query_to_dataset(type.model.dataset, type: type)
     end
 
     def results_for_dataset(ds, type:)
@@ -211,10 +175,8 @@ module Prelay
       return if results.empty?
 
       @types[type][:associations].each do |key, (association, dataset_resolver)|
-        reflection       = association.sequel_association
-        reciprocal       = reflection.reciprocal
-        local_column     = association.local_column
-        remote_column    = association.remote_column
+        local_column  = association.local_column
+        remote_column = association.remote_column
 
         ids = results.map{|r| r.record.send(local_column)}.uniq
 

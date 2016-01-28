@@ -6,6 +6,18 @@ require 'sequel-seek-pagination'
 require 'graphql'
 require 'graphql/relay'
 
+Sequel::Database.extension :seek_pagination
+
+module Prelay
+  # Frozen empty objects, mostly for use as argument defaults. Makes sure that
+  # we don't accidentally modify arguments passed to our methods, and cuts
+  # down on the number of allocated objects.
+  EMPTY_ARRAY = [].freeze
+  EMPTY_HASH  = {}.freeze
+
+  class InvalidGraphQLQuery < StandardError; end
+end
+
 require 'prelay/dataset_resolver'
 require 'prelay/graphql_processor'
 require 'prelay/id'
@@ -17,16 +29,4 @@ require 'prelay/sequel_connection'
 require 'prelay/type'
 require 'prelay/version'
 
-Sequel::Database.extension :seek_pagination
-
 GraphQL::Relay::BaseConnection.register_connection_implementation Prelay::ResultArray, Prelay::SequelConnection
-
-module Prelay
-  # Frozen empty objects, mostly for use as argument defaults. Makes sure that
-  # we don't accidentally modify arguments passed to our methods, and cuts
-  # down on the number of allocated objects.
-  EMPTY_ARRAY = [].freeze
-  EMPTY_HASH  = {}.freeze
-
-  class InvalidGraphQLQuery < StandardError; end
-end

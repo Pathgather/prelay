@@ -2,7 +2,7 @@
 
 module Prelay
   class Schema
-    def initialize(types: [])
+    def initialize(types:)
       @types = types
     end
 
