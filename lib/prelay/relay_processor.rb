@@ -1,53 +1,36 @@
 # frozen_string_literal: true
 
-# This class should:
-
-#   - Transform the GraphQL gem's AST to our own format, so that the rest of
-#     the query-servicing logic is insulated from changes to the GraphQL gem.
-#   - Inline GraphQL fragments, including ones that are type-dependent.
-#   - Validate that all the attributes and associations being accessed exist
-#     on the given types.
-#   - Return sensible errors if any of the frontend peeps sends us a malformed
-#     GraphQL/Relay query or tries to invoke GraphQL/Relay features that we
-#     don't support yet.
-#   - Fail loudly if a GraphQL query generally isn't what we expect. Since
-#     malicious GraphQL requests are a possible attack vector for us, we want
-#     to be careful to validate this input.
-
 module Prelay
   class RelayProcessor
+    attr_reader :ast, :layers_to_skip
     attr_accessor :current_type
 
-    # For most queries we'll be passing in the context object for the entire
-    # query, and we'll just process it from the top level. In some places
-    # (responding to mutations, specifically) there may be several top-level
-    # fields in a query that don't have an easily identifiable relationship to
-    # one another, so we support passing in a field object and supplying the
-    # query context separately for us to look up fragments on.
+    # The calling code should know if the field being passed in is a Relay
+    # connection or edge call, so it must provide an :entry_point argument to
+    # tell us how to start parsing.
+    def initialize(input, type:, layers_to_skip: nil, entry_point:)
+      @layers_to_skip = layers_to_skip || EMPTY_ARRAY
 
-    def initialize(context, type:)
-      @fragments = context.query.fragments
-      @selection = scope_type(type) { field_to_selection(context.ast_node) }
+      @ast =
+        scope_type(type) do
+          case entry_point
+          when :field      then process_field(input)
+          when :connection then process_connection(input)
+          when :edge       then process_edge(input)
+          else raise "Unsupported entry_point: #{entry_point}"
+          end
+        end
     end
 
     def to_resolver
-      DatasetResolver.new(selection: @selection)
+      DatasetResolver.new(ast: @ast)
     end
 
     private
 
-    def field_to_selection(field)
-      Selection.new name:       field.name.to_sym,
-                    type:       current_type,
-                    aliaz:      field.alias&.to_sym,
-                    arguments:  arguments_from_field(field),
-                    attributes: attributes_from_field(field)
-    end
-
-    def connection_to_selection(field)
-      arguments  = arguments_from_field(field)
-      attributes = {}
-      metadata   = {}
+    def process_connection(selection)
+      raise "Can't yet handle connections without edges" unless edges = selection.selections.delete(:edges)
+      process_edge(edges)
 
       # It's against the Relay spec for connections to be invoked without either
       # a 'first' or 'last' argument, but since the gem doesn't stop it from
@@ -55,114 +38,116 @@ module Prelay
       # want to support that at some point (allowing the client to load all
       # records in a connection) we could, but that behavior should be thought
       # through, and a limit should probably still be applied to prevent abuse.
-      unless arguments[:first] || arguments[:last]
+      unless selection.arguments[:first] || selection.arguments[:last]
         raise InvalidGraphQLQuery, "Tried to access a connection without a 'first' or 'last' argument."
       end
 
-      process_field_selections(field) do |f1|
-        case f1.name
-        when 'edges'
-          process_field_selections(f1) do |f2|
-            case f2.name
-            when 'node'
-              attributes_from_field(f2, attributes)
-            else
-              raise InvalidGraphQLQuery, "unsupported Edge field '#{f2.name}'"
-            end
-          end
-        when 'pageInfo'
-          process_field_selections(f1) do |f2|
-            case f2.name
-            when 'hasNextPage'     then metadata[:has_next_page]     = true
-            when 'hasPreviousPage' then metadata[:has_previous_page] = true
-            else raise InvalidGraphQLQuery, "unsupported PageInfo field '#{f2.name}'"
-            end
-          end
-        else
-          raise InvalidGraphQLQuery, "unsupported Connection field '#{f1.name}'"
+      if page_info = selection.selections.delete(:pageInfo)
+        selection.metadata[:has_next_page]     = true if page_info.selections[:hasNextPage]
+        selection.metadata[:has_previous_page] = true if page_info.selections[:hasPreviousPage]
+      end
+
+      selection.selections = edges.selections
+      selection.type = current_type
+      selection
+    end
+
+    def process_edge(selection)
+      # TODO: Don't require a 'node' field, as it's valid to just do a query to
+      # get cursors.
+      raise "Can't yet handle edges without nodes" unless node = selection.selections.delete(:node)
+      process_field(node)
+
+      if cursor = selection.selections.delete(:cursor)
+        target_layers.each do |layer|
+          node.selections[layer][:cursor] ||= Layer::Selection.new(name: :cursor, type: layer)
         end
       end
 
-      Selection.new name:       field.name.to_sym,
-                    type:       current_type,
-                    aliaz:      field.alias&.to_sym,
-                    arguments:  arguments,
-                    attributes: attributes,
-                    metadata:   metadata
+      selection.selections = node.selections
+      selection.type = current_type
+      selection
     end
 
-    def arguments_from_field(field)
-      field.arguments.each_with_object({}){|a, hash| hash[a.name.to_sym] = a.value}
-    end
+    def process_field(selection)
+      raise "Selection already typed! #{selection.inspect}" unless selection.type.nil?
 
-    def attributes_from_field(field, attrs = {})
-      process_field_selections(field) do |field|
-        name = field.name.to_sym
-        key  = field.alias&.to_sym || name
+      type = current_type
+      selection.type = type
+      selections_by_layer = {}
+      target_layers.each {|l| selections_by_layer[l] = deep_copy(selection.selections)}
+      selection.selections = selections_by_layer
 
-        new_attr =
-          if attribute = current_type.attributes[name]
-            field_to_selection(field)
-          elsif association = current_type.associations[name]
+      # Now that we know the type, figure out if any of the fragments we set
+      # aside earlier apply to this selection, and if so, resolve them.
+      selection.fragments.each do |type, selection_sets|
+        hashes = layers_for_type(type).map{|l| selection.selections[l]}.compact
+
+        hashes.each do |hash|
+          selection_sets.each do |selection_set|
+            selection_set.each do |key, new_attr|
+              if old_attr = hash[key]
+                # This field was already declared, so merge this selection with the
+                # previous one. We don't yet support declaring the same field twice
+                # with different arguments, so fail in that case.
+                hash[key] = deep_copy(old_attr).merge!(deep_copy(new_attr), fail_on_argument_difference: true) if old_attr != new_attr
+              else
+                hash[key] = deep_copy(new_attr)
+              end
+            end
+          end
+        end
+      end
+
+      selection.selections.each do |type, selection_set|
+        selection_set.each do |key, s|
+          if type.attributes[s.name]
+            # We're cool.
+            process_field(s)
+          elsif association = type.associations[s.name]
             scope_type(association.target_type) do
               if association.returns_array?
-                connection_to_selection(field)
+                process_connection(s)
               else
-                field_to_selection(field)
+                process_field(s)
               end
             end
           else
-            case name
+            case s.name
             when :id
-              # id' isn't one of our declared attributes because it's handled
-              # via the node identification interface included into all the
-              # GraphQL objects derived from our types, but it still needs to
-              # be retrieved from the DB, so we include it in our selection.
-
-              Selection.new(name: name)
+              process_field(s)
             when :clientMutationId, :__typename
               # These are acceptable fields to request, but the GraphQL gem
               # handles them, so we can just ignore them.
-              next
+              selection_set.delete(key)
             else
-              # Whatever field was requested, it ain't good.
-              raise InvalidGraphQLQuery, "unsupported field '#{name}'"
+              raise InvalidGraphQLQuery, "unsupported field '#{s.name}'"
             end
           end
-
-        if old_attr = attrs[name]
-          # This field was already declared, so merge this selection with the
-          # previous one. We don't yet support declaring the same field twice
-          # with different arguments, so fail in that case.
-          old_attr.merge!(new_attr, fail_on_argument_difference: true) if old_attr != new_attr
-        else
-          attrs[key] = new_attr
         end
       end
 
-      attrs
+      selection
     end
 
-    # Takes care of flattening fragment invocations, and only yields actual
-    # field nodes to the given block.
-    def process_field_selections(field, &block)
-      field.selections.each do |thing|
-        case thing
-        when GraphQL::Language::Nodes::FragmentSpread
-          fragment = @fragments.fetch(thing.name) { raise InvalidGraphQLQuery, "fragment not found with name #{thing.name}" }
-          process_field_selections(fragment, &block)
-        when GraphQL::Language::Nodes::InlineFragment
-          if Type::BY_NAME.fetch(thing.type) == current_type
-            process_field_selections(thing, &block)
-          else
-            # Fragment is on a different type than this is, so ignore it.
-          end
-        when GraphQL::Language::Nodes::Field
-          yield thing
-        else
-          raise "Unsupported GraphQL input: #{thing.class}"
-        end
+    def target_layers
+      layers_for_type(current_type) - layers_to_skip
+    end
+
+    def layers_for_type(type)
+      if type < Type
+        [type]
+      # elsif type < Interface
+      #   type.layers
+      else
+        raise "Unexpected type: #{type}"
       end
+    end
+
+    # Hacky, but need a foolproof way to deep_copy some things until we have a
+    # better handle on merging things.
+    def deep_copy(thing)
+      Marshal.load(Marshal.dump(thing))
     end
 
     # Super-simple scoping of the current type class as we walk the AST.

@@ -15,11 +15,6 @@ module Prelay
     def paged_nodes
       # Apply 'first' and 'last' options.
 
-      # If the 'last' option is passed we reversed the ORDER BY in the eager
-      # loading step, so now we need to reverse the actual array of returned
-      # objects so that Relay gets them in the order it wants.
-      object.reverse! if last
-
       # When hasNext/PreviousPage is provided in the query, we bump up the limit
       # in the eager loading process so that we know whether those pages exist,
       # so now we need to make sure we return the appropriate number of objects,
@@ -27,7 +22,10 @@ module Prelay
       if first
         object.first(first)
       else
-        object.last(last)
+        # If the 'last' option is passed we reversed the ORDER BY in the eager
+        # loading step, so now we need to reverse the actual array of returned
+        # objects so that Relay gets them in the order it wants.
+        object.reverse.last(last)
       end
     end
 
