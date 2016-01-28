@@ -8,8 +8,6 @@ Support cursors that are things other than id.
 
 Respect orders in sequel associations.
 
-Support top-level fragments on types.
-
 Add Prelay::ID.for().
 
 Force explicit specification of reciprocals.
