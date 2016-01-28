@@ -2,19 +2,27 @@ Soon:
 
 Support marking attributes (and association fields) not-null.
 
-Spec inverse associations, make sure they do the right thing.
-
-Add Prelay::ID.for().
-
 Sequel associations with defined blocks (supported, need testing).
-
-Cut down on retrieving key columns from the DB when it's not necessary.
-
-Spec introspection query.
 
 Spec custom dependent_columns.
 
-Query and Mutation classes.
+Support types based on models that are based on arbitrary datasets, and not just models. Cache oid->type relationships and retrieved sample rows.
+
+Add Prelay::ID.for().
+
+Spec introspection query.
+
+Force explicit specification of reciprocals.
+
+Validate that reciprocals all point to each other.
+
+Encode values in cursors. Spec them in fragments.
+
+Support top-level fragments on types.
+
+Support interfaces.
+
+Basic Query and Mutation classes.
 
 Figure out where custom query logic (like full-text search) should live.
 
@@ -26,8 +34,6 @@ Only wrap Query::Base subclasses that are connections.
 
 Pagination:
 
-Encode values and connection orders in cursors. Spec them in fragments.
-
 Support custom orders, and spec that they work with seek pagination.
 
 Support counts on connections. Should respect arguments, and just return
@@ -35,6 +41,8 @@ counter caches when available and appropriate (no arguments). How should
 counts change when paginating?
 
 Move seek pagination invocation out of DatasetResolver, probably.
+
+Encode sort fields in cursors (?). Spec them in fragments.
 
 
 
@@ -52,17 +60,17 @@ If no columns are requested at an association level (will commonly be the case
 when accessing :through associations), try to push that down to the DB as a
 join. Maybe do that sometimes when columns are requested anyway.
 
+Set associated objects in Sequel object association caches when possible? Only when we're sure they're complete.
+
 
 
 
 
 Future miscellaneous stuff:
 
-Use qualified columns everywhere.
+Support types based on arbitrary datasets, no model necessary?
 
-Base types on datasets, in addition to or instead of models?
-
-Support introspecting datatypes from models/datasets.
+Use qualified columns everywhere (?).
 
 Support deprecation warnings on fields (and whole objects?).
 
@@ -87,7 +95,6 @@ https://facebook.github.io/relay/graphql/objectidentification.htm#sec-Plural-ide
 
 Instrumentation?
 
-Set loaded associations in model objects? Would only be in certain cases when
-we can be sure they're complete.
-
 Spec/support multiple invocations of the same field with different arguments.
+
+Performance testing/benchmarks.
