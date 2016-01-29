@@ -1,6 +1,6 @@
 Soon:
 
-Support interfaces.
+Add association specs for interfaces.
 
 Basic Query and Mutation classes.
 
