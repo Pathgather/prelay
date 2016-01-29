@@ -628,7 +628,7 @@ class FragmentedQuerySpec < PrelaySpec
               'active' => album.artist.active,
             },
             'tracks' => {
-              'edges' => album.tracks.sort_by(&:id).map { |track|
+              'edges' => album.tracks.sort_by(&:number).map { |track|
                 {
                   'node' => {
                     'id' => encode('Track', track.id),
@@ -649,7 +649,7 @@ class FragmentedQuerySpec < PrelaySpec
       assert_sqls [
         %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."high_quality", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
         %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."upvotes", "artists"."active" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
-        %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "tracks"."id" LIMIT 51)
+        %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 51)
       ]
     end
   end

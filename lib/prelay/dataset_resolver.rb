@@ -80,6 +80,7 @@ module Prelay
       return EMPTY_RESULT_ARRAY if ids.none?
 
       block = association.sequel_association&.dig(:block)
+      order = association.sequel_association[:order]
       records = []
       remote_column = association.remote_column
 
@@ -87,6 +88,7 @@ module Prelay
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
 
         ds = type.model.dataset
+        ds = ds.order(order || Sequel.qualify(type.model.table_name, :id))
         ds = apply_query_to_dataset(ds, type: type, supplemental_columns: [remote_column])
         ds = block.call(ds) if block
         ds = ds.where(qualified_remote_column => ids)
@@ -109,10 +111,8 @@ module Prelay
 
     protected
 
-    def apply_query_to_dataset(ds, type:, order: nil, supplemental_columns: EMPTY_ARRAY)
+    def apply_query_to_dataset(ds, type:, supplemental_columns: EMPTY_ARRAY)
       table_name = ds.model.table_name
-
-      ds = ds.order(order || Sequel.qualify(table_name, :id))
 
       columns = @types[type][:columns] + supplemental_columns
       columns.uniq!
@@ -163,7 +163,7 @@ module Prelay
     private
 
     def dataset_for_type(type)
-      apply_query_to_dataset(type.model.dataset, type: type)
+      apply_query_to_dataset(type.model.dataset.order(Sequel.qualify(type.model.table_name, :id)), type: type)
     end
 
     def results_for_dataset(ds, type:)

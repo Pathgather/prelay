@@ -115,11 +115,11 @@ end
 
 class Album < Sequel::Model
   many_to_one :artist
-  one_to_many :tracks
+  one_to_many :tracks, order: :number
   one_to_one :publisher
 
   one_to_one  :first_track,       class_name: :Track, &:is_first
-  one_to_many :first_five_tracks, class_name: :Track, &:in_first_five
+  one_to_many :first_five_tracks, class_name: :Track, order: :number, &:in_first_five
 end
 
 class BestAlbum < Sequel::Model(DB[:albums].where(:high_quality))
