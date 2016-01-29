@@ -7,8 +7,12 @@ module Prelay
         type, pk = parts = Base64.decode64(string).split(':')
         raise InvalidGraphQLQuery, "Not a valid object id: \"#{string}\"" unless parts.length == 2
 
-        if expected_type && expected_type != type
-          raise InvalidGraphQLQuery, "Expected object id for a #{expected_type}, got one for a #{type}"
+        if expected_type
+          expected_name = expected_type.graphql_object.name
+
+          if expected_name != type
+            raise InvalidGraphQLQuery, "Expected object id for a #{expected_name}, got one for a #{type}"
+          end
         end
 
         new(type: type, pk: pk)
@@ -16,6 +20,11 @@ module Prelay
 
       def encode(type:, pk:)
         Base64.strict_encode64 "#{type}:#{pk}"
+      end
+
+      def for(record)
+        type = Type::BY_MODEL.fetch(record.class) { raise InvalidGraphQLQuery, "Not a valid object class: #{record.class}" }
+        encode type: type.graphql_object, pk: record.pk
       end
 
       def get(string)
