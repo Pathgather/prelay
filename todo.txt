@@ -2,8 +2,6 @@ Soon:
 
 Always tack on the pk when sorting.
 
-Spec encoded values in cursors in fragments.
-
 Support interfaces.
 
 Basic Query and Mutation classes.

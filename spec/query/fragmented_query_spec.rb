@@ -23,6 +23,7 @@ class FragmentedQuerySpec < PrelaySpec
               }
               tracks(first: 50) {
                 edges {
+                  cursor
                   node {
                     id,
                     name,
@@ -91,6 +92,7 @@ class FragmentedQuerySpec < PrelaySpec
             name,
             tracks(first: 50) {
               edges {
+                cursor
                 node {
                   id,
                   name,
@@ -131,6 +133,7 @@ class FragmentedQuerySpec < PrelaySpec
           id,
           tracks(first: 50) {
             edges {
+              cursor
               node {
                 id,
                 number,
@@ -158,6 +161,7 @@ class FragmentedQuerySpec < PrelaySpec
           name,
           tracks(first: 50) {
             edges {
+              cursor
               node {
                 id,
                 name,
@@ -203,6 +207,7 @@ class FragmentedQuerySpec < PrelaySpec
           }
           tracks(first: 50) {
             edges {
+              cursor
               node {
                 id,
               }
@@ -223,10 +228,12 @@ class FragmentedQuerySpec < PrelaySpec
           }
           tracks(first: 50) {
             edges {
+              cursor
               node {
                 id,
                 name,
               }
+              cursor
             }
             pageInfo {
               hasNextPage
@@ -244,6 +251,7 @@ class FragmentedQuerySpec < PrelaySpec
           }
           tracks(first: 50) {
             edges {
+              cursor
               node {
                 id,
                 number,
@@ -285,6 +293,7 @@ class FragmentedQuerySpec < PrelaySpec
               }
               tracks(first: 50) {
                 edges {
+                  cursor
                   node {
                     id,
                     name,
@@ -382,6 +391,7 @@ class FragmentedQuerySpec < PrelaySpec
 
         fragment __RelayQueryFragment0poedameron on TrackConnection {
           edges {
+            cursor
             node {
               id,
               high_quality,
@@ -420,6 +430,7 @@ class FragmentedQuerySpec < PrelaySpec
         }
 
         fragment __RelayQueryFragment0hansolo on TrackEdge {
+          cursor
           node {
             id,
           }
@@ -466,6 +477,7 @@ class FragmentedQuerySpec < PrelaySpec
               }
               tracks(first: 50) {
                 edges {
+                  cursor
                   node {
                     ...__RelayQueryFragment0hansolo
                     ...__RelayQueryFragment0bb8
@@ -519,6 +531,7 @@ class FragmentedQuerySpec < PrelaySpec
               }
               tracks(first: 50) {
                 edges {
+                  cursor
                   node {
                     id,
                     name,
@@ -582,6 +595,7 @@ class FragmentedQuerySpec < PrelaySpec
           }
           tracks(first: 50) {
             edges {
+              cursor
               node {
                 id,
                 name,
@@ -630,6 +644,7 @@ class FragmentedQuerySpec < PrelaySpec
             'tracks' => {
               'edges' => album.tracks.sort_by(&:number).map { |track|
                 {
+                  'cursor' => to_cursor(track.number),
                   'node' => {
                     'id' => encode('Track', track.id),
                     'name' => track.name,
@@ -649,7 +664,7 @@ class FragmentedQuerySpec < PrelaySpec
       assert_sqls [
         %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."high_quality", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
         %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."upvotes", "artists"."active" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
-        %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 51)
+        %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id", "tracks"."number" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 51)
       ]
     end
   end
