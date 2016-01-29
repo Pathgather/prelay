@@ -23,7 +23,7 @@ module Prelay
       end
 
       def for(record)
-        type = Type::BY_MODEL.fetch(record.class) { raise InvalidGraphQLQuery, "Not a valid object class: #{record.class}" }
+        type = Type::BY_MODEL.fetch(record.class) { raise "Could not find a Prelay::Type subclass corresponding to the #{record.class} model" }
         encode type: type.graphql_object, pk: record.pk
       end
 
