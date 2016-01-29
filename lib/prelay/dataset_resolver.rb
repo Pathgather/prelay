@@ -68,6 +68,7 @@ module Prelay
     end
 
     def resolve_by_pk(pk)
+      # TODO: Can just stop iterating through types when we get a match.
       records = []
 
       @types.each_key do |type|
