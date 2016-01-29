@@ -3,31 +3,31 @@
 module Prelay
   class Type
     class Association
-      attr_reader :name, :sequel_association, :description, :nullable
+      attr_reader :parent, :name, :sequel_association, :description, :nullable
 
-      def initialize(type, association_type, name, description, nullable: nil)
-        @type        = type
+      def initialize(parent, association_type, name, description, nullable: nil)
+        @parent      = parent
         @name        = name
         @description = description
         @nullable    = nullable
 
-        @sequel_association = @type.model.association_reflections.fetch(name) do
-          raise "Could not find an association '#{name}' on the Sequel model #{@type.model}"
+        @sequel_association = parent.model.association_reflections.fetch(name) do
+          raise "Could not find an association '#{name}' on the Sequel model #{parent.model}"
         end
 
         unless @sequel_association[:type] == association_type
-          raise "Association #{name} on #{type} declared as #{association_type}, but the underlying Sequel association is #{@sequel_association[:type]}"
+          raise "Association #{name} on #{parent} declared as #{association_type}, but the underlying Sequel association is #{@sequel_association[:type]}"
         end
 
         case association_type
-        when :one_to_many              then raise "Specified a #{association_type} association (#{type}##{name}) with a :nullable option, which is not allowed" unless nullable.nil?
-        when :many_to_one, :one_to_one then raise "Specified a #{association_type} association (#{type}##{name}) without a :nullable option, which is required" if nullable.nil?
+        when :one_to_many              then raise "Specified a #{association_type} association (#{parent}##{name}) with a :nullable option, which is not allowed" unless nullable.nil?
+        when :many_to_one, :one_to_one then raise "Specified a #{association_type} association (#{parent}##{name}) without a :nullable option, which is required" if nullable.nil?
         else raise "Unsupported association type: #{association_type}"
         end
       end
 
       def model
-        @type.model
+        @parent.model
       end
 
       def target_type

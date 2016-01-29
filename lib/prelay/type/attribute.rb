@@ -3,10 +3,10 @@
 module Prelay
   class Type
     class Attribute
-      attr_reader :name, :type, :dependent_columns, :description, :graphql_type
+      attr_reader :parent, :name, :dependent_columns, :description, :graphql_type
 
-      def initialize(type, name, description, datatype:, nullable: false, dependent_columns: nil)
-        @type              = type
+      def initialize(parent, name, description, datatype:, nullable: false, dependent_columns: nil)
+        @parent            = parent
         @name              = name
         @description       = description
         @datatype          = datatype
