@@ -122,6 +122,15 @@ class Album < Sequel::Model
   one_to_many :first_five_tracks, class_name: :Track, &:in_first_five
 end
 
+class BestAlbum < Sequel::Model(DB[:albums].where(:high_quality))
+  many_to_one :artist
+  one_to_many :tracks, key: :album_id
+  one_to_one :publisher, key: :album_id
+
+  one_to_one  :first_track,       class_name: :Track, key: :album_id, &:is_first
+  one_to_many :first_five_tracks, class_name: :Track, key: :album_id, &:in_first_five
+end
+
 class Track < Sequel::Model
   many_to_one :album
 
@@ -345,6 +354,24 @@ class PrelaySpec < Minitest::Spec
     one_to_many :first_five_tracks, "The first five tracks on the album"
   end
 
+  class BestAlbumType < Prelay::Type
+    model BestAlbum
+
+    description "A good album released by a musician"
+
+    attribute :name,         "The name of the album", datatype: :string
+    attribute :upvotes,      "How many people voted up the album.", datatype: :integer
+    attribute :high_quality, "Whether the album is good or not.", datatype: :boolean
+    attribute :popularity,   "The normalized popularity of the album, on a scale from 0 to 1.", datatype: :float
+
+    many_to_one :artist,    "The artist who released the album.", nullable: false
+    one_to_many :tracks,    "The tracks on this album."
+    one_to_one  :publisher, "The publisher responsible for releasing the album.", nullable: true
+
+    one_to_one  :first_track,       "The first track on the album.", nullable: true
+    one_to_many :first_five_tracks, "The first five tracks on the album"
+  end
+
   class TrackType < Prelay::Type
     model Track
 
@@ -369,6 +396,6 @@ class PrelaySpec < Minitest::Spec
   end
 
   GraphQLSchema = Prelay::Schema.new(
-    types: [ArtistType, AlbumType, TrackType, PublisherType, GenreType]
+    types: [ArtistType, AlbumType, BestAlbumType, TrackType, PublisherType, GenreType]
   ).to_graphql_schema(prefix: 'Client')
 end
