@@ -125,7 +125,14 @@ module Prelay
       if columns.delete(:cursor)
         order = ds.opts[:order]
         raise "Can't handle ordering by anything other than a single column!" unless order.length == 1
-        columns << Sequel.as(order.first, :cursor)
+
+        exp =
+          case o = order.first
+          when Sequel::SQL::OrderedExpression then o.expression
+          else o
+          end
+
+        columns << Sequel.as(exp, :cursor)
       end
 
       ds = ds.select(*columns.map{|c| Sequel.qualify(table_name, c)})
