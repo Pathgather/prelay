@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Genre < Sequel::Model
   one_to_many :artists
 end

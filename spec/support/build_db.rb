@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 puts "Rebuilding Prelay Test DB..."
 
 DB.drop_table? :publishers, :tracks, :compilations, :albums, :artists, :genres

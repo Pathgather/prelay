@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 puts "Populating Prelay Test DB..."
 
 random_json_doc = random_json_value = nil

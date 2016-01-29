@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module SpecHelperMethods
   def execute_query(graphql)
     sqls.clear

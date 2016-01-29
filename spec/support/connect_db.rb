@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 DB = Sequel.connect(ENV['DATABASE_URL'] || 'postgres:///prelay-test')
 
 DB.extension :pg_json

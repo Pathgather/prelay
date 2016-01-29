@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ReleaseInterface < Prelay::Interface
   description "A collection of songs released by an artist."
 
