@@ -6,14 +6,14 @@ require 'spec_helper'
 class DependentColumnsQuerySpec < PrelaySpec
   let(:artist) { Artist.first }
 
-  it "should support refetching an item by its relay id" do
+  it "should handle a field that is dependent on multiple columns" do
     id = encode 'Artist', artist.id
 
     execute_query <<-GRAPHQL
       query Query {
         node(id: "#{id}") {
           id,
-          ... on Artist { name }
+          ... on Artist { name, popularity }
         }
       }
     GRAPHQL
@@ -23,11 +23,12 @@ class DependentColumnsQuerySpec < PrelaySpec
         'node' => {
           'id' => id,
           'name' => artist.first_name + ' ' + artist.last_name,
+          'popularity' => artist.popularity,
         }
       }
 
     assert_sqls [
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}') ORDER BY "artists"."id")
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."popularity" FROM "artists" WHERE ("artists"."id" = '#{artist.id}') ORDER BY "artists"."id")
     ]
   end
 end
