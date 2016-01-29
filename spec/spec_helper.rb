@@ -207,14 +207,19 @@ artist_ids = DB[:artists].multi_insert(
 
 album_ids = DB[:albums].multi_insert(
   artist_ids.map { |artist_id|
-    10.times.map {
+    # We should be appending the pk of the table to the order by to ensure a
+    # stable sort, but until we work that out, make sure our release dates are all
+    # unique to avoid intermittently failing specs.
+    release_dates = 20.times.map{Date.today - (7200 + rand(20000))}.uniq
+
+    10.times.map { |i|
       {
         artist_id:    artist_id,
         name:         Faker::Lorem.sentence,
         upvotes:      rand(10000),
         high_quality: rand > 0.9,
         popularity:   rand,
-        release_date: Date.today - rand(1000),
+        release_date: release_dates[i],
         money_made:   (rand * 100000).round(2),
         other:        Sequel.pg_jsonb(random_json_doc),
         created_at:   Time.now - (rand(1000) * 24 * 60 * 60),
