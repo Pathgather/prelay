@@ -301,6 +301,10 @@ class PrelaySpec < Minitest::Spec
     Base64.strict_encode64 "#{type}:#{id}"
   end
 
+  def to_cursor(*args)
+    Base64.strict_encode64(args.to_json)
+  end
+
   def graphql_args(input)
     # GraphQL input syntax is basically JSON with unquoted keys.
     "#{input.map{|k,v| "#{k}: #{v.inspect}"}.join(', ')}"

@@ -16,6 +16,7 @@ class OneToManyAssociationSpec < PrelaySpec
             name,
             tracks(first: 50) {
               edges {
+                cursor,
                 node {
                   id,
                   name
@@ -35,6 +36,7 @@ class OneToManyAssociationSpec < PrelaySpec
           'tracks' => {
             'edges' => album.tracks.sort_by(&:number).map { |track|
               {
+                'cursor' => to_cursor(track.number),
                 'node' => {
                   'id' => encode('Track', track.id),
                   'name' => track.name,
@@ -47,7 +49,7 @@ class OneToManyAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 50)
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", "tracks"."number" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 50)
     ]
   end
 
@@ -64,6 +66,7 @@ class OneToManyAssociationSpec < PrelaySpec
             name,
             tracks(first: 50) {
               edges {
+                cursor,
                 node {
                   id,
                   name
@@ -88,7 +91,7 @@ class OneToManyAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 50)
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", "tracks"."number" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 50)
     ]
   end
 end

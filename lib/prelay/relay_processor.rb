@@ -60,7 +60,7 @@ module Prelay
 
       if cursor = selection.selections.delete(:cursor)
         target_layers.each do |layer|
-          node.selections[layer][:cursor] ||= Layer::Selection.new(name: :cursor, type: layer)
+          node.selections[layer][:cursor] ||= Selection.new(name: :cursor, type: layer)
         end
       end
 

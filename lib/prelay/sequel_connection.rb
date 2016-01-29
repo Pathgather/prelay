@@ -3,7 +3,9 @@
 module Prelay
   class SequelConnection < GraphQL::Relay::BaseConnection
     def cursor_from_node(node)
-      node.relay_id
+      cursor = node.record.values.fetch(:cursor) { raise "Uh-oh! Cursor not loaded for #{node.inspect}" }
+      cursor = Array(cursor)
+      Base64.strict_encode64(cursor.to_json)
     end
 
     def sliced_nodes
