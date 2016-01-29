@@ -1,7 +1,5 @@
 Soon:
 
-Support types based on models that are based on arbitrary datasets, and not just models. Cache oid->type relationships and retrieved sample rows.
-
 Encode values in cursors. Spec them in fragments.
 
 Support cursors that are things other than id.
@@ -57,6 +55,10 @@ Set associated objects in Sequel object association caches when possible? Only w
 
 
 Future miscellaneous stuff:
+
+Clean up that hacky deep copying logic in RelayProcessor.
+
+Find another way to do that whole typed/untyped Selection thing.
 
 Figure out how to handle records that don't exist in the 'nodes' query (should return null in the JSON) (maybe requires opening issue with graphql-ruby).
 
