@@ -367,6 +367,7 @@ class PrelaySpec < Minitest::Spec
     one_to_many :first_five_tracks, "The first five tracks on the album"
   end
 
+  # For specs on types on models that are on arbitrary datasets.
   class BestAlbumType < Prelay::Type
     model BestAlbum
 
