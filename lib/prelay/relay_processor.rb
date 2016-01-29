@@ -137,8 +137,8 @@ module Prelay
     def types_for_type(type)
       if type < Type
         [type]
-      # elsif type < Interface
-      #   type.types
+      elsif type < Interface
+        type.types
       else
         raise "Unexpected type: #{type}"
       end

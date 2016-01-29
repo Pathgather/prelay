@@ -391,6 +391,19 @@ class PrelaySpec < Minitest::Spec
     end
   end
 
+  class ReleaseInterface < Prelay::Interface
+    description "A collection of songs released by an artist."
+
+    attribute :name,         "The name of the release", datatype: :string
+    attribute :upvotes,      "How many people voted up the release.", datatype: :integer
+    attribute :high_quality, "Whether the release is good or not.", datatype: :boolean
+    attribute :popularity,   "The normalized popularity of the release, on a scale from 0 to 1.", datatype: :float
+
+    many_to_one :artist,    "The artist who released the release.", target: :"PrelaySpec::ArtistType", nullable: false
+    one_to_many :tracks,    "The tracks on this release.", target: :"PrelaySpec::TrackType"
+    one_to_one  :publisher, "The publisher responsible for releasing the release.", target: :"PrelaySpec::PublisherType", nullable: true
+  end
+
   class GenreType < Prelay::Type
     model Genre
 
@@ -417,6 +430,7 @@ class PrelaySpec < Minitest::Spec
 
   class AlbumType < Prelay::Type
     model Album
+    interface ReleaseInterface
 
     description "An album released by a musician"
 
@@ -454,6 +468,7 @@ class PrelaySpec < Minitest::Spec
 
   class CompilationType < Prelay::Type
     model Compilation
+    interface ReleaseInterface
 
     description "A release of an artist's best songs"
 
@@ -465,9 +480,6 @@ class PrelaySpec < Minitest::Spec
     many_to_one :artist,    "The artist who released the compilation.", nullable: false
     one_to_many :tracks,    "The tracks on this compilation."
     one_to_one  :publisher, "The publisher responsible for releasing the compilation.", nullable: true
-
-    one_to_one  :first_track,       "The first track on the compilation.", nullable: true
-    one_to_many :first_five_tracks, "The first five tracks on the compilation"
   end
 
   class TrackType < Prelay::Type
@@ -494,6 +506,15 @@ class PrelaySpec < Minitest::Spec
   end
 
   GraphQLSchema = Prelay::Schema.new(
-    types: [ArtistType, AlbumType, BestAlbumType, CompilationType, TrackType, PublisherType, GenreType]
+    types: [
+      ReleaseInterface,
+      ArtistType,
+      AlbumType,
+      BestAlbumType,
+      CompilationType,
+      TrackType,
+      PublisherType,
+      GenreType,
+    ]
   ).to_graphql_schema(prefix: 'Client')
 end

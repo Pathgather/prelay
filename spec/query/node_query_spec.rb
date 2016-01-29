@@ -31,6 +31,31 @@ class NodeQuerySpec < PrelaySpec
     ]
   end
 
+  it "should support retrieving fields on objects via interfaces" do
+    id = encode 'Album', album.id
+
+    execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id,
+          __typename,
+          ... on Release { popularity }
+          ... on Album { name }
+        }
+      }
+    GRAPHQL
+
+    assert_result \
+      'data' => {
+        'node' => {
+          'id' => id,
+          '__typename' => 'Album',
+          'popularity' => album.popularity,
+          'name'       => album.name,
+        }
+      }
+  end
+
   it "should return record typenames when requested" do
     id = encode 'Album', album.id
 

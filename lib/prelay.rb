@@ -21,6 +21,7 @@ end
 require 'prelay/dataset_resolver'
 require 'prelay/graphql_processor'
 require 'prelay/id'
+require 'prelay/interface'
 require 'prelay/relay_processor'
 require 'prelay/result_array'
 require 'prelay/schema'

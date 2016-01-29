@@ -40,6 +40,14 @@ module Prelay
         define_method(name){@record.send(name)}
       end
 
+      def interface(interface)
+        interface.types << self
+        interfaces << interface
+      end
+
+      def interfaces
+        @interfaces ||= []
+      end
 
       [:one_to_one, :one_to_many, :many_to_one].each do |association_type|
         define_method(association_type) do |*args|
@@ -61,7 +69,7 @@ module Prelay
           name(type.name.split('::').last.chomp('Type'))
           description(type.description)
 
-          interfaces [node_identification.interface]
+          interfaces([node_identification.interface] + type.interfaces.map(&:graphql_object))
           global_id_field :id
 
           type.attributes.each_value do |attribute|
