@@ -1,10 +1,8 @@
 Soon:
 
-Encode values in cursors. Spec them in fragments.
+Spec encoded values in cursors in fragments.
 
 Support cursors that are things other than id.
-
-Respect orders in sequel associations.
 
 Support interfaces.
 
@@ -53,6 +51,10 @@ Set associated objects in Sequel object association caches when possible? Only w
 
 
 Future miscellaneous stuff:
+
+Make sure it works to have fields named 'cursor'.
+
+Make sure it works to order by Sequel.desc(expression).
 
 Clean up that hacky deep copying logic in RelayProcessor.
 
