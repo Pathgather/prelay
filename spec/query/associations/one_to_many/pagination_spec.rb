@@ -34,10 +34,10 @@ class OneToManyPaginationSpec < PrelaySpec
   # Individually spec each possible mix of pagination options.
   [true, false].each do |paginating_forward|
     [true, false].each do |all_records_requested|
-      [true, false].each do |id_passed|
+      [true, false].each do |cursor_passed|
         [true, false].each do |has_next_page_passed|
           [true, false].each do |has_previous_page_passed|
-            desc = "paginating #{paginating_forward ? 'forward' : 'backward'} requesting #{all_records_requested ? 'all' : 'some'} records with#{'out' unless id_passed} an id to page from #{'and hasNextPage' if has_next_page_passed} #{'and hasPreviousPage' if has_previous_page_passed}"
+            desc = "paginating #{paginating_forward ? 'forward' : 'backward'} requesting #{all_records_requested ? 'all' : 'some'} records with#{'out' unless cursor_passed} a cursor to page from #{'and hasNextPage' if has_next_page_passed} #{'and hasPreviousPage' if has_previous_page_passed}"
 
             page_info_query =
               if has_next_page_passed || has_previous_page_passed
@@ -53,10 +53,10 @@ class OneToManyPaginationSpec < PrelaySpec
               if has_next_page_passed || has_previous_page_passed
                 r = {}
                 if has_next_page_passed
-                  r['hasNextPage'] = paginating_forward ? !all_records_requested : id_passed
+                  r['hasNextPage'] = paginating_forward ? !all_records_requested : cursor_passed
                 end
                 if has_previous_page_passed
-                  r['hasPreviousPage'] = paginating_forward ? id_passed : !all_records_requested
+                  r['hasPreviousPage'] = paginating_forward ? cursor_passed : !all_records_requested
                 end
                 r
               end
@@ -67,9 +67,9 @@ class OneToManyPaginationSpec < PrelaySpec
 
               args = {}
               args[paginating_forward ? :first : :last  ] = all_records_requested ? 10 : 3
-              args[paginating_forward ? :after : :before] = encode('Album', expected_albums[1].id) if id_passed
+              args[paginating_forward ? :after : :before] = encode('Album', expected_albums[1].id) if cursor_passed
 
-              expected_albums = expected_albums[2..-1] if id_passed
+              expected_albums = expected_albums[2..-1] if cursor_passed
               expected_albums = expected_albums[0..2] unless all_records_requested
               expected_albums = expected_albums.reverse unless paginating_forward
 
