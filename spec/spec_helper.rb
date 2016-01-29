@@ -18,7 +18,7 @@ DB.run <<-SQL
   CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA pg_catalog;
 SQL
 
-DB.drop_table? :publishers, :tracks, :albums, :artists, :genres
+DB.drop_table? :publishers, :tracks, :compilations, :albums, :artists, :genres
 
 DB.create_table :genres do
   uuid :id, primary_key: true, default: Sequel.function(:uuid_generate_v4)
@@ -61,10 +61,33 @@ DB.create_table :albums do
   foreign_key [:artist_id], :artists
 end
 
+DB.create_table :compilations do
+  uuid :id, primary_key: true, default: Sequel.function(:uuid_generate_v4)
+
+  uuid :artist_id, null: false
+
+  text        :name,         null: false
+  integer     :upvotes,      null: false
+  boolean     :high_quality, null: false
+  float       :popularity,   null: false
+  date        :release_date, null: false
+  numeric     :money_made,   null: false
+  jsonb       :other,        null: false
+  timestamptz :created_at,   null: false
+
+  foreign_key [:artist_id], :artists
+end
+
 DB.create_table :tracks do
   uuid :id, primary_key: true, default: Sequel.function(:uuid_generate_v4)
 
-  uuid :album_id, null: false
+  # Polymorphic setup - a track can belong to an album XOR a compilation.
+  uuid :release_id, null: false
+  uuid :album_id
+  uuid :compilation_id
+
+  constraint(:compilation_presence) { Sequel.~({{album_id: nil} => {compilation_id: nil}}) }
+  constraint(:compilation_validity) { {release_id: coalesce(:album_id, :compilation_id)} }
 
   text        :name,         null: false
   integer     :number,       null: false
@@ -75,8 +98,12 @@ DB.create_table :tracks do
   jsonb       :other,        null: false
   timestamptz :created_at,   null: false
 
-  unique [:album_id, :number]
-  foreign_key [:album_id], :albums
+  unique [:release_id, :number]
+  index  [:album_id]
+  index  [:compilation_id]
+
+  foreign_key [:album_id],       :albums
+  foreign_key [:compilation_id], :compilations
 end
 
 DB.create_table :publishers do
@@ -106,7 +133,8 @@ end
 
 class Artist < Sequel::Model
   many_to_one :genre
-  one_to_many :albums, order: Sequel.desc(:release_date)
+  one_to_many :albums,       order: Sequel.desc(:release_date)
+  one_to_many :compilations, order: Sequel.desc(:release_date)
 
   def name
     "#{first_name} #{last_name}"
@@ -118,7 +146,7 @@ class Album < Sequel::Model
   one_to_many :tracks, order: :number
   one_to_one :publisher
 
-  one_to_one  :first_track,       class_name: :Track, &:is_first
+  one_to_one  :first_track,       class_name: :Track,                 &:is_first
   one_to_many :first_five_tracks, class_name: :Track, order: :number, &:in_first_five
 end
 
@@ -131,8 +159,18 @@ class BestAlbum < Sequel::Model(DB[:albums].where(:high_quality))
   one_to_many :first_five_tracks, class_name: :Track, key: :album_id, &:in_first_five
 end
 
+class Compilation < Sequel::Model
+  many_to_one :artist
+  one_to_many :tracks, order: :number
+  one_to_one :publisher
+
+  one_to_one  :first_track,       class_name: :Track,                 &:is_first
+  one_to_many :first_five_tracks, class_name: :Track, order: :number, &:in_first_five
+end
+
 class Track < Sequel::Model
   many_to_one :album
+  many_to_one :compilation
 
   subset :is_first,      number: 1
   subset :in_first_five, number: 1..5
@@ -188,7 +226,7 @@ genre_ids = DB[:genres].multi_insert(
 )
 
 artist_ids = DB[:artists].multi_insert(
-  25.times.map {
+  15.times.map {
     {
       genre_id:   (genre_ids.sample if rand > 0.5),
       first_name: Faker::Name.first_name,
@@ -229,19 +267,47 @@ album_ids = DB[:albums].multi_insert(
   return: :primary_key
 )
 
-track_ids = DB[:tracks].multi_insert(
-  album_ids.map { |album_id|
-    10.times.map { |i|
+compilation_ids = DB[:compilations].multi_insert(
+  artist_ids.map { |artist_id|
+    # We should be appending the pk of the table to the order by to ensure a
+    # stable sort, but until we work that out, make sure our release dates are all
+    # unique to avoid intermittently failing specs.
+    release_dates = 20.times.map{Date.today - (7200 + rand(20000))}.uniq
+
+    5.times.map { |i|
       {
-        album_id:     album_id,
+        artist_id:    artist_id,
         name:         Faker::Lorem.sentence,
-        number:       i + 1,
+        upvotes:      rand(10000),
         high_quality: rand > 0.9,
         popularity:   rand,
-        single_date:  Date.today - rand(1000),
-        money_made:   (rand * 10000).round(2),
+        release_date: release_dates[i],
+        money_made:   (rand * 100000).round(2),
         other:        Sequel.pg_jsonb(random_json_doc),
         created_at:   Time.now - (rand(1000) * 24 * 60 * 60),
+      }
+    }
+  }.flatten(1),
+  return: :primary_key
+)
+
+release_ids = album_ids.map{|id| [:album, id]} + compilation_ids.map{|id| [:compilation, id]}
+
+track_ids = DB[:tracks].multi_insert(
+  release_ids.map { |type, id|
+    10.times.map { |i|
+      {
+        release_id:     id,
+        album_id:       (id if type == :album),
+        compilation_id: (id if type == :compilation),
+        name:           Faker::Lorem.sentence,
+        number:         i + 1,
+        high_quality:   rand > 0.9,
+        popularity:     rand,
+        single_date:    Date.today - rand(1000),
+        money_made:     (rand * 10000).round(2),
+        other:          Sequel.pg_jsonb(random_json_doc),
+        created_at:     Time.now - (rand(1000) * 24 * 60 * 60),
       }
     }
   }.flatten(1),
@@ -386,6 +452,24 @@ class PrelaySpec < Minitest::Spec
     one_to_many :first_five_tracks, "The first five tracks on the album"
   end
 
+  class CompilationType < Prelay::Type
+    model Compilation
+
+    description "A release of an artist's best songs"
+
+    attribute :name,         "The name of the compilation", datatype: :string
+    attribute :upvotes,      "How many people voted up the compilation.", datatype: :integer
+    attribute :high_quality, "Whether the compilation is good or not.", datatype: :boolean
+    attribute :popularity,   "The normalized popularity of the compilation, on a scale from 0 to 1.", datatype: :float
+
+    many_to_one :artist,    "The artist who released the compilation.", nullable: false
+    one_to_many :tracks,    "The tracks on this compilation."
+    one_to_one  :publisher, "The publisher responsible for releasing the compilation.", nullable: true
+
+    one_to_one  :first_track,       "The first track on the compilation.", nullable: true
+    one_to_many :first_five_tracks, "The first five tracks on the compilation"
+  end
+
   class TrackType < Prelay::Type
     model Track
 
@@ -410,6 +494,6 @@ class PrelaySpec < Minitest::Spec
   end
 
   GraphQLSchema = Prelay::Schema.new(
-    types: [ArtistType, AlbumType, BestAlbumType, TrackType, PublisherType, GenreType]
+    types: [ArtistType, AlbumType, BestAlbumType, CompilationType, TrackType, PublisherType, GenreType]
   ).to_graphql_schema(prefix: 'Client')
 end
