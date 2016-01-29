@@ -118,7 +118,7 @@ class FragmentedQuerySpec < PrelaySpec
         }
       GRAPHQL
     ),
-    fragment_at_node_level_with_type: (
+    fragment_on_type_at_node_level: (
       <<-GRAPHQL
         query Query {
           node(id: "%{id}") {
@@ -158,6 +158,75 @@ class FragmentedQuerySpec < PrelaySpec
         }
 
         fragment __RelayQueryFragment0rey on Album {
+          name,
+          tracks(first: 50) {
+            edges {
+              cursor
+              node {
+                id,
+                name,
+              }
+            }
+            pageInfo {
+              hasNextPage
+            }
+          }
+        }
+
+        fragment __RelayQueryFragment0poedameron on Album {
+          upvotes,
+          artist {
+            id,
+            name,
+          }
+        }
+
+        fragment __RelayQueryFragment0kyloren on Track {
+          number,
+          high_quality
+        }
+      GRAPHQL
+    ),
+    fragment_on_interface_at_node_level: (
+      <<-GRAPHQL
+        query Query {
+          node(id: "%{id}") {
+            id,
+            ...__RelayQueryFragment0kyloren
+            ...__RelayQueryFragment0hansolo
+            ...__RelayQueryFragment0bb8
+          }
+        }
+
+        fragment __RelayQueryFragment0hansolo on Album {
+          id,
+          tracks(first: 50) {
+            edges {
+              cursor
+              node {
+                id,
+                number,
+                high_quality,
+              }
+            }
+            pageInfo {
+              hasPreviousPage
+            }
+          }
+          ...__RelayQueryFragment0rey
+        }
+
+        fragment __RelayQueryFragment0bb8 on Release {
+          high_quality,
+          artist {
+            id,
+            upvotes,
+            active,
+          }
+          ...__RelayQueryFragment0poedameron
+        }
+
+        fragment __RelayQueryFragment0rey on Release {
           name,
           tracks(first: 50) {
             edges {
