@@ -4,7 +4,7 @@ require 'spec_helper'
 
 class OneToManyNestedEagerLoadingSpec < PrelaySpec
   let(:artist) { Artist.first! }
-  let(:albums) { artist.albums.sort_by(&:id).first(3) }
+  let(:albums) { artist.albums.sort_by(&:release_date).reverse.first(3) }
 
   it "should support fetching limited fetching of items through nested one-to-many associations" do
     id = encode 'Artist', artist.id
@@ -66,7 +66,7 @@ class OneToManyNestedEagerLoadingSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}') ORDER BY "artists"."id"),
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "albums"."id" LIMIT 3),
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "release_date" DESC LIMIT 3),
       %(SELECT * FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", row_number() OVER (PARTITION BY "tracks"."album_id" ORDER BY "number") AS "prelay_row_number" FROM "tracks" WHERE ("tracks"."album_id" IN (#{albums.map{|a| "'#{a.id}'"}.join(', ')}))) AS "t1" WHERE ("prelay_row_number" <= 5)),
     ]
   end

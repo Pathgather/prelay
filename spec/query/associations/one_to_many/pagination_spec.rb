@@ -4,7 +4,7 @@ require 'spec_helper'
 
 class OneToManyPaginationSpec < PrelaySpec
   let(:artist) { Artist.first }
-  let(:albums) { artist.albums.sort_by(&:id) }
+  let(:albums) { artist.albums.sort_by(&:release_date).reverse }
 
   it "should raise an error if a connection is requested without a first or last argument" do
     artist_id = encode 'Artist', artist.id

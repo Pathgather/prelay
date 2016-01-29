@@ -106,7 +106,7 @@ end
 
 class Artist < Sequel::Model
   many_to_one :genre
-  one_to_many :albums
+  one_to_many :albums, order: Sequel.desc(:release_date)
 
   def name
     "#{first_name} #{last_name}"
