@@ -10,10 +10,6 @@ Respect orders in sequel associations.
 
 Add Prelay::ID.for().
 
-Force explicit specification of reciprocals.
-
-Validate that reciprocals all point to each other.
-
 Support interfaces.
 
 Basic Query and Mutation classes.
