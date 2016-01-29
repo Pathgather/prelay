@@ -10,7 +10,7 @@ class OneToManyPaginationSpec < PrelaySpec
     artist_id = encode 'Artist', artist.id
 
     assert_invalid_query \
-      "Tried to access a connection without a 'first' or 'last' argument.",
+      "Tried to access the connection 'albums' without a 'first' or 'last' argument.",
       <<-GRAPHQL
         query Query {
           node(id: "#{artist_id}") {

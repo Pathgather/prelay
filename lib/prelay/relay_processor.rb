@@ -39,7 +39,7 @@ module Prelay
       # records in a connection) we could, but that behavior should be thought
       # through, and a limit should probably still be applied to prevent abuse.
       unless selection.arguments[:first] || selection.arguments[:last]
-        raise InvalidGraphQLQuery, "Tried to access a connection without a 'first' or 'last' argument."
+        raise InvalidGraphQLQuery, "Tried to access the connection '#{selection.name}' without a 'first' or 'last' argument."
       end
 
       if page_info = selection.selections.delete(:pageInfo)
