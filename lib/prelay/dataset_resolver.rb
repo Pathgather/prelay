@@ -146,25 +146,9 @@ module Prelay
 
         ds =
           if cursor = @arguments[:after] || @arguments[:before]
-            # values = JSON.parse(Base64.decode64(cursor))
+            values = JSON.parse(Base64.decode64(cursor))
 
-            # expressions = ds.opts[:order].zip(values).map do |o, v|
-            #   e = o.expression
-
-            #   if e.is_a?(Sequel::SQL::Function) && e.name == :ts_rank_cd
-            #     # Minor hack for full-text search, which returns reals when
-            #     # Sequel assumes floats are double precision.
-            #     Sequel.cast(v, :real)
-            #   elsif e == :created_at
-            #     Time.at(*v) # value should be an array of two integers, seconds and microseconds.
-            #   else
-            #     v
-            #   end
-            # end
-
-            pk = ID.parse(cursor).pk
-
-            ds.seek_paginate(limit, after_pk: pk)
+            ds.seek_paginate(limit, after: values)
           else
             ds.seek_paginate(limit)
           end

@@ -297,12 +297,12 @@ class PrelaySpec < Minitest::Spec
     Thread.current[:track_sqls] = boolean
   end
 
-  def encode(*args)
-    self.class.encode(*args)
+  def to_cursor(*args)
+    self.class.to_cursor(*args)
   end
 
-  def to_cursor(*args)
-    Base64.strict_encode64(args.to_json)
+  def encode(*args)
+    self.class.encode(*args)
   end
 
   def graphql_args(input)
@@ -311,6 +311,10 @@ class PrelaySpec < Minitest::Spec
   end
 
   class << self
+    def to_cursor(*args)
+      Base64.strict_encode64(args.to_json)
+    end
+
     def encode(type, id)
       Base64.strict_encode64 "#{type}:#{id}"
     end

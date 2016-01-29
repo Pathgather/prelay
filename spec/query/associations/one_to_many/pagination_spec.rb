@@ -68,7 +68,7 @@ class OneToManyPaginationSpec < PrelaySpec
 
                 args = {}
                 args[paginating_forward ? :first : :last  ] = all_records_requested ? 10 : 3
-                args[paginating_forward ? :after : :before] = encode('Album', expected_albums[1].id) if cursor_passed
+                args[paginating_forward ? :after : :before] = to_cursor(expected_albums[1].release_date) if cursor_passed
 
                 expected_albums = expected_albums[2..-1] if cursor_passed
                 expected_albums = expected_albums[0..2] unless all_records_requested
