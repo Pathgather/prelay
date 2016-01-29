@@ -297,8 +297,8 @@ class PrelaySpec < Minitest::Spec
     Thread.current[:track_sqls] = boolean
   end
 
-  def encode(type, id)
-    Base64.strict_encode64 "#{type}:#{id}"
+  def encode(*args)
+    self.class.encode(*args)
   end
 
   def to_cursor(*args)
@@ -307,7 +307,7 @@ class PrelaySpec < Minitest::Spec
 
   def graphql_args(input)
     # GraphQL input syntax is basically JSON with unquoted keys.
-    "#{input.map{|k,v| "#{k}: #{v.inspect}"}.join(', ')}"
+    input.map{|k,v| "#{k}: #{v.inspect}"}.join(', ')
   end
 
   class << self
