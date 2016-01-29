@@ -54,8 +54,6 @@ Clean up that hacky deep copying logic in RelayProcessor.
 
 Find another way to do that whole typed/untyped Selection thing.
 
-Figure out how to handle records that don't exist in the 'nodes' query (should return null in the JSON) (maybe requires opening issue with graphql-ruby).
-
 Support types based on arbitrary datasets, no model necessary?
 
 Use qualified columns everywhere (?).
