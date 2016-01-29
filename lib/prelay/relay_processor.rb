@@ -2,14 +2,14 @@
 
 module Prelay
   class RelayProcessor
-    attr_reader :ast, :layers_to_skip
+    attr_reader :ast, :types_to_skip
     attr_accessor :current_type
 
     # The calling code should know if the field being passed in is a Relay
     # connection or edge call, so it must provide an :entry_point argument to
     # tell us how to start parsing.
-    def initialize(input, type:, layers_to_skip: nil, entry_point:)
-      @layers_to_skip = layers_to_skip || EMPTY_ARRAY
+    def initialize(input, type:, types_to_skip: nil, entry_point:)
+      @types_to_skip = types_to_skip || EMPTY_ARRAY
 
       @ast =
         scope_type(type) do
@@ -59,8 +59,8 @@ module Prelay
       process_field(node)
 
       if cursor = selection.selections.delete(:cursor)
-        target_layers.each do |layer|
-          node.selections[layer][:cursor] ||= Selection.new(name: :cursor, type: layer)
+        target_types.each do |type|
+          node.selections[type][:cursor] ||= Selection.new(name: :cursor, type: type)
         end
       end
 
@@ -74,14 +74,14 @@ module Prelay
 
       type = current_type
       selection.type = type
-      selections_by_layer = {}
-      target_layers.each {|l| selections_by_layer[l] = deep_copy(selection.selections)}
-      selection.selections = selections_by_layer
+      selections_by_type = {}
+      target_types.each {|t| selections_by_type[t] = deep_copy(selection.selections)}
+      selection.selections = selections_by_type
 
       # Now that we know the type, figure out if any of the fragments we set
       # aside earlier apply to this selection, and if so, resolve them.
       selection.fragments.each do |type, selection_sets|
-        hashes = layers_for_type(type).map{|l| selection.selections[l]}.compact
+        hashes = types_for_type(type).map{|l| selection.selections[l]}.compact
 
         hashes.each do |hash|
           selection_sets.each do |selection_set|
@@ -130,15 +130,15 @@ module Prelay
       selection
     end
 
-    def target_layers
-      layers_for_type(current_type) - layers_to_skip
+    def target_types
+      types_for_type(current_type) - types_to_skip
     end
 
-    def layers_for_type(type)
+    def types_for_type(type)
       if type < Type
         [type]
       # elsif type < Interface
-      #   type.layers
+      #   type.types
       else
         raise "Unexpected type: #{type}"
       end
