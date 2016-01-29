@@ -6,8 +6,6 @@ Support cursors that are things other than id.
 
 Respect orders in sequel associations.
 
-Add Prelay::ID.for().
-
 Support interfaces.
 
 Basic Query and Mutation classes.
