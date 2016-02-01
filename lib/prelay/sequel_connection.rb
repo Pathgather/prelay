@@ -4,7 +4,17 @@ module Prelay
   class SequelConnection < GraphQL::Relay::BaseConnection
     def cursor_from_node(node)
       cursor = node.record.values.fetch(:cursor) { raise "Uh-oh! Cursor not loaded for #{node.inspect}" }
-      cursor = Array(cursor)
+
+      # Array(Time.now) behaves weirdly.
+      cursor = [cursor] unless cursor.is_a?(Array)
+
+      cursor.map! do |value|
+        case value
+        when Time then [value.to_i, value.usec] # Using #to_f results in floating point inaccuracy :(
+        else value
+        end
+      end
+
       Base64.strict_encode64(cursor.to_json)
     end
 

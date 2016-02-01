@@ -2,8 +2,10 @@
 
 module Prelay
   class Schema
-    def initialize(types:)
-      @types = types
+    def initialize(types:, queries:, mutations:)
+      @types     = types
+      @queries   = queries
+      @mutations = mutations
     end
 
     def to_graphql_schema(prefix:)
@@ -20,6 +22,9 @@ module Prelay
       @types.each do |type|
         type.define_graphql_object(node_identification)
       end
+
+      queries   = @queries
+      mutations = @mutations
 
       GraphQL::Schema.new(
         query: GraphQL::ObjectType.define {
@@ -48,6 +53,37 @@ module Prelay
               end
             }
           }
+
+          connection_queries, other_queries = queries.sort_by(&:graphql_field_name).partition { |k| k < Prelay::Connection }
+
+          # Relay wants connection queries to be located under a wrapper field, so
+          # just call it 'connections'.
+          field :connections do
+            type GraphQL::ObjectType.define {
+              name "ConnectionsQuery"
+              description "Wrapper for connection queries"
+              connection_queries.each { |q| q.create_graphql_field(self) }
+            }
+
+            # Since this field is just a wrapper, we won't actually use the result of
+            # this resolve function, but the GraphQL gem expects it to be truthy, so...
+            resolve -> (obj, args, ctx) { true }
+          end
+
+          other_queries.each { |q| q.create_graphql_field(self) }
+        },
+
+        mutation: GraphQL::ObjectType.define {
+          name "#{prefix}Mutation"
+          description "Mutations the client can run"
+          mutations.sort_by(&:graphql_field_name).each { |m| m.create_graphql_field(self) }
+        },
+
+        # We don't support subscriptions yet, but have an empty object here so
+        # that the full introspection query works.
+        subscription: GraphQL::ObjectType.define {
+          name "#{prefix}Subscription"
+          description "Subscriptions the client can make"
         }
       )
     end

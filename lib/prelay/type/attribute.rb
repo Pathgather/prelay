@@ -14,10 +14,11 @@ module Prelay
 
         base_type =
           case @datatype
-          when :string  then GraphQL::STRING_TYPE
-          when :integer then GraphQL::INT_TYPE
-          when :boolean then GraphQL::BOOLEAN_TYPE
-          when :float   then GraphQL::FLOAT_TYPE
+          when :string    then GraphQL::STRING_TYPE
+          when :integer   then GraphQL::INT_TYPE
+          when :boolean   then GraphQL::BOOLEAN_TYPE
+          when :float     then GraphQL::FLOAT_TYPE
+          when :timestamp then Prelay::TimeType
           else raise "Unsupported type for GraphQL: #{@datatype}"
           end
 

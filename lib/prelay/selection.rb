@@ -5,7 +5,7 @@ module Prelay
     attr_accessor :name, :type, :selections, :metadata, :aliaz
     attr_reader :arguments, :fragments
 
-    def initialize(name:, type: nil, aliaz: nil, arguments: EMPTY_HASH, selections: EMPTY_HASH, fragments: EMPTY_HASH, metadata: EMPTY_HASH)
+    def initialize(name:, type: nil, aliaz: nil, arguments: EMPTY_HASH, selections: EMPTY_HASH, fragments: EMPTY_HASH, metadata: {})
       @name       = name
       @type       = type
       @aliaz      = aliaz

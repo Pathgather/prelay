@@ -3,20 +3,22 @@
 module Prelay
   class Type
     class Association
-      attr_reader :parent, :name, :sequel_association, :description, :nullable
+      attr_reader :parent, :name, :sequel_association, :sequel_association_name, :description, :nullable, :order
 
-      def initialize(parent, association_type, name, description, target: nil, target_types: nil, nullable: nil)
-        @parent           = parent
-        @name             = name
-        @description      = description
-        @nullable         = nullable
-        @association_type = association_type
+      def initialize(parent, association_type, name, description, target: nil, sequel_association_name: nil, target_types: nil, nullable: nil, order: nil)
+        @parent                  = parent
+        @name                    = name
+        @description             = description
+        @nullable                = nullable
+        @association_type        = association_type
+        @order                   = order
+        @sequel_association_name = sequel_association_name || name
 
         if target
           @specified_target       = target
           @specified_target_types = target_types
         elsif parent < Type
-          @sequel_association = parent.model.association_reflections.fetch(name) do
+          @sequel_association = parent.model.association_reflections.fetch(@sequel_association_name) do
             raise "Could not find an association '#{name}' on the Sequel model #{parent.model}"
           end
 
@@ -36,6 +38,21 @@ module Prelay
 
       def model
         @parent.model
+      end
+
+      def derived_order
+        return @order if @order
+
+        if @sequel_association
+          if o = @sequel_association[:order]
+            return o
+          end
+
+          associated_class = @sequel_association.associated_class
+          return Sequel.qualify(associated_class.table_name, associated_class.primary_key)
+        end
+
+        :id
       end
 
       def target_type
@@ -73,19 +90,23 @@ module Prelay
         target_type.graphql_object
       end
 
-      def local_column
-        case t = sequel_association.fetch(:type)
-        when :many_to_one              then sequel_association.fetch(:key)
-        when :one_to_many, :one_to_one then sequel_association.primary_key
-        else raise "Unsupported Sequel association type: #{t.inspect}"
+      def local_columns
+        a = sequel_association
+
+        case @association_type
+        when :many_to_one              then (a && [a.fetch(:key)]) || target_types.map(&:foreign_keys).flatten.uniq
+        when :one_to_many, :one_to_one then (a && [a.primary_key]) || [:id]
+        else raise "Unsupported type: #{type}"
         end
       end
 
-      def remote_column
-        case t = sequel_association.fetch(:type)
-        when :many_to_one              then sequel_association.primary_key
-        when :one_to_many, :one_to_one then sequel_association.fetch(:key)
-        else raise "Unsupported Sequel association type: #{t.inspect}"
+      def remote_columns
+        a = sequel_association
+
+        case @association_type
+        when :many_to_one              then (a && [a.primary_key]) || [:id]
+        when :one_to_many, :one_to_one then (a && [a.fetch(:key)]) || parent.types.map(&:foreign_keys).flatten.uniq
+        else raise "Unsupported type: #{type}"
         end
       end
     end

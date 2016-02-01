@@ -49,6 +49,14 @@ module Prelay
         @interfaces ||= []
       end
 
+      def additional_models(*models)
+        models.each { |model| associate_with_model(model) }
+      end
+
+      def associate_with_model(model)
+        BY_MODEL[model] = self
+      end
+
       [:one_to_one, :one_to_many, :many_to_one].each do |association_type|
         define_method(association_type) do |*args|
           association = Association.new(self, association_type, *args)
@@ -107,10 +115,22 @@ module Prelay
         d ? @description = d : @description
       end
 
+      def foreign_keys(k = nil)
+        k ? @foreign_keys = k : @foreign_keys
+      end
+
+      def default_selections(*s)
+        if s.any?
+          @default_selections = s
+        else
+          @default_selections || []
+        end
+      end
+
       def model(m = nil)
         if m
           @model = m
-          BY_MODEL[m] = self
+          associate_with_model(m)
         else
           @model
         end

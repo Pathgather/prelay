@@ -8,10 +8,19 @@ module Prelay
         raise InvalidGraphQLQuery, "Not a valid object id: \"#{string}\"" unless parts.length == 2
 
         if expected_type
-          expected_name = expected_type.graphql_object.name
+          possible_types =
+            if expected_type < Type
+              [expected_type]
+            elsif expected_type < Interface
+              expected_type.types
+            else
+              raise "Bad expected_type: #{expected_type}"
+            end
 
-          if expected_name != type
-            raise InvalidGraphQLQuery, "Expected object id for a #{expected_name}, got one for a #{type}"
+          expected_names = possible_types.map { |t| t.graphql_object.name }
+
+          unless expected_names.include?(type)
+            raise InvalidGraphQLQuery, "Expected object id for a #{expected_names.join('/')}, got one for a #{type}"
           end
         end
 

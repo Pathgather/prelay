@@ -55,7 +55,7 @@ module Prelay
           if selections = fields.delete(name)
             selections.each do |selection|
               key = selection.aliaz || selection.name
-              columns << association.local_column
+              columns.push *association.local_columns
               associations[key] = [association, self.class.new(ast: selection)]
             end
           end
@@ -65,6 +65,27 @@ module Prelay
 
         columns.uniq!
       end
+    end
+
+    def resolve(order:)
+      records = []
+      overall_order = nil
+
+      @types.each_key do |type|
+        ds = apply_query_to_dataset(type.model.dataset.order(order), type: type, supplemental_columns: [:cursor])
+
+        derived_order = ds.opts[:order]
+        overall_order ||= derived_order
+        raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
+
+        records += results_for_dataset(ds, type: type)
+      end
+
+      # Each individual result set is sorted, now we need to make sure the
+      # union is sorted as well.
+      records.sort_by!{|r| r.record.values.fetch(:cursor)}
+      records.reverse! if overall_order.only.descending
+      records
     end
 
     def resolve_by_pk(pk)
@@ -86,15 +107,15 @@ module Prelay
       return EMPTY_RESULT_ARRAY if ids.none?
 
       block = association.sequel_association&.dig(:block)
-      order = association.sequel_association[:order]
+      order = association.derived_order
       records = []
-      remote_column = association.remote_column
+      remote_column = association.remote_columns.first # TODO: Multiple columns?
 
       @types.each_key do |type|
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
 
         ds = type.model.dataset
-        ds = ds.order(order || Sequel.qualify(type.model.table_name, :id))
+        ds = ds.order(order)
         ds = apply_query_to_dataset(ds, type: type, supplemental_columns: [remote_column])
         ds = block.call(ds) if block
         ds = ds.where(qualified_remote_column => ids)
@@ -123,6 +144,10 @@ module Prelay
       columns = @types[type][:columns] + supplemental_columns
       columns.uniq!
 
+      if default_selections = type.default_selections
+        columns.push(*default_selections)
+      end
+
       if columns.delete(:cursor)
         order = ds.opts[:order]
         raise "Can't handle ordering by anything other than a single column!" unless order.length == 1
@@ -136,7 +161,7 @@ module Prelay
         columns << Sequel.as(exp, :cursor)
       end
 
-      ds = ds.select(*columns.map{|c| Sequel.qualify(table_name, c)})
+      ds = ds.select(*columns.map{|c| qualify_column(table_name, c)})
 
       if limit = @arguments[:first] || @arguments[:last]
         ds = ds.reverse_order if @arguments[:last]
@@ -149,7 +174,21 @@ module Prelay
           if cursor = @arguments[:after] || @arguments[:before]
             values = JSON.parse(Base64.decode64(cursor))
 
-            ds.seek_paginate(limit, after: values)
+            expressions = ds.opts[:order].zip(values).map do |o, v|
+              e = o.expression
+
+              if e.is_a?(Sequel::SQL::Function) && e.name == :ts_rank_cd
+                # Minor hack for full-text search, which returns reals when
+                # Sequel assumes floats are double precision.
+                Sequel.cast(v, :real)
+              elsif e == :created_at
+                Time.at(*v) # value should be an array of two integers, seconds and microseconds.
+              else
+                v
+              end
+            end
+
+            ds.seek_paginate(limit, after: expressions)
           else
             ds.seek_paginate(limit)
           end
@@ -159,6 +198,21 @@ module Prelay
     end
 
     private
+
+    def qualify_column(table_name, column)
+      case column
+      when Symbol
+        Sequel.qualify(table_name, column)
+      when Sequel::SQL::AliasedExpression
+        Sequel.as(qualify_column(table_name, column.expression), column.aliaz)
+      when Sequel::SQL::QualifiedIdentifier
+        # TODO: Figure out when/how this happens and stop it.
+        raise "Table qualification mismatch: #{column.table.inspect}, #{table_name.inspect}" unless column.table == table_name
+        column
+      else
+        raise "Unexpected thing to qualify: #{column.class}"
+      end
+    end
 
     def dataset_for_type(type)
       apply_query_to_dataset(type.model.dataset.order(Sequel.qualify(type.model.table_name, :id)), type: type)
@@ -173,8 +227,9 @@ module Prelay
       return if results.empty?
 
       @types[type][:associations].each do |key, (association, dataset_resolver)|
-        local_column  = association.local_column
-        remote_column = association.remote_column
+        # TODO: Figure out what it means to have multiple columns here.
+        local_column  = association.local_columns.first
+        remote_column = association.remote_columns.first
 
         ids = results.map{|r| r.record.send(local_column)}.uniq
 

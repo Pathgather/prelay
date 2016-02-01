@@ -54,6 +54,10 @@ class PrelaySpec < Minitest::Spec
       TrackType,
       PublisherType,
       GenreType,
-    ]
+    ],
+
+    queries: [],
+
+    mutations: [],
   ).to_graphql_schema(prefix: 'Client')
 end

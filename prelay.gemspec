@@ -22,6 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'graphql-relay',          '~> 0.6.1'
   spec.add_dependency 'sequel',                 '~> 4.29'
   spec.add_dependency 'sequel-seek-pagination', '~> 0.2.1'
+  spec.add_dependency 'activesupport',          '5.0.0.beta1'
 
   spec.add_development_dependency 'bundler',        '~> 1.11'
   spec.add_development_dependency 'rake',           '~> 10.0'
