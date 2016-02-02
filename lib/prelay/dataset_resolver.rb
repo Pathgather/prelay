@@ -85,7 +85,7 @@ module Prelay
       # union is sorted as well.
       records.sort_by!{|r| r.record.values.fetch(:cursor)}
       records.reverse! if overall_order.only.descending
-      records
+      ResultArray.new(records)
     end
 
     def resolve_by_pk(pk)
@@ -143,6 +143,17 @@ module Prelay
 
       columns = @types[type][:columns] + supplemental_columns
       columns.uniq!
+
+      if text_search = @arguments[:text_search]
+        ds = ds.full_text_search(
+          :searchable_text,
+          text_search,
+          tsvector: true,
+          plain: true,
+          rank: true,
+          language: 'english'
+        )
+      end
 
       if default_selections = type.default_selections
         columns.push(*default_selections)
@@ -209,13 +220,15 @@ module Prelay
         # TODO: Figure out when/how this happens and stop it.
         raise "Table qualification mismatch: #{column.table.inspect}, #{table_name.inspect}" unless column.table == table_name
         column
+      when Sequel::SQL::Function
+        column
       else
         raise "Unexpected thing to qualify: #{column.class}"
       end
     end
 
     def dataset_for_type(type)
-      apply_query_to_dataset(type.model.dataset.order(Sequel.qualify(type.model.table_name, :id)), type: type)
+      apply_query_to_dataset(type.model.dataset.order(type.order), type: type)
     end
 
     def results_for_dataset(ds, type:)

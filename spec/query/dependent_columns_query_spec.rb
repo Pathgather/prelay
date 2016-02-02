@@ -28,7 +28,7 @@ class DependentColumnsQuerySpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."popularity" FROM "artists" WHERE ("artists"."id" = '#{artist.id}') ORDER BY "artists"."id")
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."popularity" FROM "artists" WHERE ("artists"."id" = '#{artist.id}'))
     ]
   end
 end

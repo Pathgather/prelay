@@ -27,7 +27,7 @@ class NodeQuerySpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id")
+      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}'))
     ]
   end
 
@@ -79,7 +79,7 @@ class NodeQuerySpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id")
+      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}'))
     ]
   end
 
@@ -102,7 +102,7 @@ class NodeQuerySpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{uuid}') ORDER BY "albums"."id")
+      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{uuid}'))
     ]
   end
 

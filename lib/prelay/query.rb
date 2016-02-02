@@ -20,7 +20,7 @@ module Prelay
       end
 
       def build_graphql_object(config)
-        config.name(graphql_field_name)
+        config.name(to_s)
         config.description(type.description)
         config.type(graphql_type)
         config.resolve(resolve)

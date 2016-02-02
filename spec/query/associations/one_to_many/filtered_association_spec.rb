@@ -46,7 +46,7 @@ class FilteredOneToManyAssociationSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
+      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
       %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."album_id" IN ('#{album.id}'))) ORDER BY "number" LIMIT 50)
     ]
   end
@@ -87,7 +87,7 @@ class FilteredOneToManyAssociationSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
+      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
       %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."album_id" IN ('#{album.id}'))) ORDER BY "number" LIMIT 50)
     ]
   end

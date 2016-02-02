@@ -29,6 +29,10 @@ module Prelay
         end
       end
 
+      def order(o = nil)
+        o ? @order = o : @order
+      end
+
       def types
         @types ||= []
       end

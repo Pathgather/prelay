@@ -49,9 +49,9 @@ class NodesQuerySpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name", "albums"."high_quality" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."number" FROM "tracks" WHERE ("tracks"."id" = '#{track.id}') ORDER BY "tracks"."id"),
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."upvotes" FROM "artists" WHERE ("artists"."id" = '#{artist.id}') ORDER BY "artists"."id"),
+      %(SELECT "albums"."id", "albums"."name", "albums"."high_quality" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."number" FROM "tracks" WHERE ("tracks"."id" = '#{track.id}')),
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."upvotes" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
     ]
   end
 

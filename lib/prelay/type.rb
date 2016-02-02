@@ -119,6 +119,10 @@ module Prelay
         k ? @foreign_keys = k : @foreign_keys
       end
 
+      def order(o = nil)
+        o ? @order = o : @order
+      end
+
       def default_selections(*s)
         if s.any?
           @default_selections = s
