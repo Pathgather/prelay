@@ -20,7 +20,7 @@ module Prelay
           expected_names = possible_types.map { |t| t.graphql_object.name }
 
           unless expected_names.include?(type)
-            raise InvalidGraphQLQuery, "Expected object id for a #{expected_names.join('/')}, got one for a #{type}"
+            raise InvalidGraphQLQuery, "Expected object id for a #{expected_type.graphql_object.name}, got one for a #{type}"
           end
         end
 
