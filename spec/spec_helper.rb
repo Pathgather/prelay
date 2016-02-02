@@ -19,6 +19,7 @@ end
 
 require_relative 'support/sequel_models'
 require_relative 'support/prelay_types'
+require_relative 'support/prelay_queries'
 require_relative 'support/spec_helper_methods'
 
 # # A little helper to raise a nice error if any of our specs try to access a
@@ -56,7 +57,10 @@ class PrelaySpec < Minitest::Spec
       GenreType,
     ],
 
-    queries: [],
+    queries: [
+      RandomAlbumQuery,
+      AlbumsQuery,
+    ],
 
     mutations: [],
   ).to_graphql_schema(prefix: 'Client')

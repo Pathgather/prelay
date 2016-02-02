@@ -84,7 +84,7 @@ module Prelay
       # Each individual result set is sorted, now we need to make sure the
       # union is sorted as well.
       records.sort_by!{|r| r.record.values.fetch(:cursor)}
-      records.reverse! if overall_order.only.descending
+      records.reverse! if overall_order.first.descending
       ResultArray.new(records)
     end
 

@@ -23,8 +23,8 @@ module Prelay
         super.connection_type
       end
 
-      def description
-        super || "Returns a set of #{graphql_field_name}"
+      def description(arg = nil)
+        super(arg) || "Returns a set of #{graphql_field_name}"
       end
 
       def resolve

@@ -8,7 +8,7 @@ module Prelay
       [:type, :description, :resolve, :types_to_skip].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
 
       def arguments
-        @arguments ||= WriteOnceHash.new
+        @arguments ||= {}
       end
 
       def argument(*args)
@@ -16,7 +16,8 @@ module Prelay
       end
 
       def graphql_field_name
-        to_s.chomp('Query').underscore
+        # CamelCase to under_score
+        to_s.chomp('Query').gsub(/(.)([A-Z])/,'\1_\2').downcase
       end
 
       def build_graphql_object(config)
