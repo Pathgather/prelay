@@ -2,12 +2,9 @@
 
 module Prelay
   module LookupById
-    extend ActiveSupport::Concern
-
-    included do
-      argument :id, :id
-
-      prepend PrependedMethods
+    def self.included(base)
+      base.argument :id, :id
+      base.prepend PrependedMethods
     end
 
     attr_reader :relay_id

@@ -2,10 +2,8 @@
 
 module Prelay
   module PostgresFullTextSearch
-    extend ActiveSupport::Concern
-
-    included do
-      argument :text_search, :text, optional: true
+    def self.included(base)
+      base.argument :text_search, :text, optional: true
     end
   end
 end

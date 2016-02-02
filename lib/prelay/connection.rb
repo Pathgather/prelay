@@ -2,9 +2,11 @@
 
 module Prelay
   module Connection
-    extend ActiveSupport::Concern
+    def self.included(base)
+      base.extend ClassMethods
+    end
 
-    class_methods do
+    module ClassMethods
       def order(order = nil)
         if order
           @order = order
