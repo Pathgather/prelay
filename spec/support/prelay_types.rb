@@ -54,6 +54,9 @@ class AlbumType < Prelay::Type
 
   one_to_one  :first_track,       "The first track on the album.", nullable: true
   one_to_many :first_five_tracks, "The first five tracks on the album"
+
+  filter(:are_high_quality) { |ds| ds.where(:high_quality) }
+  filter(:upvotes_greater_than, :integer) { |ds, count| ds.where{upvotes > count} }
 end
 
 # For specs on types on models that are on arbitrary datasets.

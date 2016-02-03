@@ -27,6 +27,16 @@ module Prelay
         super(arg) || "Returns a set of #{graphql_field_name}"
       end
 
+      def type(type = nil)
+        if type
+          type.filters.each do |name, (type, _)|
+            arguments[name] = Query::Argument.new(self, name, type)
+          end
+        end
+
+        super
+      end
+
       def resolve
         -> (obj, args, ctx) {
           ast = GraphQLProcessor.new(ctx).ast

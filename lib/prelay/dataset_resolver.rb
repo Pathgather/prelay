@@ -148,6 +148,12 @@ module Prelay
       columns = @types[type][:columns] + supplemental_columns
       columns.uniq!
 
+      type.filters.each do |name, (type, block)|
+        if value = @arguments[name]
+          ds = block.call(ds, value)
+        end
+      end
+
       if text_search = @arguments[:text_search]
         ds = ds.full_text_search(
           :searchable_text,

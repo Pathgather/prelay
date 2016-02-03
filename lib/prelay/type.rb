@@ -49,6 +49,14 @@ module Prelay
         @interfaces ||= []
       end
 
+      def filter(name, type = :boolean, &block)
+        filters[name] = [type, block]
+      end
+
+      def filters
+        @filters ||= {}
+      end
+
       def additional_models(*models)
         models.each { |model| associate_with_model(model) }
       end
@@ -92,6 +100,9 @@ module Prelay
               connection association.name do
                 type -> { association.graphql_type.connection_type }
                 description(association.description)
+                association.target_type.filters.each do |name, (type, _)|
+                  argument name, Query::Argument.new(nil, name, type).graphql_type
+                end
                 resolve -> (obj, args, ctx) {
                   node = ctx.ast_node
                   key = (node.alias || node.name).to_sym
