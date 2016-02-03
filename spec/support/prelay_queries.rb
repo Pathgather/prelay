@@ -12,7 +12,7 @@ class RandomAlbumQuery < Prelay::Query
   resolve -> (obj, args, ctx) {
     ast = Prelay::GraphQLProcessor.new(ctx).ast
     Prelay::RelayProcessor.new(ast, type: AlbumType, entry_point: :field).
-      to_resolver.resolve_by_pk(Album.order{random{}}.get(:id))
+      to_resolver.resolve_singular{|ds| ds.order{random{}}.limit(1)}
   }
 end
 

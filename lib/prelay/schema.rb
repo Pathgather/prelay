@@ -37,7 +37,7 @@ module Prelay
               id = ID.parse(args['id'])
               ast = GraphQLProcessor.new(ctx).ast
               RelayProcessor.new(ast, type: id.type, entry_point: :field).
-                to_resolver.resolve_by_pk(id.pk)
+                to_resolver.resolve_singular{|ds| ds.where(Sequel.qualify(id.type.model.table_name, :id) => id.pk)}
             }
           }
 
@@ -49,7 +49,7 @@ module Prelay
                 id = ID.parse(id)
                 ast = GraphQLProcessor.new(ctx).ast
                 RelayProcessor.new(ast, type: id.type, entry_point: :field).
-                  to_resolver.resolve_by_pk(id.pk)
+                  to_resolver.resolve_singular{|ds| ds.where(Sequel.qualify(id.type.model.table_name, :id) => id.pk)}
               end
             }
           }

@@ -67,12 +67,14 @@ module Prelay
       end
     end
 
-    def resolve(order:)
+    def resolve
       records = []
       overall_order = nil
 
       @types.each_key do |type|
-        ds = apply_query_to_dataset(type.model.dataset.order(order), type: type, supplemental_columns: [:cursor])
+        ds = type.model.dataset
+        ds = yield(ds)
+        ds = apply_query_to_dataset(ds, type: type, supplemental_columns: [:cursor])
 
         derived_order = ds.opts[:order]
         overall_order ||= derived_order
@@ -88,13 +90,15 @@ module Prelay
       ResultArray.new(records)
     end
 
-    def resolve_by_pk(pk)
+    def resolve_singular
       # TODO: Can just stop iterating through types when we get a match.
       records = []
 
       @types.each_key do |type|
-        ds = dataset_for_type(type)
-        ds = ds.where(Sequel.qualify(type.model.table_name, :id) => pk)
+        ds = type.model.dataset
+        ds = yield(ds)
+        ds = apply_query_to_dataset(ds, type: type)
+
         records += results_for_dataset(ds, type: type)
       end
 
@@ -161,7 +165,7 @@ module Prelay
 
       if columns.delete(:cursor)
         order = ds.opts[:order]
-        raise "Can't handle ordering by anything other than a single column!" unless order.length == 1
+        raise "Can't handle ordering by anything other than a single column!" unless order&.length == 1
 
         exp =
           case o = order.first
@@ -225,10 +229,6 @@ module Prelay
       else
         raise "Unexpected thing to qualify: #{column.class}"
       end
-    end
-
-    def dataset_for_type(type)
-      apply_query_to_dataset(type.model.dataset.order(type.order), type: type)
     end
 
     def results_for_dataset(ds, type:)
