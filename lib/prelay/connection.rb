@@ -28,7 +28,7 @@ module Prelay
       end
 
       def type(type = nil)
-        if type && type.respond_to?(:filters) # Interfaces don't have filters... yet?
+        if type
           type.filters.each do |name, (type, _)|
             arguments[name] = Query::Argument.new(self, name, type)
           end

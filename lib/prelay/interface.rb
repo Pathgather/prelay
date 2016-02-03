@@ -37,6 +37,14 @@ module Prelay
         @types ||= []
       end
 
+      def filter(name, type = :boolean, &block)
+        filters[name] = [type, block]
+      end
+
+      def filters
+        @filters ||= {}
+      end
+
       attr_reader :graphql_object
 
       def define_graphql_object(node_identification)
