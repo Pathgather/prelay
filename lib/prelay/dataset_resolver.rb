@@ -154,17 +154,6 @@ module Prelay
         end
       end
 
-      if text_search = @arguments[:text_search]
-        ds = ds.full_text_search(
-          :searchable_text,
-          text_search,
-          tsvector: true,
-          plain: true,
-          rank: true,
-          language: 'english'
-        )
-      end
-
       if default_selections = type.default_selections
         columns.push(*default_selections)
       end
