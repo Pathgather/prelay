@@ -40,13 +40,13 @@ module Prelay
         define_method(name){@record.send(name)}
       end
 
-      def interface(interface)
+      def interface(interface, foreign_key)
         interface.types << self
-        interfaces << interface
+        interfaces[interface] = foreign_key
       end
 
       def interfaces
-        @interfaces ||= []
+        @interfaces ||= {}
       end
 
       def filter(name, type = :boolean, &block)
@@ -85,7 +85,7 @@ module Prelay
           name(type.name.split('::').last.chomp('Type'))
           description(type.description)
 
-          interfaces([node_identification.interface] + type.interfaces.map(&:graphql_object))
+          interfaces([node_identification.interface] + type.interfaces.keys.map(&:graphql_object))
           global_id_field :id
 
           type.attributes.each_value do |attribute|
@@ -126,10 +126,6 @@ module Prelay
 
       def description(d = nil)
         d ? @description = d : @description
-      end
-
-      def foreign_keys(k = nil)
-        k ? @foreign_keys = k : @foreign_keys
       end
 
       def order(o = nil)

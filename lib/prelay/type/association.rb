@@ -94,7 +94,7 @@ module Prelay
         a = sequel_association
 
         case @association_type
-        when :many_to_one              then (a && [a.fetch(:key)]) || target_types.map(&:foreign_keys).flatten.uniq
+        when :many_to_one              then (a && [a.fetch(:key)]) || target_types.map{|t| t.interfaces.fetch(target_type)}.uniq
         when :one_to_many, :one_to_one then (a && [a.primary_key]) || [:id]
         else raise "Unsupported type: #{type}"
         end

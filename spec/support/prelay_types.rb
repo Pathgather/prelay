@@ -40,9 +40,7 @@ end
 
 class AlbumType < Prelay::Type
   model Album
-  interface ReleaseInterface
-
-  foreign_keys [:release_id]
+  interface ReleaseInterface, :release_id
 
   description "An album released by a musician"
 
@@ -83,9 +81,7 @@ end
 
 class CompilationType < Prelay::Type
   model Compilation
-  interface ReleaseInterface
-
-  foreign_keys [:release_id]
+  interface ReleaseInterface, :release_id
 
   description "A release of an artist's best songs"
 
