@@ -27,11 +27,11 @@ module Prelay
       [:type, :description].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
 
       def arguments
-        @arguments ||= WriteOnceHash.new
+        @arguments ||= {}
       end
 
       def result_fields
-        @result_fields ||= WriteOnceHash.new
+        @result_fields ||= {}
       end
 
       def argument(*args)
