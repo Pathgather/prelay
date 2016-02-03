@@ -35,11 +35,14 @@ class ArtistType < Prelay::Type
 
   many_to_one :genre,  "The genre of music the artist predominantly worked in", nullable: false
   one_to_many :albums, "Albums released by the artist"
+  one_to_many :releases, "Albums and Compilations released by the artist", order: Sequel.desc(:release_date), target: :ReleaseInterface
 end
 
 class AlbumType < Prelay::Type
   model Album
   interface ReleaseInterface
+
+  foreign_keys [:release_id]
 
   description "An album released by a musician"
 
@@ -82,6 +85,8 @@ class CompilationType < Prelay::Type
   model Compilation
   interface ReleaseInterface
 
+  foreign_keys [:release_id]
+
   description "A release of an artist's best songs"
 
   attribute :name,         "The name of the compilation", datatype: :string
@@ -104,7 +109,7 @@ class TrackType < Prelay::Type
   attribute :high_quality, "Whether the track is good or not.", datatype: :boolean
   attribute :popularity,   "The normalized popularity of the track, on a scale from 0 to 1.", datatype: :float
 
-  many_to_one :album, "The album the track belongs to.", nullable: false
+  many_to_one :release, "The release the track belongs to.", target: :ReleaseInterface, nullable: false
 end
 
 class PublisherType < Prelay::Type
