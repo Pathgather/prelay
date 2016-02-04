@@ -5,7 +5,7 @@ module Prelay
     class Association
       attr_reader :parent, :name, :sequel_association, :sequel_association_name, :description, :nullable, :order
 
-      def initialize(parent, association_type, name, description, target: nil, sequel_association_name: nil, target_types: nil, nullable: nil, order: nil)
+      def initialize(parent, association_type, name, description, target: nil, sequel_association_name: nil, target_types: nil, nullable: nil, order: nil, foreign_key: nil)
         @parent                  = parent
         @name                    = name
         @description             = description
@@ -13,6 +13,7 @@ module Prelay
         @association_type        = association_type
         @order                   = order
         @sequel_association_name = sequel_association_name || name
+        @foreign_key             = foreign_key
 
         if target
           @specified_target       = target
@@ -94,9 +95,21 @@ module Prelay
         a = sequel_association
 
         case @association_type
-        when :many_to_one              then (a && [a.fetch(:key)]) || target_types.map{|t| t.interfaces.fetch(target_type)}.uniq
-        when :one_to_many, :one_to_one then (a && [a.primary_key]) || [:id]
-        else raise "Unsupported type: #{type}"
+        when :many_to_one
+          if a
+            [a.fetch(:key)]
+          else
+            # TODO: Fix.
+            target_types.map{|t| t.interfaces.fetch(target_type)}.uniq
+          end
+        when :one_to_many, :one_to_one
+          if a
+            [a.primary_key]
+          else
+            [:id]
+          end
+        else
+          raise "Unsupported type: #{type}"
         end
       end
 
@@ -104,9 +117,22 @@ module Prelay
         a = sequel_association
 
         case @association_type
-        when :many_to_one              then (a && [a.primary_key]) || [:id]
-        when :one_to_many, :one_to_one then (a && [a.fetch(:key)]) || parent.types.map(&:foreign_keys).flatten.uniq
-        else raise "Unsupported type: #{type}"
+        when :many_to_one
+          if a
+            [a.primary_key]
+          else
+            # TODO: Fix.
+            [:id]
+          end
+        when :one_to_many, :one_to_one
+          if a
+            [a.fetch(:key)]
+          else
+            return [@foreign_key] if @foreign_key
+            raise "Can't determine foreign key for association: #{inspect}"
+          end
+        else
+          raise "Unsupported type: #{type}"
         end
       end
     end

@@ -74,7 +74,11 @@ module Prelay
       @types.each_key do |type|
         ds = type.model.dataset
         ds = yield(ds)
-        ds = apply_query_to_dataset(ds, type: type, supplemental_columns: [:cursor])
+
+        supplemental_columns = []
+        supplemental_columns << :cursor if @types.length > 1
+
+        ds = apply_query_to_dataset(ds, type: type, supplemental_columns: supplemental_columns)
 
         derived_order = ds.opts[:order]
         overall_order ||= derived_order
@@ -85,8 +89,8 @@ module Prelay
 
       # Each individual result set is sorted, now we need to make sure the
       # union is sorted as well.
-      records.sort_by!{|r| r.record.values.fetch(:cursor)}
-      records.reverse! if overall_order.first.descending
+      sort_records_by_order(records, overall_order) if @types.length > 1
+
       ResultArray.new(records)
     end
 
@@ -120,7 +124,11 @@ module Prelay
 
         ds = type.model.dataset
         ds = ds.order(order)
-        ds = apply_query_to_dataset(ds, type: type, supplemental_columns: [remote_column])
+
+        supplemental_columns = [remote_column]
+        supplemental_columns << :cursor if @types.length > 1
+
+        ds = apply_query_to_dataset(ds, type: type, supplemental_columns: supplemental_columns)
         ds = block.call(ds) if block
         ds = ds.where(qualified_remote_column => ids)
 
@@ -136,6 +144,8 @@ module Prelay
 
         records += results_for_dataset(ds, type: type)
       end
+
+      sort_records_by_order(records, order) if @types.length > 1
 
       ResultArray.new(records)
     end
@@ -208,6 +218,15 @@ module Prelay
     end
 
     private
+
+    def sort_records_by_order(records, order)
+      records.sort_by!{|r| r.record.values.fetch(:cursor)}
+
+      o = order.is_a?(Array) ? order.first : order
+      records.reverse! if o.is_a?(Sequel::SQL::OrderedExpression) && o.descending
+
+      records
+    end
 
     def qualify_column(table_name, column)
       case column

@@ -4,8 +4,6 @@ require 'spec_helper'
 
 class OneToManyInterfaceAssociationSpec < PrelaySpec
   it "should support fetching associated items through a one-to-many association to an interface" do
-    skip "Not yet supported"
-
     artist = Artist.first!
 
     id = encode 'Artist', artist.id
@@ -43,33 +41,39 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
           'name' => artist.name,
           'releases' => {
             'edges' => (artist.albums + artist.compilations).sort_by(&:release_date).reverse.map { |r|
-              case r
-              when Album
-                {
-                  '__typename' => "Album",
-                  'id' => encode("Album", r.id),
-                  'upvotes' => r.upvotes,
-                  'name' => r.name,
-                }
-              when Compilation
-                {
-                  '__typename' => "Compilation",
-                  'id' => encode("Compilation", r.id),
-                  'upvotes' => r.upvotes,
-                  'high_quality' => r.high_quality,
-                }
-              else
-                raise "Bad!"
-              end
+              {
+                'node' => (
+                  case r
+                  when Album
+                    {
+                      '__typename' => "Album",
+                      'id' => encode("Album", r.id),
+                      'upvotes' => r.upvotes,
+                      'name' => r.name,
+                    }
+                  when Compilation
+                    {
+                      '__typename' => "Compilation",
+                      'id' => encode("Compilation", r.id),
+                      'upvotes' => r.upvotes,
+                      'high_quality' => r.high_quality,
+                    }
+                  else
+                    raise "Bad!"
+                  end
+                )
+              }
             }
           }
         }
       }
 
     assert_sqls [
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE ("tracks"."id" = '#{track.id}')),
-      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" IN ('#{track.release_id}')) ORDER BY "id"),
-      %(SELECT "compilations"."id", "compilations"."name" FROM "compilations" WHERE ("compilations"."id" IN ('#{track.release_id}')) ORDER BY "id"),
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
+      %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id", "albums"."release_date" AS "cursor" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "release_date" DESC LIMIT 200),
+      %(SELECT "compilations"."id", "compilations"."upvotes", "compilations"."high_quality", "compilations"."artist_id", "compilations"."release_date" AS "cursor" FROM "compilations" WHERE ("compilations"."artist_id" IN ('#{artist.id}')) ORDER BY "release_date" DESC LIMIT 200),
     ]
   end
+
+  it "should limit items appropriately"
 end
