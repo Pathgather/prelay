@@ -47,7 +47,7 @@ module Prelay
       end
 
       def graphql_field_name
-        to_s.chomp('Mutation').underscore
+        to_s.chomp('Mutation').gsub(/(.)([A-Z])/,'\1_\2').downcase
       end
 
       def create_graphql_field(config)
@@ -70,8 +70,18 @@ module Prelay
           config.return_field result_field.name, result_field.graphql_type
         end
 
+        symbolize_keys = proc do |thing|
+          case thing
+          when Array then thing.map(&symbolize_keys)
+          when Hash  then thing.each_with_object({}) { |(key, value), hash| hash[key.to_sym] = symbolize_keys.call(value) }
+          else            thing
+          end
+        end
+
         config.resolve -> (inputs, ctx) {
-          args = inputs.to_h.symbolize_keys.except(:clientMutationId)
+          args = symbolize_keys.call(inputs.to_h)
+          args.delete(:clientMutationId)
+
           ids = new(arguments: args).execute
 
           result = {}

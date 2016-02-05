@@ -20,6 +20,7 @@ end
 require_relative 'support/sequel_models'
 require_relative 'support/prelay_types'
 require_relative 'support/prelay_queries'
+require_relative 'support/prelay_mutations'
 require_relative 'support/spec_helper_methods'
 
 # # A little helper to raise a nice error if any of our specs try to access a
@@ -62,6 +63,8 @@ class PrelaySpec < Minitest::Spec
       AlbumsQuery,
     ],
 
-    mutations: [],
+    mutations: [
+      UpdateAlbumMutation,
+    ],
   ).to_graphql_schema(prefix: 'Client')
 end
