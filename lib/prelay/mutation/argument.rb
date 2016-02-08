@@ -18,7 +18,7 @@ module Prelay
           when GraphQL::BaseType then @type
           when :id               then GraphQL::ID_TYPE
           when :boolean          then GraphQL::BOOLEAN_TYPE
-          when :text             then GraphQL::STRING_TYPE
+          when :string           then GraphQL::STRING_TYPE
           else raise "Unsupported argument type! #{@type.inspect}"
           end
 

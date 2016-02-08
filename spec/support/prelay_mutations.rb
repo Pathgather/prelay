@@ -8,7 +8,7 @@ class UpdateAlbumMutation < Prelay::Mutation
   DESC
 
   argument :id, :id
-  argument :name, :text
+  argument :name, :string
 
   result_field :album, association: :self
 
@@ -35,7 +35,7 @@ class CreateAlbumMutation < Prelay::Mutation
   type AlbumType
 
   argument :artist_id, :id
-  argument :name,      :text
+  argument :name,      :string
 
   result_field :artist,     association: :artist
   result_field :album,      association: :self
