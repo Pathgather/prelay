@@ -10,13 +10,39 @@ module SpecHelperMethods
     self.track_sqls = false
   end
 
+  def execute_mutation(name, graphql: '')
+    assert_instance_of Hash, @input
+
+    @mutation_name = name.to_s
+
+    @input[:clientMutationId] ||= SecureRandom.uuid
+
+    @client_mutation_id = @input[:clientMutationId]
+
+    execute_query <<-GRAPHQL
+      mutation Mutation {
+        #{name}(input: {#{graphql_args(@input)}}) {
+          clientMutationId,
+          #{graphql}
+        }
+      }
+    GRAPHQL
+
+    assert_equal @client_mutation_id, @result['data'][@mutation_name]['clientMutationId']
+  end
+
+  def assert_result(data)
+    assert_equal data, @result
+  end
+
   def assert_invalid_query(message, graphql)
     error = assert_raises(Prelay::InvalidGraphQLQuery) { execute_query(graphql) }
     assert_equal message, error.message
   end
 
-  def assert_result(data)
-    assert_equal data, @result
+  def assert_mutation_result(data)
+    assert_result \
+      'data' => { @mutation_name => data.merge('clientMutationId' => @client_mutation_id) }
   end
 
   def assert_sqls(expected)

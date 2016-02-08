@@ -3,21 +3,21 @@
 require 'spec_helper'
 
 class NodeMutationSpec < PrelaySpec
-  it "should support invoking a mutation that returns a node" do
-    album = Album.first
-    id = id_for(album)
+  let(:album) { Album.first! }
 
-    execute_query <<-GRAPHQL
-      mutation Mutation {
-        update_album(input: {id: "#{id}", name: "New Album Name", clientMutationId: "blah"}) {
-          album {
-            id,
-            name,
-            artist {
-              id,
-              name
-            }
-          }
+  it "should support invoking a mutation that returns a node" do
+    @input = {
+      id: id_for(album),
+      name: "New Album Name"
+    }
+
+    execute_mutation :update_album, graphql: <<-GRAPHQL
+      album {
+        id,
+        name,
+        artist {
+          id,
+          name
         }
       }
     GRAPHQL
@@ -33,17 +33,13 @@ class NodeMutationSpec < PrelaySpec
 
     assert_equal "New Album Name", album.reload.name
 
-    assert_result \
-      'data' => {
-        'update_album' => {
-          'album' => {
-            'id' => id,
-            'name' => "New Album Name",
-            'artist' => {
-              'id' => id_for(album.artist),
-              'name' => album.artist.name,
-            }
-          }
+    assert_mutation_result \
+      'album' => {
+        'id' => id_for(album),
+        'name' => "New Album Name",
+        'artist' => {
+          'id' => id_for(album.artist),
+          'name' => album.artist.name,
         }
       }
   end
