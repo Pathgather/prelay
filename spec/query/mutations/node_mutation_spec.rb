@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-class BaseMutationSpec < PrelaySpec
+class NodeMutationSpec < PrelaySpec
   it "should support invoking a mutation that returns a node" do
     album = Album.first
     id = id_for(album)
