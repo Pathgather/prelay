@@ -7,7 +7,7 @@ class FilteredOneToOneAssociationSpec < PrelaySpec
   let(:first_track) { Track.first(number: 1, album: album) }
 
   it "should support fetching an associated item through a filtered one-to-one association" do
-    id = encode 'Album', album.id
+    id = id_for(album)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -30,7 +30,7 @@ class FilteredOneToOneAssociationSpec < PrelaySpec
           'id' => id,
           'name' => album.name,
           'first_track' => {
-            'id' => encode('Track', first_track.id),
+            'id' => id_for(first_track),
             'name' => first_track.name,
           }
         }
@@ -43,7 +43,7 @@ class FilteredOneToOneAssociationSpec < PrelaySpec
   end
 
   it "should support attempting to fetch an associated item through a one-to-one association when it does not exist" do
-    id = encode 'Album', album.id
+    id = id_for(album)
 
     album.tracks_dataset.delete
 

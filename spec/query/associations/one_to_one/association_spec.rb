@@ -6,7 +6,7 @@ class OneToOneAssociationSpec < PrelaySpec
   let(:album) { Album.first! }
 
   it "should support fetching an associated item through a one-to-one association" do
-    id = encode 'Album', album.id
+    id = id_for(album)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -29,7 +29,7 @@ class OneToOneAssociationSpec < PrelaySpec
           'id' => id,
           'name' => album.name,
           'publisher' => {
-            'id' => encode('Publisher', album.publisher.id),
+            'id' => id_for(album.publisher),
             'name' => album.publisher.name,
           }
         }
@@ -42,7 +42,7 @@ class OneToOneAssociationSpec < PrelaySpec
   end
 
   it "should support attempting to fetch an associated item through a one-to-one association when it does not exist" do
-    id = encode 'Album', album.id
+    id = id_for(album)
 
     album.publisher_dataset.delete
 

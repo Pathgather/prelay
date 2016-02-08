@@ -8,9 +8,9 @@ class NodesQuerySpec < PrelaySpec
   let(:artist) { Artist.first }
 
   it "should support refetching multiple nodes by their relay ids" do
-    id1 = encode 'Album',  album.id
-    id2 = encode 'Track',  track.id
-    id3 = encode 'Artist', artist.id
+    id1 = id_for(album)
+    id2 = id_for(track)
+    id3 = id_for(artist)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -59,9 +59,9 @@ class NodesQuerySpec < PrelaySpec
     # Once this is fixed it can replace the above one.
     skip "File an issue with the GraphQL gem?"
 
-    id1 = encode 'Album',  album.id
-    id2 = encode 'Track',  track.id
-    id3 = encode 'Artist', artist.id
+    id1 = id_for(album)
+    id2 = id_for(track)
+    id3 = id_for(artist)
 
     execute_query <<-GRAPHQL
       query Query {

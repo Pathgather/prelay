@@ -6,7 +6,7 @@ class FilteredOneToManyQuerySpec < PrelaySpec
   let(:artist) { Artist.first! }
 
   it "should support fetching associated items through a filtered one-to-many association" do
-    id = encode 'Artist', artist.id
+    id = id_for(artist)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -36,7 +36,7 @@ class FilteredOneToManyQuerySpec < PrelaySpec
             'edges' => artist.albums_dataset.where{upvotes > 10}.all.sort_by(&:release_date).reverse.map { |album|
               {
                 'node' => {
-                  'id' => encode('Album', album.id),
+                  'id' => id_for(album),
                   'name' => album.name,
                 }
               }

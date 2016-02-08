@@ -6,7 +6,7 @@ class ManyToOneAssociationSpec < PrelaySpec
   it "should support fetching an associated item through a many-to-one association" do
     artist = Artist.exclude(genre_id: nil).first!
 
-    id = encode 'Artist', artist.id
+    id = id_for(artist)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -29,7 +29,7 @@ class ManyToOneAssociationSpec < PrelaySpec
           'id' => id,
           'name' => artist.name,
           'genre' => {
-            'id' => encode("Genre", artist.genre.id),
+            'id' => id_for(artist.genre),
             'name' => artist.genre.name
           }
         }
@@ -44,7 +44,7 @@ class ManyToOneAssociationSpec < PrelaySpec
   it "should support attempting to fetch an associated item through a many-to-one association when one does not exist" do
     artist = Artist.where(genre_id: nil).first!
 
-    id = encode 'Artist', artist.id
+    id = id_for(artist)
 
     execute_query <<-GRAPHQL
       query Query {

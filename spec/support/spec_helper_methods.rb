@@ -60,7 +60,12 @@ module SpecHelperMethods
     Base64.strict_encode64(args.to_json)
   end
 
-  def encode(type, id)
-    Base64.strict_encode64 "#{type}:#{id}"
+  def id_for(object)
+    type = Prelay::Type::BY_MODEL.fetch(object.class)
+    encode_prelay_id type: type.graphql_object, pk: object.pk
+  end
+
+  def encode_prelay_id(type:, pk:)
+    Base64.strict_encode64 "#{type}:#{pk}"
   end
 end

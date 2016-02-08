@@ -7,7 +7,7 @@ class DependentColumnsQuerySpec < PrelaySpec
   let(:artist) { Artist.first }
 
   it "should handle a field that is dependent on multiple columns" do
-    id = encode 'Artist', artist.id
+    id = id_for(artist)
 
     execute_query <<-GRAPHQL
       query Query {

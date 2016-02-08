@@ -6,7 +6,7 @@ class FilteredOneToManyAssociationSpec < PrelaySpec
   let(:album) { Album.first! }
 
   it "should support fetching associated items through a filtered one-to-many association" do
-    id = encode 'Album', album.id
+    id = id_for(album)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -36,7 +36,7 @@ class FilteredOneToManyAssociationSpec < PrelaySpec
             'edges' => album.tracks_dataset.where(number: 1..5).all.sort_by(&:number).map { |track|
               {
                 'node' => {
-                  'id' => encode('Track', track.id),
+                  'id' => id_for(track),
                   'name' => track.name,
                 }
               }
@@ -54,7 +54,7 @@ class FilteredOneToManyAssociationSpec < PrelaySpec
   it "should not fail if a record has no associated items" do
     album.tracks_dataset.delete
 
-    id = encode 'Album', album.id
+    id = id_for(album)
 
     execute_query <<-GRAPHQL
       query Query {

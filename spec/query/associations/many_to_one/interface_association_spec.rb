@@ -6,7 +6,7 @@ class ManyToOneInterfaceAssociationSpec < PrelaySpec
   it "should support fetching an associated item through a many-to-one association to an interface" do
     track = Track.exclude(album_id: nil).first!
 
-    id = encode 'Track', track.id
+    id = id_for(track)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -31,7 +31,7 @@ class ManyToOneInterfaceAssociationSpec < PrelaySpec
           'name' => track.name,
           'release' => {
             '__typename' => "Album",
-            'id' => encode("Album", track.album.id),
+            'id' => id_for(track.album),
             'name' => track.album.name
           }
         }

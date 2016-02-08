@@ -7,7 +7,7 @@ class OneToManyNestedEagerLoadingSpec < PrelaySpec
   let(:albums) { artist.albums.sort_by(&:release_date).reverse.first(3) }
 
   it "should support fetching limited fetching of items through nested one-to-many associations" do
-    id = encode 'Artist', artist.id
+    id = id_for(artist)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -45,13 +45,13 @@ class OneToManyNestedEagerLoadingSpec < PrelaySpec
             'edges' => albums.map { |album|
               {
                 'node' => {
-                  'id' => encode('Album', album.id),
+                  'id' => id_for(album),
                   'name' => album.name,
                   'tracks' => {
                     'edges' => album.tracks.sort_by(&:number).first(5).map { |track|
                       {
                         'node' => {
-                          'id' => encode('Track', track.id),
+                          'id' => id_for(track),
                           'name' => track.name,
                         }
                       }

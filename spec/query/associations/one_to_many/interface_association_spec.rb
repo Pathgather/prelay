@@ -6,7 +6,7 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
   it "should support fetching associated items through a one-to-many association to an interface" do
     artist = Artist.first!
 
-    id = encode 'Artist', artist.id
+    id = id_for(artist)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -47,14 +47,14 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
                   when Album
                     {
                       '__typename' => "Album",
-                      'id' => encode("Album", r.id),
+                      'id' => id_for(r),
                       'upvotes' => r.upvotes,
                       'name' => r.name,
                     }
                   when Compilation
                     {
                       '__typename' => "Compilation",
-                      'id' => encode("Compilation", r.id),
+                      'id' => id_for(r),
                       'upvotes' => r.upvotes,
                       'high_quality' => r.high_quality,
                     }

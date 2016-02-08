@@ -8,8 +8,8 @@ class AliasQuerySpec < PrelaySpec
   let(:album2) { albums[1] }
 
   it "should support aliases for multiple invocations of the same query" do
-    id1 = encode 'Album', album1.id
-    id2 = encode 'Album', album2.id
+    id1 = id_for album1
+    id2 = id_for album2
 
     execute_query <<-GRAPHQL
       query Query {
@@ -39,18 +39,18 @@ class AliasQuerySpec < PrelaySpec
     assert_result \
       'data' => {
         'first' => {
-          'id' => encode("Album", album1.id),
+          'id' => id_for(album1),
           'name' => album1.name,
           'artist' => {
-            'id' => encode("Artist", album1.artist.id),
+            'id' => id_for(album1.artist),
             'name' => album1.artist.name
           }
         },
         'second' => {
-          'id' => encode("Album", album2.id),
+          'id' => id_for(album2),
           'name' => album2.name,
           'artist' => {
-            'id' => encode("Artist", album2.artist.id),
+            'id' => id_for(album2.artist),
             'name' => album2.artist.name
           }
         }
@@ -65,7 +65,7 @@ class AliasQuerySpec < PrelaySpec
   end
 
   it "should support aliases for multiple invocations of the same attribute" do
-    id = encode 'Album', album1.id
+    id = id_for(album1)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -82,7 +82,7 @@ class AliasQuerySpec < PrelaySpec
     assert_result \
       'data' => {
         'node' => {
-          'id' => encode("Album", album1.id),
+          'id' => id_for(album1),
           'name1' => album1.name,
           'name2' => album1.name,
         }
@@ -94,7 +94,7 @@ class AliasQuerySpec < PrelaySpec
   end
 
   it "should support aliases for multiple invocations of the same connection" do
-    id = encode 'Album', album1.id
+    id = id_for(album1)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -115,12 +115,12 @@ class AliasQuerySpec < PrelaySpec
     assert_result \
       'data' => {
         'node' => {
-          'id' => encode("Album", album1.id),
+          'id' => id_for(album1),
           'first_half' => {
             'edges' => first_half.map { |t|
               {
                 'node' => {
-                  'id' => encode("Track", t.id),
+                  'id' => id_for(t),
                   'name' => t.name,
                 }
               }
@@ -130,7 +130,7 @@ class AliasQuerySpec < PrelaySpec
             'edges' => last_half.map { |t|
               {
                 'node' => {
-                  'id' => encode("Track", t.id),
+                  'id' => id_for(t),
                   'name' => t.name,
                 }
               }

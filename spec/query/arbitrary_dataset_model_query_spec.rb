@@ -6,7 +6,7 @@ class ArbitraryDatasetModelQuerySpec < PrelaySpec
   let(:album) { BestAlbum.first }
 
   it "should support models on arbitrary datasets, and not just tables" do
-    id = encode 'BestAlbum', album.id
+    id = id_for(album)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -34,17 +34,17 @@ class ArbitraryDatasetModelQuerySpec < PrelaySpec
     assert_result \
       'data' => {
         'node' => {
-          'id' => encode("BestAlbum", album.id),
+          'id' => id,
           'name' => album.name,
           'artist' => {
-            'id' => encode("Artist", album.artist.id),
+            'id' => id_for(album.artist),
             'name' => album.artist.name
           },
           'first_five_tracks' => {
             'edges' => album.tracks_dataset.where(number: 1..5).all.sort_by(&:id).map { |track|
               {
                 'node' => {
-                  'id' => encode('Track', track.id),
+                  'id' => id_for(track),
                   'name' => track.name,
                 }
               }

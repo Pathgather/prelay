@@ -6,7 +6,7 @@ class OneToManyAssociationSpec < PrelaySpec
   let(:album) { Album.first! }
 
   it "should support fetching associated items through a one-to-many association" do
-    id = encode 'Album', album.id
+    id = id_for(album)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -38,7 +38,7 @@ class OneToManyAssociationSpec < PrelaySpec
               {
                 'cursor' => to_cursor(track.number),
                 'node' => {
-                  'id' => encode('Track', track.id),
+                  'id' => id_for(track),
                   'name' => track.name,
                 }
               }
@@ -56,7 +56,7 @@ class OneToManyAssociationSpec < PrelaySpec
   it "should not fail if a record has no associated items" do
     album.tracks_dataset.delete
 
-    id = encode 'Album', album.id
+    id = id_for(album)
 
     execute_query <<-GRAPHQL
       query Query {

@@ -695,17 +695,17 @@ class FragmentedQuerySpec < PrelaySpec
 
   queries.each do |name, query|
     it "should handle a #{name} query" do
-      execute_query(query % {id: encode('Album', album.id)})
+      execute_query(query % {id: id_for(album)})
 
       assert_result \
         'data' => {
           'node' => {
-            'id' => encode('Album', album.id),
+            'id' => id_for(album),
             'name' => album.name,
             'upvotes' => album.upvotes,
             'high_quality' => album.high_quality,
             'artist' => {
-              'id' => encode('Artist', album.artist.id),
+              'id' => id_for(album.artist),
               'name' => album.artist.name,
               'upvotes' => album.artist.upvotes,
               'active' => album.artist.active,
@@ -715,7 +715,7 @@ class FragmentedQuerySpec < PrelaySpec
                 {
                   'cursor' => to_cursor(track.number),
                   'node' => {
-                    'id' => encode('Track', track.id),
+                    'id' => id_for(track),
                     'name' => track.name,
                     'number' => track.number,
                     'high_quality' => track.high_quality,
@@ -739,7 +739,7 @@ class FragmentedQuerySpec < PrelaySpec
   end
 
   it "should ignore inline fragments on the wrong type" do
-    id = encode('Album', album.id)
+    id = id_for(album)
 
     execute_query <<-GRAPHQL
       query Query {
@@ -761,7 +761,7 @@ class FragmentedQuerySpec < PrelaySpec
     assert_result \
       'data' => {
         'node' => {
-          'id' => encode('Album', album.id),
+          'id' => id_for(album),
           'name' => album.name,
           'high_quality' => album.high_quality,
         }

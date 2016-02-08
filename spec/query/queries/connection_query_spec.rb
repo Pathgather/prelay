@@ -39,10 +39,10 @@ class ConnectionQuerySpec < PrelaySpec
               {
                 'cursor' => to_cursor(album.name),
                 'node' => {
-                  'id' => encode("Album", album.id),
+                  'id' => id_for(album),
                   'name' => album.name,
                   'artist' => {
-                    'id' => encode("Artist", album.artist.id),
+                    'id' => id_for(album.artist),
                     'name' => album.artist.name,
                   }
                 }
@@ -84,10 +84,10 @@ class ConnectionQuerySpec < PrelaySpec
               {
                 'cursor' => to_cursor(album.name),
                 'node' => {
-                  'id' => encode("Album", album.id),
+                  'id' => id_for(album),
                   'name' => album.name,
                   'artist' => {
-                    'id' => encode("Artist", album.artist.id),
+                    'id' => id_for(album.artist),
                     'name' => album.artist.name,
                   }
                 }

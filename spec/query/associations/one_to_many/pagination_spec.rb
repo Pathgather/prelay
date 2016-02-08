@@ -7,7 +7,7 @@ class OneToManyPaginationSpec < PrelaySpec
   let(:albums) { artist.albums.sort_by(&:release_date).reverse }
 
   it "should raise an error if a connection is requested without a first or last argument" do
-    artist_id = encode 'Artist', artist.id
+    artist_id = id_for(artist)
 
     assert_invalid_query \
       "Tried to access the connection 'albums' without a 'first' or 'last' argument.",
@@ -78,7 +78,7 @@ class OneToManyPaginationSpec < PrelaySpec
               end
 
               it "on a one-to-many association should support #{desc}" do
-                artist_id = encode 'Artist', artist.id
+                artist_id = id_for(artist)
 
                 # Will need to update the spec logic if this changes.
                 assert_equal 10, albums.length
@@ -111,7 +111,7 @@ class OneToManyPaginationSpec < PrelaySpec
 
                 expectation = {
                   'edges' => expected_albums.map { |a|
-                    h = {'node' => {'id' => encode('Album', a.id), 'name' => a.name}}
+                    h = {'node' => {'id' => id_for(a), 'name' => a.name}}
                     h['cursor'] = to_cursor(a.release_date) if cursor_requested
                     h
                   }
@@ -122,7 +122,7 @@ class OneToManyPaginationSpec < PrelaySpec
                 assert_result \
                   'data' => {
                     'node' => {
-                      'id' => encode('Artist', artist.id),
+                      'id' => id_for(artist),
                       'name' => artist.name,
                       'albums' => expectation,
                     }

@@ -8,7 +8,7 @@ class EdgeMutationSpec < PrelaySpec
   it "should support invoking a mutation that returns a node and an edge for it in relation to another node" do
     execute_query <<-GRAPHQL
       mutation Mutation {
-        create_album(input: {artist_id: "#{encode("Artist", artist.id)}", name: "10 New Songs", clientMutationId: "blah"}) {
+        create_album(input: {artist_id: "#{id_for(artist)}", name: "10 New Songs", clientMutationId: "blah"}) {
           artist {
             id,
             name
@@ -44,18 +44,18 @@ class EdgeMutationSpec < PrelaySpec
       'data' => {
         'create_album' => {
           'artist' => {
-            'id' => encode('Artist', artist.id),
+            'id' => id_for(artist),
             'name' => artist.name,
           },
           'album_edge' => {
             'cursor' => to_cursor(album.created_at),
             'node' => {
-              'id' => encode('Album', album.id),
+              'id' => id_for(album),
               'name' => album.name,
             }
           },
           'album' => {
-            'id' => encode('Album', album.id),
+            'id' => id_for(album),
             'name' => album.name,
           },
         }

@@ -5,7 +5,7 @@ require 'spec_helper'
 class BaseMutationSpec < PrelaySpec
   it "should support invoking a mutation that returns a node" do
     album = Album.first
-    id = encode('Album', album.id)
+    id = id_for(album)
 
     execute_query <<-GRAPHQL
       mutation Mutation {
@@ -40,7 +40,7 @@ class BaseMutationSpec < PrelaySpec
             'id' => id,
             'name' => "New Album Name",
             'artist' => {
-              'id' => encode("Artist", album.artist_id),
+              'id' => id_for(album.artist),
               'name' => album.artist.name,
             }
           }
