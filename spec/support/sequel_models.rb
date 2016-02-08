@@ -28,8 +28,8 @@ class BestAlbum < Sequel::Model(DB[:albums].where(:high_quality))
   one_to_many :tracks, key: :album_id
   one_to_one :publisher, key: :album_id
 
-  one_to_one  :first_track,       class_name: :Track, key: :album_id, &:is_first
-  one_to_many :first_five_tracks, class_name: :Track, key: :album_id, &:in_first_five
+  one_to_one  :first_track,       class_name: :Track, key: :album_id,                 &:is_first
+  one_to_many :first_five_tracks, class_name: :Track, key: :album_id, order: :number, &:in_first_five
 end
 
 class Compilation < Sequel::Model

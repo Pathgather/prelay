@@ -41,7 +41,7 @@ class ArbitraryDatasetModelQuerySpec < PrelaySpec
             'name' => album.artist.name
           },
           'first_five_tracks' => {
-            'edges' => album.tracks_dataset.where(number: 1..5).all.sort_by(&:id).map { |track|
+            'edges' => album.tracks_dataset.where(number: 1..5).all.sort_by(&:number).map { |track|
               {
                 'node' => {
                   'id' => id_for(track),
@@ -56,7 +56,7 @@ class ArbitraryDatasetModelQuerySpec < PrelaySpec
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("high_quality" AND ("albums"."id" = '#{album.id}'))),
       %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist.id}')) ORDER BY "artists"."id"),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."album_id" IN ('#{album.id}'))) ORDER BY "tracks"."id" LIMIT 10),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."album_id" IN ('#{album.id}'))) ORDER BY "number" LIMIT 10),
     ]
   end
 end
