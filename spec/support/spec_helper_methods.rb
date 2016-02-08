@@ -19,7 +19,17 @@ module SpecHelperMethods
   end
 
   def assert_sqls(expected)
-    assert_equal expected, sqls
+    actual = sqls
+
+    assert_equal expected, actual unless expected.length == actual.length
+
+    expected.zip(actual).each do |e, a|
+      case e
+      when String then assert_equal(e, a)
+      when Regexp then assert_match(e, a)
+      else raise "Unexpected argument to assert_sqls: #{e.inspect}"
+      end
+    end
   end
 
   def sqls
@@ -40,6 +50,13 @@ module SpecHelperMethods
   end
 
   def to_cursor(*args)
+    args = args.map do |thing|
+      case thing
+      when Time then [thing.to_i, thing.usec]
+      else thing
+      end
+    end
+
     Base64.strict_encode64(args.to_json)
   end
 

@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 class BaseMutationSpec < PrelaySpec
-  it "should invoking a mutation that returns an object" do
+  it "should support invoking a mutation that returns a node" do
     album = Album.first
     id = encode('Album', album.id)
 

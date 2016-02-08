@@ -65,6 +65,7 @@ class PrelaySpec < Minitest::Spec
 
     mutations: [
       UpdateAlbumMutation,
+      CreateAlbumMutation,
     ],
   ).to_graphql_schema(prefix: 'Client')
 end
