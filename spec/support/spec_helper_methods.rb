@@ -5,6 +5,7 @@ module SpecHelperMethods
     sqls.clear
     self.track_sqls = true
     @result = PrelaySpec::GraphQLSchema.execute(graphql, debug: true)
+    assert_nil @result['errors']
   ensure
     self.track_sqls = false
   end
