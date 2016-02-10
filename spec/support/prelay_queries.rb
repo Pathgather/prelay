@@ -28,3 +28,16 @@ class AlbumsQuery < Prelay::Query
   type AlbumType
   order Sequel.desc(:created_at)
 end
+
+class ReleasesQuery < Prelay::Query
+  include Prelay::Connection
+
+  description <<-DESC
+
+    Returns all releases in the DB.
+
+  DESC
+
+  type ReleaseInterface
+  order Sequel.desc(:created_at)
+end

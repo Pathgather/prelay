@@ -61,6 +61,7 @@ class PrelaySpec < Minitest::Spec
     queries: [
       RandomAlbumQuery,
       AlbumsQuery,
+      ReleasesQuery,
     ],
 
     mutations: [
