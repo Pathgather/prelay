@@ -24,10 +24,10 @@ class ConnectionQuerySpec < PrelaySpec
       }
     GRAPHQL
 
-    albums = Album.order(:name).limit(5).all
+    albums = Album.order(Sequel.desc(:created_at)).limit(5).all
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."name" AS "cursor" FROM "albums" ORDER BY "name" ASC LIMIT 5),
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" ORDER BY "created_at" DESC LIMIT 5),
       %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
     ]
 
@@ -37,7 +37,7 @@ class ConnectionQuerySpec < PrelaySpec
           'albums' => {
             'edges' => albums.map { |album|
               {
-                'cursor' => to_cursor(album.name),
+                'cursor' => to_cursor(album.created_at),
                 'node' => {
                   'id' => encode("Album", album.id),
                   'name' => album.name,
@@ -74,7 +74,7 @@ class ConnectionQuerySpec < PrelaySpec
       }
     GRAPHQL
 
-    albums = Album.order(:name).where(:high_quality).limit(5).all
+    albums = Album.order(Sequel.desc(:created_at)).where(:high_quality).limit(5).all
 
     assert_result \
       'data' => {
@@ -82,7 +82,7 @@ class ConnectionQuerySpec < PrelaySpec
           'albums' => {
             'edges' => albums.map { |album|
               {
-                'cursor' => to_cursor(album.name),
+                'cursor' => to_cursor(album.created_at),
                 'node' => {
                   'id' => encode("Album", album.id),
                   'name' => album.name,
@@ -98,7 +98,7 @@ class ConnectionQuerySpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."name" AS "cursor" FROM "albums" WHERE "high_quality" ORDER BY "name" ASC LIMIT 5),
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE "high_quality" ORDER BY "created_at" DESC LIMIT 5),
       %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
     ]
   end
