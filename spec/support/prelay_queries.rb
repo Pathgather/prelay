@@ -26,5 +26,5 @@ class AlbumsQuery < Prelay::Query
   DESC
 
   type AlbumType
-  order Sequel.asc(:name)
+  order Sequel.desc(:created_at)
 end

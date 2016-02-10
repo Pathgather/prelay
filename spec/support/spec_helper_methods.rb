@@ -40,6 +40,12 @@ module SpecHelperMethods
   end
 
   def to_cursor(*args)
+    args.map! do |arg|
+      case arg
+      when Time then [arg.to_i, arg.usec]
+      else arg
+      end
+    end
     Base64.strict_encode64(args.to_json)
   end
 
