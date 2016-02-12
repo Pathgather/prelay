@@ -124,17 +124,17 @@ class NodeQuerySpec < PrelaySpec
   end
 
   def fuzz(types)
-    structure_by_type = {default: [:__typename]}
-    graphql = '__typename,'.dup
+    structure = {}
+    graphql = String.new
 
     (rand(5) + 1).times do
       type, fields = types.to_a.sample
 
       chosen_fields = fields.sample(rand(fields.length) + 1)
 
-      structure_by_type[type] ||= []
-      structure_by_type[type] += chosen_fields
-      structure_by_type[type].uniq!
+      structure[type] ||= []
+      structure[type] += chosen_fields
+      structure[type].uniq!
 
       field_text = chosen_fields.join(', ') << ', '
 
@@ -147,7 +147,7 @@ class NodeQuerySpec < PrelaySpec
       end
     end
 
-    [graphql, structure_by_type]
+    [graphql, structure]
   end
 
   100.times do
@@ -158,6 +158,7 @@ class NodeQuerySpec < PrelaySpec
           :id
         ],
         Album: [
+          :__typename,
           :id,
           :name,
           :upvotes,
@@ -165,6 +166,7 @@ class NodeQuerySpec < PrelaySpec
           :popularity,
         ],
         Release: [
+          :__typename,
           :id,
           :name,
           :upvotes,
