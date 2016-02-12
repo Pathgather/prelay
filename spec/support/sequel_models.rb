@@ -47,6 +47,10 @@ class Track < Sequel::Model
 
   subset :is_first,      number: 1
   subset :in_first_five, number: 1..5
+
+  def release
+    album || compilation
+  end
 end
 
 class Publisher < Sequel::Model

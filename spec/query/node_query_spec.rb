@@ -123,8 +123,25 @@ class NodeQuerySpec < PrelaySpec
     assert_sqls []
   end
 
+  def recursive_merge_proc
+    recursive_merge = proc { |k,o,n|
+      if o.is_a?(Hash) && n.is_a?(Hash)
+        o.merge(n, &recursive_merge)
+      else
+        true
+      end
+    }
+  end
+
   def fuzz(type)
-    all_types = [type] + type.interfaces.keys
+    all_types =
+      if type < Prelay::Type
+        [type] + type.interfaces.keys
+      elsif type < Prelay::Interface
+        type.types
+      else
+        raise "Unsupported type: #{type.inspect}"
+      end
 
     types_hash = { default: {id: true, __typename: true} }
 
@@ -132,11 +149,11 @@ class NodeQuerySpec < PrelaySpec
       fields = type.attributes.keys.each_with_object({}){|key, hash| hash[key] = true}
 
       type.associations.each do |key, association|
-        next unless association.association_type == :many_to_one
+        next if association.association_type == :one_to_many
         fields[key] = association.target_type
       end
 
-      types_hash[type.graphql_object.name.to_sym] = fields
+      types_hash[type] = fields
     end
 
     graphql = String.new
@@ -157,7 +174,7 @@ class NodeQuerySpec < PrelaySpec
           subgraphql, substructure = fuzz(types)
 
           structure[type][field] ||= {}
-          structure[type][field].merge!(substructure){|k,o,n| o.merge(n)}
+          structure[type][field].merge!(substructure){|k,o,n| o.merge(n, &recursive_merge_proc)}
 
           field_text << %{\n#{field} { #{subgraphql} }}
         end
@@ -166,23 +183,30 @@ class NodeQuerySpec < PrelaySpec
       if type == :default
         graphql << field_text
       else
-        graphql << %{\n... on #{type} { #{field_text} }}
+        graphql << %{\n... on #{type.graphql_object} { #{field_text} }}
       end
     end
 
     [graphql, structure]
   end
 
-  def build_expected_json(object:, structure:)
-    recursive_merge = proc { |k,o,n|
-      if o.is_a?(Hash) && n.is_a?(Hash)
-        o.merge(n, &recursive_merge)
-      else
-        true
-      end
-    }
+  def object_implements_type?(object, type)
+    if type < Prelay::Type
+      object.is_a?(type.model)
+    elsif type < Prelay::Interface
+      type.types.any?{|t| object.is_a?(t.model)}
+    else
+      raise "Unsupported! #{type.inspect}"
+    end
+  end
 
-    fields = structure.values.inject({}){|a,b| a.merge(b, &recursive_merge)}
+  def build_expected_json(object:, structure:)
+    fields = {}
+
+    structure.each do |type, fieldset|
+      next unless type == :default || object_implements_type?(object, type)
+      fields = fields.merge(fieldset, &recursive_merge_proc)
+    end
 
     fields.each_with_object({}) do |(field, value), hash|
       hash[field.to_s] =
