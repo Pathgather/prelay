@@ -150,48 +150,50 @@ class NodeQuerySpec < PrelaySpec
     [graphql, structure_by_type]
   end
 
-  it "should support fragments, however they appear" do
-    graphql, structure = fuzz \
-      default: [
-        :__typename,
-        :id
-      ],
-      Album: [
-        :id,
-        :name,
-        :upvotes,
-        :high_quality,
-        :popularity,
-      ],
-      Release: [
-        :id,
-        :name,
-        :upvotes,
-        :high_quality,
-        :popularity,
-      ]
+  100.times do
+    it "should support fragments, however they appear" do
+      graphql, structure = fuzz \
+        default: [
+          :__typename,
+          :id
+        ],
+        Album: [
+          :id,
+          :name,
+          :upvotes,
+          :high_quality,
+          :popularity,
+        ],
+        Release: [
+          :id,
+          :name,
+          :upvotes,
+          :high_quality,
+          :popularity,
+        ]
 
-    execute_query <<-SQL
-      query Query { node(id: "#{id_for(album)}") { #{graphql} } }
-    SQL
+      execute_query <<-SQL
+        query Query { node(id: "#{id_for(album)}") { #{graphql} } }
+      SQL
 
-    fields = structure.values.flatten.uniq
+      fields = structure.values.flatten.uniq
 
-    expected_json = fields.each_with_object({}) do |field, hash|
-      hash[field.to_s] =
-        case field
-        when :__typename
-          type_name_for(album)
-        when :id
-          id_for(album)
-        else
-          album.send(field)
-        end
+      expected_json = fields.each_with_object({}) do |field, hash|
+        hash[field.to_s] =
+          case field
+          when :__typename
+            type_name_for(album)
+          when :id
+            id_for(album)
+          else
+            album.send(field)
+          end
+      end
+
+      assert_result \
+        'data' => {
+          'node' => expected_json
+        }
     end
-
-    assert_result \
-      'data' => {
-        'node' => expected_json
-      }
   end
 end
