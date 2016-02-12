@@ -143,6 +143,7 @@ class NodeQuerySpec < PrelaySpec
     structure = {}
 
     (rand(types_hash.length) + 1).times do
+      graphql << "\n"
       type, fields = types_hash.to_a.sample
       structure[type] ||= {}
 
@@ -158,18 +159,14 @@ class NodeQuerySpec < PrelaySpec
           structure[type][field] ||= {}
           structure[type][field].merge!(substructure){|k,o,n| o.merge(n)}
 
-          field_text << <<-GRAPHQL
-            #{field} { #{subgraphql} }
-          GRAPHQL
+          field_text << %{\n#{field} { #{subgraphql} }}
         end
       end
 
       if type == :default
         graphql << field_text
       else
-        graphql << <<-GRAPHQL
-          ... on #{type} { #{field_text} }
-        GRAPHQL
+        graphql << %{\n... on #{type} { #{field_text} }}
       end
     end
 
