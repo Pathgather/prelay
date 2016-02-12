@@ -122,4 +122,55 @@ class NodeQuerySpec < PrelaySpec
     assert_invalid_query "Not a valid object id: \"\"", "query Query { node(id: \"\") { id ... on Album { name } } }"
     assert_sqls []
   end
+
+  def fuzz(types)
+    graphql = '__typename,'.dup
+
+    (rand(5) + 1).times do
+      type, fields = types.to_a.sample
+
+      field_text = fields.sample(rand(fields.length) + 1).join(', ') << ', '
+
+      if type == :default
+        graphql << field_text
+      else
+        graphql << <<-GRAPHQL
+          ... on #{type} { #{field_text} }
+        GRAPHQL
+      end
+    end
+
+    graphql
+  end
+
+  it "should support fragments, however they appear" do
+    fuzzed = fuzz \
+      default: [
+        :__typename,
+        :id
+      ],
+      Album: [
+        :id,
+        :name,
+        :upvotes,
+        :high_quality,
+        :popularity,
+      ],
+      Release: [
+        :id,
+        :name,
+        :upvotes,
+        :high_quality,
+        :popularity,
+      ]
+
+    execute_query <<-SQL
+      query Query {
+        node(id: "#{id_for(album)}") {
+          __typename,
+          #{fuzzed}
+        }
+      }
+    SQL
+  end
 end
