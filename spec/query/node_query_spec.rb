@@ -181,7 +181,7 @@ class NodeQuerySpec < PrelaySpec
       hash[field.to_s] =
         case field
         when :__typename
-          'Album'
+          type_name_for(album)
         when :id
           id_for(album)
         else

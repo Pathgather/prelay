@@ -88,8 +88,15 @@ module SpecHelperMethods
   end
 
   def id_for(object)
-    type = Prelay::Type::BY_MODEL.fetch(object.class)
-    encode_prelay_id type: type.graphql_object, pk: object.pk
+    encode_prelay_id type: type_name_for(object), pk: object.pk
+  end
+
+  def type_for(object)
+    Prelay::Type::BY_MODEL.fetch(object.class)
+  end
+
+  def type_name_for(object)
+    type_for(object).graphql_object.to_s
   end
 
   def encode_prelay_id(type:, pk:)
