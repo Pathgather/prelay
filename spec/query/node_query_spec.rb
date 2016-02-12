@@ -124,12 +124,19 @@ class NodeQuerySpec < PrelaySpec
   end
 
   def fuzz(types)
+    structure_by_type = {default: [:__typename]}
     graphql = '__typename,'.dup
 
     (rand(5) + 1).times do
       type, fields = types.to_a.sample
 
-      field_text = fields.sample(rand(fields.length) + 1).join(', ') << ', '
+      chosen_fields = fields.sample(rand(fields.length) + 1)
+
+      structure_by_type[type] ||= []
+      structure_by_type[type] += chosen_fields
+      structure_by_type[type].uniq!
+
+      field_text = chosen_fields.join(', ') << ', '
 
       if type == :default
         graphql << field_text
@@ -140,11 +147,11 @@ class NodeQuerySpec < PrelaySpec
       end
     end
 
-    graphql
+    [graphql, structure_by_type]
   end
 
   it "should support fragments, however they appear" do
-    fuzzed = fuzz \
+    graphql, structure = fuzz \
       default: [
         :__typename,
         :id
@@ -165,12 +172,26 @@ class NodeQuerySpec < PrelaySpec
       ]
 
     execute_query <<-SQL
-      query Query {
-        node(id: "#{id_for(album)}") {
-          __typename,
-          #{fuzzed}
-        }
-      }
+      query Query { node(id: "#{id_for(album)}") { #{graphql} } }
     SQL
+
+    fields = structure.values.flatten.uniq
+
+    expected_json = fields.each_with_object({}) do |field, hash|
+      hash[field.to_s] =
+        case field
+        when :__typename
+          'Album'
+        when :id
+          id_for(album)
+        else
+          album.send(field)
+        end
+    end
+
+    assert_result \
+      'data' => {
+        'node' => expected_json
+      }
   end
 end
