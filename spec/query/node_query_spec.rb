@@ -123,23 +123,33 @@ class NodeQuerySpec < PrelaySpec
     assert_sqls []
   end
 
-  def fuzz(types)
+  def fuzz(type)
+    all_types = [type] + type.interfaces.keys
+
+    types_hash = { default: {id: true, __typename: true} }
+
+    all_types.each do |type|
+      fields = type.attributes.keys.each_with_object({}){|key, hash| hash[key] = true}
+
+      type.associations.each do |key, association|
+        next unless association.association_type == :many_to_one
+        fields[key] = association.target_type
+      end
+
+      types_hash[type.graphql_object.name.to_sym] = fields
+    end
+
     graphql = String.new
     structure = {}
 
-    (rand(types.length) + 1).times do
-      type, fields = types.to_a.sample
+    (rand(types_hash.length) + 1).times do
+      type, fields = types_hash.to_a.sample
       structure[type] ||= {}
-
-      fields = fields.dup
-      if fields.last.is_a?(Hash)
-        fields += fields.pop.to_a
-      end
 
       field_text = String.new
 
-      fields.sample(rand(fields.length) + 1).each do |field, types|
-        if types.nil?
+      fields.to_a.sample(rand(fields.length) + 1).each do |field, types|
+        if types == true
           structure[type][field] = true
           field_text << "#{field}, "
         else
@@ -187,8 +197,10 @@ class NodeQuerySpec < PrelaySpec
         else
           if value == true
             object.send(field)
+          elsif subobject = object.send(field)
+            build_expected_json(object: subobject, structure: value)
           else
-            build_expected_json(object: object.send(field), structure: value)
+            nil
           end
         end
     end
@@ -196,57 +208,7 @@ class NodeQuerySpec < PrelaySpec
 
   100.times do
     it "should support fragments, however they appear" do
-      graphql, structure = fuzz \
-        default: [
-          :__typename,
-          :id
-        ],
-        Album: [
-          :__typename,
-          :id,
-          :name,
-          :upvotes,
-          :high_quality,
-          :popularity,
-          artist: {
-            default: [
-              :__typename,
-              :id,
-              :name,
-              :upvotes,
-              :active,
-              :popularity,
-            ]
-          },
-          first_track: {
-            default: [
-              :__typename,
-              :id,
-              :name,
-              :number,
-              :high_quality,
-              :popularity,
-            ]
-          }
-        ],
-        Release: [
-          :__typename,
-          :id,
-          :name,
-          :upvotes,
-          :high_quality,
-          :popularity,
-          artist: {
-            default: [
-              :__typename,
-              :id,
-              :name,
-              :upvotes,
-              :active,
-              :popularity,
-            ]
-          },
-        ]
+      graphql, structure = fuzz(AlbumType)
 
       execute_query <<-SQL
         query Query { node(id: "#{id_for(album)}") { #{graphql} } }

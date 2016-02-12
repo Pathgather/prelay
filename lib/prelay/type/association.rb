@@ -3,7 +3,7 @@
 module Prelay
   class Type
     class Association
-      attr_reader :parent, :name, :sequel_association, :sequel_association_name, :description, :nullable, :order
+      attr_reader :parent, :name, :sequel_association, :sequel_association_name, :description, :nullable, :order, :association_type
 
       def initialize(parent, association_type, name, description, target: nil, sequel_association_name: nil, target_types: nil, nullable: nil, order: nil, foreign_key: nil)
         @parent                  = parent
