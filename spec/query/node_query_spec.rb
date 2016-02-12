@@ -124,19 +124,35 @@ class NodeQuerySpec < PrelaySpec
   end
 
   def fuzz(types)
-    structure = {}
     graphql = String.new
+    structure = {}
 
-    (rand(5) + 1).times do
+    (rand(types.length) + 1).times do
       type, fields = types.to_a.sample
+      structure[type] ||= {}
 
-      chosen_fields = fields.sample(rand(fields.length) + 1)
+      fields = fields.dup
+      if fields.last.is_a?(Hash)
+        fields += fields.pop.to_a
+      end
 
-      structure[type] ||= []
-      structure[type] += chosen_fields
-      structure[type].uniq!
+      field_text = String.new
 
-      field_text = chosen_fields.join(', ') << ', '
+      fields.sample(rand(fields.length) + 1).each do |field, types|
+        if types.nil?
+          structure[type][field] = true
+          field_text << "#{field}, "
+        else
+          subgraphql, substructure = fuzz(types)
+
+          structure[type][field] ||= {}
+          structure[type][field].merge!(substructure){|k,o,n| o.merge(n)}
+
+          field_text << <<-GRAPHQL
+            #{field} { #{subgraphql} }
+          GRAPHQL
+        end
+      end
 
       if type == :default
         graphql << field_text
@@ -148,6 +164,34 @@ class NodeQuerySpec < PrelaySpec
     end
 
     [graphql, structure]
+  end
+
+  def build_expected_json(object:, structure:)
+    recursive_merge = proc { |k,o,n|
+      if o.is_a?(Hash) && n.is_a?(Hash)
+        o.merge(n, &recursive_merge)
+      else
+        true
+      end
+    }
+
+    fields = structure.values.inject({}){|a,b| a.merge(b, &recursive_merge)}
+
+    fields.each_with_object({}) do |(field, value), hash|
+      hash[field.to_s] =
+        case field
+        when :__typename
+          type_name_for(object)
+        when :id
+          id_for(object)
+        else
+          if value == true
+            object.send(field)
+          else
+            build_expected_json(object: object.send(field), structure: value)
+          end
+        end
+    end
   end
 
   100.times do
@@ -164,6 +208,26 @@ class NodeQuerySpec < PrelaySpec
           :upvotes,
           :high_quality,
           :popularity,
+          artist: {
+            default: [
+              :__typename,
+              :id,
+              :name,
+              :upvotes,
+              :active,
+              :popularity,
+            ]
+          },
+          first_track: {
+            default: [
+              :__typename,
+              :id,
+              :name,
+              :number,
+              :high_quality,
+              :popularity,
+            ]
+          }
         ],
         Release: [
           :__typename,
@@ -172,29 +236,25 @@ class NodeQuerySpec < PrelaySpec
           :upvotes,
           :high_quality,
           :popularity,
+          artist: {
+            default: [
+              :__typename,
+              :id,
+              :name,
+              :upvotes,
+              :active,
+              :popularity,
+            ]
+          },
         ]
 
       execute_query <<-SQL
         query Query { node(id: "#{id_for(album)}") { #{graphql} } }
       SQL
 
-      fields = structure.values.flatten.uniq
-
-      expected_json = fields.each_with_object({}) do |field, hash|
-        hash[field.to_s] =
-          case field
-          when :__typename
-            type_name_for(album)
-          when :id
-            id_for(album)
-          else
-            album.send(field)
-          end
-      end
-
       assert_result \
         'data' => {
-          'node' => expected_json
+          'node' => build_expected_json(object: album, structure: structure)
         }
     end
   end
