@@ -158,6 +158,10 @@ module Prelay
       columns = @types[type][:columns] + supplemental_columns
       columns.uniq!
 
+      if scope = type.dataset_scope
+        ds = scope.call(ds)
+      end
+
       type.filters.each do |name, (type, block)|
         if value = @arguments[name]
           ds = block.call(ds, value)

@@ -117,3 +117,16 @@ class PublisherType < Prelay::Type
 
   many_to_one :album, "The album this company was responsible for.", nullable: false
 end
+
+# Type for speccing dataset_scope.
+class BestTrackType < Prelay::Type
+  model BestTrack
+
+  dataset_scope { |ds| ds.where(:high_quality) }
+
+  description "A really good song on an album"
+
+  attribute :name,       "The name of the track.", datatype: :string
+  attribute :number,     "The number of the track listing.", datatype: :integer
+  attribute :popularity, "The normalized popularity of the track, on a scale from 0 to 1.", datatype: :float
+end

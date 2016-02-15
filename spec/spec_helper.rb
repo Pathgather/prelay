@@ -56,6 +56,7 @@ class PrelaySpec < Minitest::Spec
       TrackType,
       PublisherType,
       GenreType,
+      BestTrackType,
     ],
 
     queries: [

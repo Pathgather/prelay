@@ -56,3 +56,6 @@ end
 class Publisher < Sequel::Model
   many_to_one :album
 end
+
+class BestTrack < Sequel::Model(:tracks)
+end

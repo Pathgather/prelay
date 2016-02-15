@@ -57,6 +57,14 @@ module Prelay
         @filters ||= {}
       end
 
+      def dataset_scope(&block)
+        if block_given?
+          @dataset_scope = block
+        else
+          @dataset_scope
+        end
+      end
+
       def additional_models(*models)
         models.each { |model| associate_with_model(model) }
       end
