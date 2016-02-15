@@ -133,7 +133,7 @@ class NodeQuerySpec < PrelaySpec
     }
   end
 
-  def fuzz(type)
+  def fuzz(type, fragments: [])
     types_hash = {}
 
     all_types =
@@ -181,7 +181,7 @@ class NodeQuerySpec < PrelaySpec
           structure[this_type][field] = true
           field_text << " #{field}, "
         else
-          subgraphql, substructure = fuzz(value)
+          subgraphql, substructure = fuzz(value, fragments: fragments)
 
           structure[this_type][field] ||= {}
           structure[this_type][field].merge!(substructure){|k,o,n| o.merge(n, &recursive_merge_proc)}
@@ -190,14 +190,22 @@ class NodeQuerySpec < PrelaySpec
         end
       end
 
-      if this_type == :default
-        graphql << field_text
+      if rand > 0.8
+        # Shove it in a fragment!
+        fragment_name = "f#{fragments.length}"
+        t = this_type == :default ? type : this_type
+        fragments << %{\n fragment #{fragment_name} on #{t.graphql_object} { #{field_text} } }
+        graphql << %{ ...#{fragment_name} }
       else
-        graphql << %{\n... on #{this_type.graphql_object} { #{field_text} } }
+        if this_type == :default
+          graphql << field_text
+        else
+          graphql << %{\n... on #{this_type.graphql_object} { #{field_text} } }
+        end
       end
     end
 
-    [graphql, structure]
+    [graphql, structure, fragments]
   end
 
   def object_implements_type?(object, type)
@@ -239,11 +247,14 @@ class NodeQuerySpec < PrelaySpec
 
   100.times do
     it "should support fragments, however they appear" do
-      graphql, structure = fuzz(AlbumType)
+      graphql, structure, fragments = fuzz(AlbumType)
 
-      execute_query <<-SQL
+      s = <<-SQL
         query Query { node(id: "#{id_for(album)}") { id, __typename, ... on Album { #{graphql} } } }
+        #{fragments.join("\n")}
       SQL
+
+      execute_query(s)
 
       assert_result \
         'data' => {
