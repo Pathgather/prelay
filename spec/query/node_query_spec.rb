@@ -134,6 +134,8 @@ class NodeQuerySpec < PrelaySpec
   end
 
   def fuzz(type)
+    types_hash = {}
+
     all_types =
       if type < Prelay::Type
         [type] + type.interfaces.keys
@@ -143,12 +145,10 @@ class NodeQuerySpec < PrelaySpec
         raise "Unsupported type: #{type.inspect}"
       end
 
-    types_hash = {}
+    all_types.each do |t|
+      fields = t.attributes.keys.each_with_object({}){|key, hash| hash[key] = true}
 
-    all_types.each do |type|
-      fields = type.attributes.keys.each_with_object({}){|key, hash| hash[key] = true}
-
-      type.associations.each do |key, association|
+      t.associations.each do |key, association|
         next if association.association_type == :one_to_many
         fields[key] = association.target_type
       end
@@ -156,7 +156,7 @@ class NodeQuerySpec < PrelaySpec
       fields[:id] = true
       fields[:__typename] = true
 
-      types_hash[type] = fields
+      types_hash[t] = fields
     end
 
     types_hash[:default] =
@@ -171,29 +171,29 @@ class NodeQuerySpec < PrelaySpec
 
     (rand(types_hash.length) + 1).times do
       graphql << "\n"
-      type, fields = types_hash.to_a.sample
-      structure[type] ||= {}
+      this_type, fields = types_hash.to_a.sample
+      structure[this_type] ||= {}
 
       field_text = String.new
 
-      fields.to_a.sample(rand(fields.length) + 1).each do |field, types|
-        if types == true
-          structure[type][field] = true
-          field_text << "#{field}, "
+      fields.to_a.sample(rand(fields.length) + 1).each do |field, value|
+        if value == true
+          structure[this_type][field] = true
+          field_text << " #{field}, "
         else
-          subgraphql, substructure = fuzz(types)
+          subgraphql, substructure = fuzz(value)
 
-          structure[type][field] ||= {}
-          structure[type][field].merge!(substructure){|k,o,n| o.merge(n, &recursive_merge_proc)}
+          structure[this_type][field] ||= {}
+          structure[this_type][field].merge!(substructure){|k,o,n| o.merge(n, &recursive_merge_proc)}
 
-          field_text << %{\n#{field} { #{subgraphql} }}
+          field_text << %{\n#{field} { #{subgraphql} } }
         end
       end
 
-      if type == :default
+      if this_type == :default
         graphql << field_text
       else
-        graphql << %{\n... on #{type.graphql_object} { #{field_text} }}
+        graphql << %{\n... on #{this_type.graphql_object} { #{field_text} } }
       end
     end
 
