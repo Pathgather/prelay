@@ -143,7 +143,7 @@ class NodeQuerySpec < PrelaySpec
         raise "Unsupported type: #{type.inspect}"
       end
 
-    types_hash = { default: {id: true, __typename: true} }
+    types_hash = {}
 
     all_types.each do |type|
       fields = type.attributes.keys.each_with_object({}){|key, hash| hash[key] = true}
@@ -153,8 +153,18 @@ class NodeQuerySpec < PrelaySpec
         fields[key] = association.target_type
       end
 
+      fields[:id] = true
+      fields[:__typename] = true
+
       types_hash[type] = fields
     end
+
+    types_hash[:default] =
+      if type < Prelay::Type
+        types_hash.delete(type)
+      else
+        {id: true, __typename: true}
+      end
 
     graphql = String.new
     structure = {}
@@ -232,12 +242,12 @@ class NodeQuerySpec < PrelaySpec
       graphql, structure = fuzz(AlbumType)
 
       execute_query <<-SQL
-        query Query { node(id: "#{id_for(album)}") { #{graphql} } }
+        query Query { node(id: "#{id_for(album)}") { id, __typename, ... on Album { #{graphql} } } }
       SQL
 
       assert_result \
         'data' => {
-          'node' => build_expected_json(object: album, structure: structure)
+          'node' => build_expected_json(object: album, structure: structure).merge('id' => id_for(album), '__typename' => "Album")
         }
     end
   end
