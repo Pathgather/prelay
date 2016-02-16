@@ -44,4 +44,12 @@ class IDSpec < PrelaySpec
     a2 = Prelay::ID.get(Prelay::ID.for(a1))
     assert_equal a1, a2
   end
+
+  it ".get should not raise an error when getting a record that doesn't exist" do
+    assert_nil Prelay::ID.get(id)
+  end
+
+  it ".get! should raise an error when getting a record that doesn't exist" do
+    assert_raises(Sequel::NoMatchingRow) { Prelay::ID.get!(id) }
+  end
 end

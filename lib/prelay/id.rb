@@ -39,6 +39,10 @@ module Prelay
       def get(string)
         parse(string).get
       end
+
+      def get!(string)
+        parse(string).get!
+      end
     end
 
     attr_reader :type, :pk
@@ -49,7 +53,11 @@ module Prelay
     end
 
     def get
-      @type.model[@pk]
+      @type.model.with_pk(@pk)
+    end
+
+    def get!
+      @type.model.with_pk!(@pk)
     end
   end
 end
