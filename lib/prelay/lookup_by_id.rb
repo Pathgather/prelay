@@ -2,23 +2,28 @@
 
 module Prelay
   module LookupById
+    attr_reader :object
+
     def self.included(base)
       base.argument :id, :id
       base.prepend PrependedMethods
     end
 
-    attr_reader :relay_id
-
     module PrependedMethods
       def mutate(id:, **args)
-        @relay_id = ID.parse(id, expected_type: self.class.type)
-        super(**args)
-      end
+        @object = ID.parse(id, expected_type: self.class.type).get
 
-      def object
-        # This loads all fields from the DB, but that's ok, since
-        # validations/callbacks could touch any column anyway.
-        @object ||= @relay_id.get
+        if @object.nil?
+          # Return the values that are necessary for the GraphQL gem to work,
+          # but let them all be nil.
+          r = {}
+          self.class.result_fields.each_value do |result_field|
+            r[result_field.normalized_name] = nil
+          end
+          r
+        else
+          super(**args)
+        end
       end
     end
   end
