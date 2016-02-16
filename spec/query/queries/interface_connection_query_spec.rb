@@ -43,10 +43,10 @@ class InterfaceConnectionQuerySpec < PrelaySpec
               {
                 'cursor' => to_cursor(release.created_at),
                 'node' => {
-                  'id' => encode(release.is_a?(Album) ? 'Album' : 'Compilation', release.id),
+                  'id' => id_for(release),
                   'name' => release.name,
                   'artist' => {
-                    'id' => encode('Artist', release.artist_id),
+                    'id' => id_for(release.artist),
                     'name' => release.artist.name,
                   }
                 }
