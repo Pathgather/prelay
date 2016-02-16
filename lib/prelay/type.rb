@@ -140,14 +140,6 @@ module Prelay
         o ? @order = o : @order
       end
 
-      def default_selections(*s)
-        if s.any?
-          @default_selections = s
-        else
-          @default_selections || []
-        end
-      end
-
       def model(m = nil)
         if m
           @model = m

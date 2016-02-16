@@ -122,7 +122,7 @@ end
 class BestTrackType < Prelay::Type
   model BestTrack
 
-  dataset_scope { |ds| ds.where(:high_quality) }
+  dataset_scope { |ds| ds.where(:high_quality).select{random{}.as(:rand)} }
 
   description "A really good song on an album"
 

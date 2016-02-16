@@ -28,7 +28,7 @@ class DatasetScopeSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "tracks"."id", "tracks"."name" FROM "tracks" WHERE (("tracks"."id" = '#{track.id}') AND "high_quality")),
+      %(SELECT random() AS "rand", "tracks"."id", "tracks"."name" FROM "tracks" WHERE (("tracks"."id" = '#{track.id}') AND "high_quality")),
     ]
   end
 end

@@ -155,9 +155,6 @@ module Prelay
     def apply_query_to_dataset(ds, type:, supplemental_columns: EMPTY_ARRAY)
       table_name = ds.model.table_name
 
-      columns = @types[type][:columns] + supplemental_columns
-      columns.uniq!
-
       if scope = type.dataset_scope
         ds = scope.call(ds)
       end
@@ -168,9 +165,8 @@ module Prelay
         end
       end
 
-      if default_selections = type.default_selections
-        columns.push(*default_selections)
-      end
+      columns = @types[type][:columns] + supplemental_columns
+      columns.uniq!
 
       if columns.delete(:cursor)
         order = ds.opts[:order]
@@ -185,7 +181,9 @@ module Prelay
         columns << Sequel.as(exp, :cursor)
       end
 
-      ds = ds.select(*columns.map{|c| qualify_column(table_name, c)})
+      selections = ds.opts[:select] || EMPTY_ARRAY
+
+      ds = ds.select(*(selections + columns.map{|c| qualify_column(table_name, c)}))
 
       if limit = @arguments[:first] || @arguments[:last]
         ds = ds.reverse_order if @arguments[:last]
