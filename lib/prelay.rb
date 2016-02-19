@@ -21,20 +21,25 @@ module Prelay
   class InvalidGraphQLQuery < StandardError; end
 end
 
-require 'prelay/connection'
-require 'prelay/dataset_resolver'
-require 'prelay/graphql_processor'
-require 'prelay/id'
-require 'prelay/interface'
-require 'prelay/mutation'
-require 'prelay/query'
-require 'prelay/relay_processor'
-require 'prelay/result_array'
 require 'prelay/schema'
-require 'prelay/selection'
-require 'prelay/sequel_connection'
-require 'prelay/time_type'
+
 require 'prelay/type'
+require 'prelay/interface'
+require 'prelay/query'
+require 'prelay/mutation'
+
+require 'prelay/graphql_processor'
+require 'prelay/relay_processor'
+require 'prelay/selection'
+
+require 'prelay/dataset_resolver'
+require 'prelay/sequel_connection'
+require 'prelay/result_array'
+
+require 'prelay/connection'
+require 'prelay/id'
+require 'prelay/time_type'
+
 require 'prelay/version'
 
 GraphQL::Relay::BaseConnection.register_connection_implementation Prelay::ResultArray, Prelay::SequelConnection
