@@ -16,7 +16,7 @@ module Prelay
           if s = SCHEMAS.first
             s
           else
-            raise "Tried to subclass #{to_s} (#{subclass}) without first instantiating a Prelay::Schema for it to belong to!"
+            raise DefinitionError, "Tried to subclass #{to_s} (#{subclass}) without first instantiating a Prelay::Schema for it to belong to!"
           end
         else
           s = self.schema

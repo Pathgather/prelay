@@ -19,6 +19,7 @@ module Prelay
   SCHEMAS = []
 
   class InvalidGraphQLQuery < StandardError; end
+  class DefinitionError < StandardError; end
 
   %w(Type Interface Query Mutation).each do |subclassable|
     eval <<-RUBY

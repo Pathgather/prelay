@@ -14,6 +14,18 @@ class TypeSpec < PrelaySpec
         assert_equal [SCHEMA], Prelay::SCHEMAS
       end
     end
+
+    it "should raise an error if a schema hasn't been declared yet" do
+      TEST_MUTEX.synchronize do
+        Prelay::SCHEMAS.clear
+
+        error = assert_raises(Prelay::DefinitionError){class TypeTest < Prelay::Type; end}
+
+        Prelay::SCHEMAS.replace([SCHEMA])
+
+        assert_equal "Tried to subclass Prelay::Type (TypeSpec::TypeTest) without first instantiating a Prelay::Schema for it to belong to!", error.message
+      end
+    end
   end
 
   describe "when inherited from the function that was passed a schema" do
