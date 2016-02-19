@@ -9,8 +9,8 @@ class TypeSpec < PrelaySpec
         assert_equal [SCHEMA], Prelay::SCHEMAS
         t = Class.new(Prelay::Type)
         assert_equal SCHEMA, t.schema
-        assert SCHEMA.types.include?(t)
-        SCHEMA.types.delete(t)
+        assert SCHEMA.type_set.include?(t)
+        SCHEMA.type_set.delete(t)
         assert_equal [SCHEMA], Prelay::SCHEMAS
       end
     end
@@ -20,15 +20,15 @@ class TypeSpec < PrelaySpec
     it "should have that schema as its parent" do
       TEST_MUTEX.synchronize do
         assert_equal [SCHEMA], Prelay::SCHEMAS
-        original_types = SCHEMA.types
+        original_types = SCHEMA.type_set
 
         s = Prelay::Schema.new(temporary: true)
         t = Class.new(Prelay::Type(schema: s))
         assert_equal s, t.schema
-        assert_equal [t], s.types
+        assert_equal [t], s.type_set
 
         assert_equal [SCHEMA], Prelay::SCHEMAS
-        assert_equal original_types, SCHEMA.types
+        assert_equal original_types, SCHEMA.type_set
       end
     end
   end

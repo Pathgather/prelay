@@ -32,6 +32,7 @@ module Prelay
 end
 
 require 'prelay/schema'
+require 'prelay/subclassable'
 
 require 'prelay/type'
 require 'prelay/interface'

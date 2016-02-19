@@ -2,32 +2,12 @@
 
 module Prelay
   class Interface
+    extend Subclassable
+
     class << self
       def inherited(subclass)
         super
-
-        subclass.schema ||=
-          if self == Interface
-            if s = SCHEMAS.first
-              s
-            else
-              raise "Tried to subclass Prelay::Interface (#{subclass}) without first instantiating a Prelay::Schema for it to belong to!"
-            end
-          else
-            s = self.schema
-            self.schema = nil
-            s
-          end
-
         Type::BY_NAME[subclass.to_s.split('::').last.chomp('Interface')] = subclass
-      end
-
-      attr_reader :schema
-
-      def schema=(s)
-        @schema.interfaces.delete(self) if @schema
-        s.interfaces << self if s
-        @schema = s
       end
 
       # Eval is evil, but use it to define some fast class accessors:

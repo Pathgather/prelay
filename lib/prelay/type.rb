@@ -5,6 +5,8 @@ require 'prelay/type/attribute'
 
 module Prelay
   class Type
+    extend Subclassable
+
     BY_MODEL = {}
     BY_NAME  = {}
 
@@ -20,31 +22,9 @@ module Prelay
     end
 
     class << self
-      attr_reader :schema
-
       def inherited(subclass)
         super
-
-        subclass.schema ||=
-          if self == Type
-            if s = SCHEMAS.first
-              s
-            else
-              raise "Tried to subclass Prelay::Type (#{subclass}) without first instantiating a Prelay::Schema for it to belong to!"
-            end
-          else
-            s = self.schema
-            self.schema = nil
-            s
-          end
-
         BY_NAME[subclass.to_s.split('::').last.chomp('Type')] = subclass
-      end
-
-      def schema=(s)
-        @schema.types.delete(self) if @schema
-        s.types << self if s
-        @schema = s
       end
 
       def attributes

@@ -2,13 +2,13 @@
 
 module Prelay
   class Schema
-    attr_reader :types, :queries, :mutations, :interfaces
+    attr_reader :type_set, :query_set, :mutation_set, :interface_set
 
     def initialize(temporary: false)
-      @types      = []
-      @interfaces = []
-      @queries    = []
-      @mutations  = []
+      @type_set      = []
+      @interface_set = []
+      @query_set     = []
+      @mutation_set  = []
 
       SCHEMAS << self unless temporary
     end
@@ -24,12 +24,12 @@ module Prelay
         ID.encode(type: type, pk: pk)
       end
 
-      @types.each { |type| type.node_identification = node_identification }
+      @type_set.each { |type| type.node_identification = node_identification }
 
-      (@types + @interfaces).each &:graphql_object
+      (@type_set + @interface_set).each &:graphql_object
 
-      queries   = @queries
-      mutations = @mutations
+      queries   = @query_set
+      mutations = @mutation_set
 
       GraphQL::Schema.new(
         query: GraphQL::ObjectType.define {

@@ -5,6 +5,8 @@ require 'prelay/mutation/result_field'
 
 module Prelay
   class Mutation
+    extend Subclassable
+
     def initialize(arguments:)
       @args = arguments
     end
@@ -24,31 +26,6 @@ module Prelay
     end
 
     class << self
-      attr_reader :schema
-
-      def inherited(subclass)
-        super
-
-        subclass.schema ||=
-          if self == Mutation
-            if s = SCHEMAS.first
-              s
-            else
-              raise "Tried to subclass Prelay::Mutation (#{subclass}) without first instantiating a Prelay::Schema for it to belong to!"
-            end
-          else
-            s = self.schema
-            self.schema = nil
-            s
-          end
-      end
-
-      def schema=(s)
-        @schema.mutations.delete(self) if @schema
-        s.mutations << self if s
-        @schema = s
-      end
-
       [:type, :description].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
 
       def arguments

@@ -4,32 +4,9 @@ require 'prelay/query/argument'
 
 module Prelay
   class Query
+    extend Subclassable
+
     class << self
-      attr_reader :schema
-
-      def inherited(subclass)
-        super
-
-        subclass.schema ||=
-          if self == Query
-            if s = SCHEMAS.first
-              s
-            else
-              raise "Tried to subclass Prelay::Query (#{subclass}) without first instantiating a Prelay::Schema for it to belong to!"
-            end
-          else
-            s = self.schema
-            self.schema = nil
-            s
-          end
-      end
-
-      def schema=(s)
-        @schema.queries.delete(self) if @schema
-        s.queries << self if s
-        @schema = s
-      end
-
       [:type, :description, :resolve, :types_to_skip].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
 
       def arguments
