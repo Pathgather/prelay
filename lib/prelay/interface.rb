@@ -1,12 +1,6 @@
 # frozen_string_literal: true
 
 module Prelay
-  def self.Interface(schema:)
-    c = Class.new(Interface)
-    c.schema = schema
-    c
-  end
-
   class Interface
     class << self
       def inherited(subclass)

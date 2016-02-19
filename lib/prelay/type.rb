@@ -4,12 +4,6 @@ require 'prelay/type/association'
 require 'prelay/type/attribute'
 
 module Prelay
-  def self.Type(schema:)
-    c = Class.new(Type)
-    c.schema = schema
-    c
-  end
-
   class Type
     BY_MODEL = {}
     BY_NAME  = {}

@@ -19,6 +19,16 @@ module Prelay
   SCHEMAS = []
 
   class InvalidGraphQLQuery < StandardError; end
+
+  %w(Type Interface Query Mutation).each do |subclassable|
+    eval <<-RUBY
+      def self.#{subclassable}(schema:)
+        c = Class.new(#{subclassable})
+        c.schema = schema
+        c
+      end
+    RUBY
+  end
 end
 
 require 'prelay/schema'

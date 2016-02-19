@@ -3,12 +3,6 @@
 require 'prelay/query/argument'
 
 module Prelay
-  def self.Query(schema:)
-    c = Class.new(Query)
-    c.schema = schema
-    c
-  end
-
   class Query
     class << self
       attr_reader :schema

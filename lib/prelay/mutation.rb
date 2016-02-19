@@ -4,12 +4,6 @@ require 'prelay/mutation/argument'
 require 'prelay/mutation/result_field'
 
 module Prelay
-  def self.Mutation(schema:)
-    c = Class.new(Mutation)
-    c.schema = schema
-    c
-  end
-
   class Mutation
     def initialize(arguments:)
       @args = arguments
