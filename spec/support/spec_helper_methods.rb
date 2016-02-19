@@ -4,7 +4,7 @@ module SpecHelperMethods
   def execute_query(graphql)
     sqls.clear
     self.track_sqls = true
-    @result = PrelaySpec::GraphQLSchema.execute(graphql, debug: true)
+    @result = PrelaySpec::GRAPHQL_SCHEMA.execute(graphql, debug: true)
     assert_nil @result['errors']
   ensure
     self.track_sqls = false

@@ -2,10 +2,15 @@
 
 module Prelay
   class Schema
-    def initialize(types:, queries:, mutations:)
-      @types     = types
-      @queries   = queries
-      @mutations = mutations
+    attr_reader :types, :queries, :mutations, :interfaces
+
+    def initialize(temporary: false)
+      @types      = []
+      @interfaces = []
+      @queries    = []
+      @mutations  = []
+
+      SCHEMAS << self unless temporary
     end
 
     def to_graphql_schema(prefix:)
@@ -19,9 +24,9 @@ module Prelay
         ID.encode(type: type, pk: pk)
       end
 
-      @types.each do |type|
-        type.define_graphql_object(node_identification)
-      end
+      @types.each { |type| type.node_identification = node_identification }
+
+      (@types + @interfaces).each &:graphql_object
 
       queries   = @queries
       mutations = @mutations

@@ -4,6 +4,12 @@ require 'prelay/type/association'
 require 'prelay/type/attribute'
 
 module Prelay
+  def self.Type(schema:)
+    c = Class.new(Type)
+    c.schema = schema
+    c
+  end
+
   class Type
     BY_MODEL = {}
     BY_NAME  = {}
@@ -20,9 +26,31 @@ module Prelay
     end
 
     class << self
+      attr_reader :schema
+
       def inherited(subclass)
         super
+
+        subclass.schema ||=
+          if self == Type
+            if s = SCHEMAS.first
+              s
+            else
+              raise "Tried to subclass Prelay::Type (#{subclass}) without first instantiating a Prelay::Schema for it to belong to!"
+            end
+          else
+            s = self.schema
+            self.schema = nil
+            s
+          end
+
         BY_NAME[subclass.to_s.split('::').last.chomp('Type')] = subclass
+      end
+
+      def schema=(s)
+        @schema.types.delete(self) if @schema
+        s.types << self if s
+        @schema = s
       end
 
       def attributes
@@ -86,46 +114,50 @@ module Prelay
         @graphql_object || raise("GraphQL Object not defined for #{self} (was it included in the schema?)")
       end
 
-      def define_graphql_object(node_identification)
-        type = self
+      attr_accessor :node_identification
 
-        @graphql_object = ::GraphQL::ObjectType.define do
-          name(type.name.split('::').last.chomp('Type'))
-          description(type.description)
+      def graphql_object
+        @graphql_object ||= begin
+          type = self
 
-          interfaces([node_identification.interface] + type.interfaces.keys.map(&:graphql_object))
-          global_id_field :id
+          ::GraphQL::ObjectType.define do
+            name(type.name.split('::').last.chomp('Type'))
+            description(type.description)
 
-          type.attributes.each_value do |attribute|
-            field attribute.name do
-              description(attribute.description)
-              type(attribute.graphql_type)
-            end
-          end
+            interfaces([type.node_identification.interface] + type.interfaces.keys.map(&:graphql_object))
+            global_id_field :id
 
-          type.associations.each_value do |association|
-            if association.returns_array?
-              connection association.name do
-                type -> { association.graphql_type.connection_type }
-                description(association.description)
-
-                association.target_type.filters.each do |name, (type, _)|
-                  argument name, Query::Argument.new(nil, name, type).graphql_type
-                end
-
-                resolve -> (obj, args, ctx) {
-                  node = ctx.ast_node
-                  key = (node.alias || node.name).to_sym
-                  obj.associations.fetch(key) { raise "Association #{key} not loaded for #{obj.inspect}" }
-                }
+            type.attributes.each_value do |attribute|
+              field attribute.name do
+                description(attribute.description)
+                type(attribute.graphql_type)
               end
-            else
-              field association.name do
-                description(association.description)
-                type -> {
-                  t = association.graphql_type
-                  association.nullable ? t : t.to_non_null_type
-                }
+            end
+
+            type.associations.each_value do |association|
+              if association.returns_array?
+                connection association.name do
+                  type -> { association.graphql_type.connection_type }
+                  description(association.description)
+
+                  association.target_type.filters.each do |name, (type, _)|
+                    argument name, Query::Argument.new(nil, name, type).graphql_type
+                  end
+
+                  resolve -> (obj, args, ctx) {
+                    node = ctx.ast_node
+                    key = (node.alias || node.name).to_sym
+                    obj.associations.fetch(key) { raise "Association #{key} not loaded for #{obj.inspect}" }
+                  }
+                end
+              else
+                field association.name do
+                  description(association.description)
+                  type -> {
+                    t = association.graphql_type
+                    association.nullable ? t : t.to_non_null_type
+                  }
+                end
               end
             end
           end

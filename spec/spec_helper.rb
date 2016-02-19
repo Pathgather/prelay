@@ -17,12 +17,6 @@ if !DB.table_exists?(:publishers) || ENV['PRELAY_REBUILD']
   require_relative 'support/populate_db'
 end
 
-require_relative 'support/sequel_models'
-require_relative 'support/prelay_types'
-require_relative 'support/prelay_queries'
-require_relative 'support/prelay_mutations'
-require_relative 'support/spec_helper_methods'
-
 # # A little helper to raise a nice error if any of our specs try to access a
 # # model attribute that wasn't loaded from the DB. Probably not a good idea
 # # to use it all the time, but it's useful for linting every once in a while.
@@ -31,6 +25,8 @@ require_relative 'support/spec_helper_methods'
 #     @values.fetch(k) { raise "column '#{k}' not loaded for object #{inspect}" }
 #   end
 # }
+
+require_relative 'support/spec_helper_methods'
 
 class PrelaySpec < Minitest::Spec
   ENV['N'] = '4'
@@ -42,32 +38,17 @@ class PrelaySpec < Minitest::Spec
   include SpecHelperMethods
   extend  SpecHelperMethods
 
+  TEST_MUTEX = Mutex.new
+  SCHEMA = Prelay::Schema.new
+
   def around
     DB.transaction(rollback: :always, savepoint: true, auto_savepoint: true) { super }
   end
-
-  GraphQLSchema = Prelay::Schema.new(
-    types: [
-      ReleaseInterface,
-      ArtistType,
-      AlbumType,
-      BestAlbumType,
-      CompilationType,
-      TrackType,
-      PublisherType,
-      GenreType,
-      BestTrackType,
-    ],
-
-    queries: [
-      RandomAlbumQuery,
-      AlbumsQuery,
-      ReleasesQuery,
-    ],
-
-    mutations: [
-      UpdateAlbumMutation,
-      CreateAlbumMutation,
-    ],
-  ).to_graphql_schema(prefix: 'Client')
 end
+
+require_relative 'support/sequel_models'
+require_relative 'support/prelay_types'
+require_relative 'support/prelay_queries'
+require_relative 'support/prelay_mutations'
+
+PrelaySpec::GRAPHQL_SCHEMA = PrelaySpec::SCHEMA.to_graphql_schema(prefix: 'Client')

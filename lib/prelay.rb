@@ -15,6 +15,9 @@ module Prelay
   EMPTY_ARRAY = [].freeze
   EMPTY_HASH  = {}.freeze
 
+  # Array of all permanent Prelay schemas that have been instantiated.
+  SCHEMAS = []
+
   class InvalidGraphQLQuery < StandardError; end
 end
 
