@@ -38,95 +38,99 @@ class OneToManyPaginationSpec < PrelaySpec
         [true, false].each do |cursor_requested|
           [true, false].each do |has_next_page_passed|
             [true, false].each do |has_previous_page_passed|
-              desc = "paginating #{paginating_forward ? 'forward' : 'backward'} requesting #{all_records_requested ? 'all' : 'some'} records #{cursor_requested ? 'and' : 'but not'} their cursors with#{'out' unless cursor_passed} a cursor to page from #{'and hasNextPage' if has_next_page_passed} #{'and hasPreviousPage' if has_previous_page_passed}"
+              [true, false].each do |paginating_through_interface|
+                desc = "paginating #{paginating_forward ? 'forward' : 'backward'} through a #{paginating_through_interface ? 'interface' : 'type'} requesting #{all_records_requested ? 'all' : 'some'} records #{cursor_requested ? 'and' : 'but not'} their cursors with#{'out' unless cursor_passed} a cursor to page from #{'and hasNextPage' if has_next_page_passed} #{'and hasPreviousPage' if has_previous_page_passed}"
 
-              page_info_query =
-                if has_next_page_passed || has_previous_page_passed
-                  <<-PAGEINFO
-                    pageInfo {
-                      #{'hasNextPage'     if has_next_page_passed}
-                      #{'hasPreviousPage' if has_previous_page_passed}
-                    }
-                  PAGEINFO
+                page_info_query =
+                  if has_next_page_passed || has_previous_page_passed
+                    <<-PAGEINFO
+                      pageInfo {
+                        #{'hasNextPage'     if has_next_page_passed}
+                        #{'hasPreviousPage' if has_previous_page_passed}
+                      }
+                    PAGEINFO
+                  end
+
+                page_info =
+                  if has_next_page_passed || has_previous_page_passed
+                    r = {}
+                    if has_next_page_passed
+                      r['hasNextPage'] = paginating_forward ? !all_records_requested : cursor_passed
+                    end
+                    if has_previous_page_passed
+                      r['hasPreviousPage'] = paginating_forward ? cursor_passed : !all_records_requested
+                    end
+                    r
+                  end
+
+                args_and_expected_albums = proc do |all_albums|
+                  expected_albums = all_albums
+                  expected_albums = expected_albums.reverse unless paginating_forward
+
+                  args = {}
+                  args[paginating_forward ? :first : :last  ] = all_records_requested ? 10 : 3
+                  args[paginating_forward ? :after : :before] = to_cursor(expected_albums[1].release_date) if cursor_passed
+
+                  expected_albums = expected_albums[2..-1] if cursor_passed
+                  expected_albums = expected_albums[0..2] unless all_records_requested
+                  expected_albums = expected_albums.reverse unless paginating_forward
+
+                  [args, expected_albums]
                 end
 
-              page_info =
-                if has_next_page_passed || has_previous_page_passed
-                  r = {}
-                  if has_next_page_passed
-                    r['hasNextPage'] = paginating_forward ? !all_records_requested : cursor_passed
-                  end
-                  if has_previous_page_passed
-                    r['hasPreviousPage'] = paginating_forward ? cursor_passed : !all_records_requested
-                  end
-                  r
-                end
+                it "on a one-to-many association should support #{desc}" do
+                  skip if paginating_through_interface
 
-              args_and_expected_albums = proc do |all_albums|
-                expected_albums = all_albums
-                expected_albums = expected_albums.reverse unless paginating_forward
+                  artist_id = id_for(artist)
 
-                args = {}
-                args[paginating_forward ? :first : :last  ] = all_records_requested ? 10 : 3
-                args[paginating_forward ? :after : :before] = to_cursor(expected_albums[1].release_date) if cursor_passed
+                  # Will need to update the spec logic if this changes.
+                  assert_equal 10, albums.length
 
-                expected_albums = expected_albums[2..-1] if cursor_passed
-                expected_albums = expected_albums[0..2] unless all_records_requested
-                expected_albums = expected_albums.reverse unless paginating_forward
+                  args, expected_albums = args_and_expected_albums.call(albums)
 
-                [args, expected_albums]
-              end
-
-              it "on a one-to-many association should support #{desc}" do
-                artist_id = id_for(artist)
-
-                # Will need to update the spec logic if this changes.
-                assert_equal 10, albums.length
-
-                args, expected_albums = args_and_expected_albums.call(albums)
-
-                graphql =
-                  <<-GRAPHQL
-                    query Query {
-                      node(id: "#{artist_id}") {
-                        id,
-                        ... on Artist {
-                          name,
-                          albums(#{graphql_args(args)}) {
-                            edges {
-                              #{'cursor,' if cursor_requested}
-                              node {
-                                id,
-                                name
+                  graphql =
+                    <<-GRAPHQL
+                      query Query {
+                        node(id: "#{artist_id}") {
+                          id,
+                          ... on Artist {
+                            name,
+                            #{paginating_through_interface ? 'releases' : 'albums'}(#{graphql_args(args)}) {
+                              edges {
+                                #{'cursor,' if cursor_requested}
+                                node {
+                                  id,
+                                  name
+                                }
                               }
+                              #{page_info_query}
                             }
-                            #{page_info_query}
                           }
                         }
                       }
-                    }
-                  GRAPHQL
+                    GRAPHQL
 
-                execute_query(graphql)
+                  execute_query(graphql)
 
-                expectation = {
-                  'edges' => expected_albums.map { |a|
-                    h = {'node' => {'id' => id_for(a), 'name' => a.name}}
-                    h['cursor'] = to_cursor(a.release_date) if cursor_requested
-                    h
-                  }
-                }
-
-                expectation['pageInfo'] = page_info if page_info
-
-                assert_result \
-                  'data' => {
-                    'node' => {
-                      'id' => id_for(artist),
-                      'name' => artist.name,
-                      'albums' => expectation,
+                  expectation = {
+                    'edges' => expected_albums.map { |a|
+                      h = {'node' => {'id' => id_for(a), 'name' => a.name}}
+                      h['cursor'] = to_cursor(a.release_date) if cursor_requested
+                      h
                     }
                   }
+
+                  expectation['pageInfo'] = page_info if page_info
+
+                  assert_result \
+                    'data' => {
+                      'node' => {
+                        'id' => id_for(artist),
+                        'name' => artist.name,
+                        (paginating_through_interface ? 'releases' : 'albums') => expectation,
+                      }
+                    }
+                end
               end
             end
           end

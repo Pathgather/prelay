@@ -102,4 +102,6 @@ class ConnectionQuerySpec < PrelaySpec
       %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
     ]
   end
+
+  it "should support all types of pagination"
 end
