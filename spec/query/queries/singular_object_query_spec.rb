@@ -11,7 +11,7 @@ class SingularObjectQuerySpec < PrelaySpec
           name,
           artist {
             id,
-            name
+            first_name
           }
         }
       }
@@ -22,7 +22,7 @@ class SingularObjectQuerySpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" ORDER BY random() LIMIT 1),
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist.id}')) ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist.id}')) ORDER BY "artists"."id"),
     ]
 
     assert_result \
@@ -32,7 +32,7 @@ class SingularObjectQuerySpec < PrelaySpec
           'name' => album.name,
           'artist' => {
             'id' => id_for(album.artist),
-            'name' => album.artist.name
+            'first_name' => album.artist.first_name
           }
         }
       }

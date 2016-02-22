@@ -18,7 +18,7 @@ class NodesQuerySpec < PrelaySpec
           id,
           __typename,
           ... on Album  { name, high_quality }
-          ... on Artist { name, upvotes }
+          ... on Artist { first_name, upvotes }
           ... on Track  { name, number }
         }
       }
@@ -42,7 +42,7 @@ class NodesQuerySpec < PrelaySpec
           {
             'id'           => id3,
             '__typename'   => "Artist",
-            'name'         => artist.name,
+            'first_name'   => artist.first_name,
             'upvotes'      => artist.upvotes,
           },
         ]
@@ -51,7 +51,7 @@ class NodesQuerySpec < PrelaySpec
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name", "albums"."high_quality" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
       %(SELECT "tracks"."id", "tracks"."name", "tracks"."number" FROM "tracks" WHERE ("tracks"."id" = '#{track.id}')),
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."upvotes" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."upvotes" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
     ]
   end
 
@@ -69,7 +69,7 @@ class NodesQuerySpec < PrelaySpec
           id,
           __typename,
           ... on Album   { name, high_quality }
-          ... on Artist  { name, upvotes }
+          ... on Artist  { first_name, upvotes }
           ... on Track   { name, number }
           ... on Release { name, popularity }
         }
@@ -95,7 +95,7 @@ class NodesQuerySpec < PrelaySpec
           {
             'id'           => id3,
             '__typename'   => "Artist",
-            'name'         => artist.name,
+            'first_name'   => artist.first_name,
             'upvotes'      => artist.upvotes,
           },
         ]
@@ -104,7 +104,7 @@ class NodesQuerySpec < PrelaySpec
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name", "albums"."high_quality" FROM "albums" WHERE ("albums"."id" = '#{album.id}') ORDER BY "albums"."id"),
       %(SELECT "tracks"."id", "tracks"."name", "tracks"."number" FROM "tracks" WHERE ("tracks"."id" = '#{track.id}') ORDER BY "tracks"."id"),
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."upvotes" FROM "artists" WHERE ("artists"."id" = '#{artist.id}') ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."upvotes" FROM "artists" WHERE ("artists"."id" = '#{artist.id}') ORDER BY "artists"."id"),
     ]
   end
 

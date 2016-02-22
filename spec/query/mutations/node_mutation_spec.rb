@@ -17,7 +17,7 @@ class NodeMutationSpec < PrelaySpec
         name,
         artist {
           id,
-          name
+          first_name
         }
       }
     GRAPHQL
@@ -28,7 +28,7 @@ class NodeMutationSpec < PrelaySpec
       %(UPDATE "albums" SET "name" = 'New Album Name' WHERE ("id" = '#{album.id}')),
       %(RELEASE SAVEPOINT autopoint_1),
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("id" = '#{album.id}') ORDER BY "created_at" DESC),
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
     ]
 
     assert_equal "New Album Name", album.reload.name
@@ -39,7 +39,7 @@ class NodeMutationSpec < PrelaySpec
         'name' => "New Album Name",
         'artist' => {
           'id' => id_for(album.artist),
-          'name' => album.artist.name,
+          'first_name' => album.artist.first_name,
         }
       }
   end

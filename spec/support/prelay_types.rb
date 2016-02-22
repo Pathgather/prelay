@@ -28,7 +28,8 @@ class ArtistType < Prelay::Type
 
   description "A musician"
 
-  attribute :name,       "The full name of the artist", datatype: :string, dependent_columns: [:first_name, :last_name]
+  attribute :first_name, "The first name of the artist", datatype: :string
+  attribute :last_name,  "The last name of the artist", datatype: :string
   attribute :upvotes,    "How many upvotes the artist got", datatype: :integer
   attribute :active,     "Whether the artist is still making music", datatype: :boolean
   attribute :popularity, "The artist's relative popularity, normalized between 0 and 1.", datatype: :float

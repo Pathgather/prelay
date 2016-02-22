@@ -13,7 +13,7 @@ class ManyToOneAssociationSpec < PrelaySpec
         node(id: "#{id}") {
           id,
           ... on Artist {
-            name,
+            first_name,
             genre {
               id,
               name
@@ -27,7 +27,7 @@ class ManyToOneAssociationSpec < PrelaySpec
       'data' => {
         'node' => {
           'id' => id,
-          'name' => artist.name,
+          'first_name' => artist.first_name,
           'genre' => {
             'id' => id_for(artist.genre),
             'name' => artist.genre.name
@@ -36,7 +36,7 @@ class ManyToOneAssociationSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."genre_id" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."genre_id" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
       %(SELECT "genres"."id", "genres"."name" FROM "genres" WHERE ("genres"."id" IN ('#{artist.genre_id}')) ORDER BY "genres"."id")
     ]
   end
@@ -51,7 +51,7 @@ class ManyToOneAssociationSpec < PrelaySpec
         node(id: "#{id}") {
           id,
           ... on Artist {
-            name,
+            first_name,
             genre {
               id,
               name
@@ -65,13 +65,13 @@ class ManyToOneAssociationSpec < PrelaySpec
       'data' => {
         'node' => {
           'id' => id,
-          'name' => artist.name,
+          'first_name' => artist.first_name,
           'genre' => nil,
         }
       }
 
     assert_sqls [
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."genre_id" FROM "artists" WHERE ("artists"."id" = '#{artist.id}'))
+      %(SELECT "artists"."id", "artists"."first_name", "artists"."genre_id" FROM "artists" WHERE ("artists"."id" = '#{artist.id}'))
     ]
   end
 end

@@ -17,7 +17,7 @@ class OneToManyPaginationSpec < PrelaySpec
           node(id: "#{artist_id}") {
             id,
             ... on Artist {
-              name,
+              first_name,
               albums {
                 edges {
                   node {
@@ -90,7 +90,7 @@ class OneToManyPaginationSpec < PrelaySpec
                         node(id: "#{artist_id}") {
                           id,
                           ... on Artist {
-                            name,
+                            first_name,
                             #{paginating_through_interface ? 'releases' : 'albums'}(#{graphql_args(args)}) {
                               edges {
                                 #{'cursor,' if cursor_requested}
@@ -122,7 +122,7 @@ class OneToManyPaginationSpec < PrelaySpec
                     'data' => {
                       'node' => {
                         'id' => id_for(artist),
-                        'name' => artist.name,
+                        'first_name' => artist.first_name,
                         (paginating_through_interface ? 'releases' : 'albums') => expectation,
                       }
                     }

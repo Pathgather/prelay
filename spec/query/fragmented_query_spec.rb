@@ -17,7 +17,7 @@ class FragmentedQuerySpec < PrelaySpec
               high_quality,
               artist {
                 id,
-                name,
+                first_name,
                 upvotes,
                 active,
               }
@@ -112,7 +112,7 @@ class FragmentedQuerySpec < PrelaySpec
             upvotes,
             artist {
               id,
-              name,
+              first_name,
             }
           }
         }
@@ -177,7 +177,7 @@ class FragmentedQuerySpec < PrelaySpec
           upvotes,
           artist {
             id,
-            name,
+            first_name,
           }
         }
 
@@ -246,7 +246,7 @@ class FragmentedQuerySpec < PrelaySpec
           upvotes,
           artist {
             id,
-            name,
+            first_name,
           }
         }
 
@@ -293,7 +293,7 @@ class FragmentedQuerySpec < PrelaySpec
           name,
           artist {
             id,
-            name,
+            first_name,
           }
           tracks(first: 50) {
             edges {
@@ -386,7 +386,7 @@ class FragmentedQuerySpec < PrelaySpec
 
         fragment __RelayQueryFragment0bb8 on Artist {
           id,
-          name,
+          first_name,
           ...__RelayQueryFragment0poedameron
         }
 
@@ -412,7 +412,7 @@ class FragmentedQuerySpec < PrelaySpec
               high_quality,
               artist {
                 id,
-                name,
+                first_name,
                 upvotes,
                 active,
               }
@@ -480,7 +480,7 @@ class FragmentedQuerySpec < PrelaySpec
               high_quality,
               artist {
                 id,
-                name,
+                first_name,
                 upvotes,
                 active,
               }
@@ -540,7 +540,7 @@ class FragmentedQuerySpec < PrelaySpec
               high_quality,
               artist {
                 id,
-                name,
+                first_name,
                 upvotes,
                 active,
               }
@@ -594,7 +594,7 @@ class FragmentedQuerySpec < PrelaySpec
               high_quality,
               artist {
                 id,
-                name,
+                first_name,
                 upvotes,
                 active,
               }
@@ -679,7 +679,7 @@ class FragmentedQuerySpec < PrelaySpec
         }
 
         fragment __RelayQueryFragment0rey on Artist {
-          name,
+          first_name,
           upvotes,
           active,
         }
@@ -706,7 +706,7 @@ class FragmentedQuerySpec < PrelaySpec
             'high_quality' => album.high_quality,
             'artist' => {
               'id' => id_for(album.artist),
-              'name' => album.artist.name,
+              'first_name' => album.artist.first_name,
               'upvotes' => album.artist.upvotes,
               'active' => album.artist.active,
             },
@@ -732,7 +732,7 @@ class FragmentedQuerySpec < PrelaySpec
 
       assert_sqls [
         %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."high_quality", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-        %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."upvotes", "artists"."active" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
+        %(SELECT "artists"."id", "artists"."first_name", "artists"."upvotes", "artists"."active" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
         %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id", "tracks"."number" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 51)
       ]
     end
@@ -746,7 +746,7 @@ class FragmentedQuerySpec < PrelaySpec
         node(id: "#{id}") {
           id,
           ... on Artist {
-            name,
+            first_name,
             upvotes,
             active,
           }

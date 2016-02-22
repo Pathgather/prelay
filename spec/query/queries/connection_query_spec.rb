@@ -15,7 +15,7 @@ class ConnectionQuerySpec < PrelaySpec
                 name,
                 artist {
                   id,
-                  name
+                  first_name
                 }
               }
             }
@@ -28,7 +28,7 @@ class ConnectionQuerySpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" ORDER BY "created_at" DESC LIMIT 5),
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
     ]
 
     assert_result \
@@ -43,7 +43,7 @@ class ConnectionQuerySpec < PrelaySpec
                   'name' => album.name,
                   'artist' => {
                     'id' => id_for(album.artist),
-                    'name' => album.artist.name,
+                    'first_name' => album.artist.first_name,
                   }
                 }
               }
@@ -65,7 +65,7 @@ class ConnectionQuerySpec < PrelaySpec
                 name,
                 artist {
                   id,
-                  name
+                  first_name
                 }
               }
             }
@@ -88,7 +88,7 @@ class ConnectionQuerySpec < PrelaySpec
                   'name' => album.name,
                   'artist' => {
                     'id' => id_for(album.artist),
-                    'name' => album.artist.name,
+                    'first_name' => album.artist.first_name,
                   }
                 }
               }
@@ -99,7 +99,7 @@ class ConnectionQuerySpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE "high_quality" ORDER BY "created_at" DESC LIMIT 5),
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
     ]
   end
 

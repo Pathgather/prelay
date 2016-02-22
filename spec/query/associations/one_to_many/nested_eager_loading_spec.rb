@@ -14,7 +14,7 @@ class OneToManyNestedEagerLoadingSpec < PrelaySpec
         node(id: "#{id}") {
           id,
           ... on Artist {
-            name,
+            first_name,
             albums(first: 3) {
               edges {
                 node {
@@ -40,7 +40,7 @@ class OneToManyNestedEagerLoadingSpec < PrelaySpec
       'data' => {
         'node' => {
           'id' => id,
-          'name' => artist.name,
+          'first_name' => artist.first_name,
           'albums' => {
             'edges' => albums.map { |album|
               {
@@ -65,7 +65,7 @@ class OneToManyNestedEagerLoadingSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "release_date" DESC LIMIT 3),
       %(SELECT * FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", row_number() OVER (PARTITION BY "tracks"."album_id" ORDER BY "number") AS "prelay_row_number" FROM "tracks" WHERE ("tracks"."album_id" IN (#{albums.map{|a| "'#{a.id}'"}.join(', ')}))) AS "t1" WHERE ("prelay_row_number" <= 5)),
     ]

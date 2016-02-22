@@ -102,6 +102,6 @@ class IntrospectionQuerySpec < PrelaySpec
 
     artist_fields = type['fields'].map{|f| f['name']}
 
-    assert artist_fields.include?('name')
+    assert artist_fields.include?('first_name')
   end
 end

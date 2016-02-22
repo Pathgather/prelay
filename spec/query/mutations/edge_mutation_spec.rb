@@ -14,7 +14,7 @@ class EdgeMutationSpec < PrelaySpec
     execute_mutation :create_album, graphql: <<-GRAPHQL
       artist {
         id,
-        name
+        first_name
       }
       album {
         id,
@@ -36,7 +36,7 @@ class EdgeMutationSpec < PrelaySpec
       %(SAVEPOINT autopoint_1),
       /INSERT INTO "albums"/,
       %(RELEASE SAVEPOINT autopoint_1),
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("id" = '#{artist.id}') ORDER BY "created_at" DESC),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("id" = '#{artist.id}') ORDER BY "created_at" DESC),
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("id" = '#{album.id}') ORDER BY "created_at" DESC),
       %(SELECT "albums"."id", "albums"."name", "albums"."created_at" AS "cursor" FROM "albums" WHERE ("id" = '#{album.id}') ORDER BY "created_at" DESC),
     ]
@@ -44,7 +44,7 @@ class EdgeMutationSpec < PrelaySpec
     assert_mutation_result \
       'artist' => {
         'id' => id_for(artist),
-        'name' => artist.name,
+        'first_name' => artist.first_name,
       },
       'album_edge' => {
         'cursor' => to_cursor(album.created_at),

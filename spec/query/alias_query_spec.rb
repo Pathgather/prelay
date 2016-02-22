@@ -19,7 +19,7 @@ class AliasQuerySpec < PrelaySpec
             name,
             artist {
               id,
-              name
+              first_name
             }
           }
         }
@@ -29,7 +29,7 @@ class AliasQuerySpec < PrelaySpec
             name,
             artist {
               id,
-              name
+              first_name
             }
           }
         }
@@ -43,7 +43,7 @@ class AliasQuerySpec < PrelaySpec
           'name' => album1.name,
           'artist' => {
             'id' => id_for(album1.artist),
-            'name' => album1.artist.name
+            'first_name' => album1.artist.first_name
           }
         },
         'second' => {
@@ -51,16 +51,16 @@ class AliasQuerySpec < PrelaySpec
           'name' => album2.name,
           'artist' => {
             'id' => id_for(album2.artist),
-            'name' => album2.artist.name
+            'first_name' => album2.artist.first_name
           }
         }
       }
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album1.id}')),
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN ('#{album1.artist.id}')) ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN ('#{album1.artist.id}')) ORDER BY "artists"."id"),
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album2.id}')),
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" IN ('#{album2.artist.id}')) ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN ('#{album2.artist.id}')) ORDER BY "artists"."id"),
     ]
   end
 

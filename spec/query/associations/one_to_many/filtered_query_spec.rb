@@ -13,7 +13,7 @@ class FilteredOneToManyQuerySpec < PrelaySpec
         node(id: "#{id}") {
           id,
           ... on Artist {
-            name,
+            first_name,
             albums(first: 50, upvotes_greater_than: 10) {
               edges {
                 node {
@@ -31,7 +31,7 @@ class FilteredOneToManyQuerySpec < PrelaySpec
       'data' => {
         'node' => {
           'id' => id,
-          'name' => artist.name,
+          'first_name' => artist.first_name,
           'albums' => {
             'edges' => artist.albums_dataset.where{upvotes > 10}.all.sort_by(&:release_date).reverse.map { |album|
               {
@@ -46,7 +46,7 @@ class FilteredOneToManyQuerySpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE (("upvotes" > 10) AND ("albums"."artist_id" IN ('#{artist.id}'))) ORDER BY "release_date" DESC LIMIT 50)
     ]
   end
