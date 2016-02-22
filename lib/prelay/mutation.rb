@@ -28,6 +28,14 @@ module Prelay
     class << self
       [:type, :description].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
 
+      def name(n = nil)
+        if n
+          @name = n
+        else
+          @name ||= super()
+        end
+      end
+
       def arguments
         @arguments ||= {}
       end
@@ -49,7 +57,7 @@ module Prelay
       end
 
       def graphql_field_name
-        to_s.chomp('Mutation').gsub(/(.)([A-Z])/,'\1_\2').downcase
+        name.chomp('Mutation').gsub(/(.)([A-Z])/,'\1_\2').downcase
       end
 
       def create_graphql_field(config)

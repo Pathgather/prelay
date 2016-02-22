@@ -5,20 +5,51 @@ require 'spec_helper'
 class NodeMutationSpec < PrelaySpec
   let(:album) { Album.first! }
 
+  let :schema do
+    Prelay::Schema.new(temporary: true)
+  end
+
+  let :album_type do
+    mock :type, schema: schema do
+      name "Album"
+      model Album
+      attribute :name, "The name of the album", datatype: :string
+    end
+  end
+
+  let :mutation do
+    t = album_type
+    mock :mutation, schema: schema do
+      name "UpdateAlbumName"
+      description "Updates an album with the given id."
+
+      argument :id, :id
+      argument :name, :string
+
+      result_field :album, association: :self
+
+      type(t)
+
+      def mutate(id:, name:)
+        album = Prelay::ID.parse(id, schema: self.class.schema).get
+        album.update(name: name)
+        {album: album.id}
+      end
+    end
+  end
+
   it "should support invoking a mutation that returns a node" do
+    mutation
+
     @input = {
       id: id_for(album),
       name: "New Album Name"
     }
 
-    execute_mutation :update_album, graphql: <<-GRAPHQL
+    execute_mutation :update_album_name, graphql: <<-GRAPHQL
       album {
         id,
-        name,
-        artist {
-          id,
-          first_name
-        }
+        name
       }
     GRAPHQL
 
@@ -27,8 +58,7 @@ class NodeMutationSpec < PrelaySpec
       %(SAVEPOINT autopoint_1),
       %(UPDATE "albums" SET "name" = 'New Album Name' WHERE ("id" = '#{album.id}')),
       %(RELEASE SAVEPOINT autopoint_1),
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("id" = '#{album.id}') ORDER BY "created_at" DESC),
-      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
+      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("id" = '#{album.id}') ORDER BY "created_at" DESC),
     ]
 
     assert_equal "New Album Name", album.reload.name
@@ -36,11 +66,7 @@ class NodeMutationSpec < PrelaySpec
     assert_mutation_result \
       'album' => {
         'id' => id_for(album),
-        'name' => "New Album Name",
-        'artist' => {
-          'id' => id_for(album.artist),
-          'first_name' => album.artist.first_name,
-        }
+        'name' => "New Album Name"
       }
   end
 end
