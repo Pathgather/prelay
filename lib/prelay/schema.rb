@@ -31,30 +31,36 @@ module Prelay
       type_for_model(model) || raise(Error, "Type not found for model: #{model}")
     end
 
+    def node_identification
+      @node_identification ||= begin
+        schema = self
+
+        node_identification =
+          GraphQL::Relay::GlobalNodeIdentification.define do
+            type_from_object -> (object) { schema.type_for_model!(object.record.class).graphql_object }
+          end
+
+        def node_identification.to_global_id(type, pk)
+          ID.encode(type: type, pk: pk)
+        end
+
+        node_identification
+      end
+    end
+
     def to_graphql_schema(prefix:)
-      schema = self
-
-      node_identification = GraphQL::Relay::GlobalNodeIdentification.define do
-        type_from_object -> (object) { schema.type_for_model!(object.record.class).graphql_object }
-      end
-
-      def node_identification.to_global_id(type, pk)
-        ID.encode(type: type, pk: pk)
-      end
-
-      @type_set.each { |type| type.node_identification = node_identification }
-
+      # Make sure that type and interface objects are defined before we
+      # build the actual GraphQL schema.
       (@type_set + @interface_set).each &:graphql_object
 
-      queries   = @query_set
-      mutations = @mutation_set
+      schema = self
 
       GraphQL::Schema.new(
         query: GraphQL::ObjectType.define {
           name "#{prefix}Query"
 
           field :node, field: GraphQL::Field.define {
-            type(node_identification.interface)
+            type(schema.node_identification.interface)
             argument :id, !GraphQL::ID_TYPE
             resolve -> (obj, args, ctx) {
               id = ID.parse(args['id'])
@@ -65,7 +71,7 @@ module Prelay
           }
 
           field :nodes, field: GraphQL::Field.define {
-            type(node_identification.interface.to_list_type)
+            type(schema.node_identification.interface.to_list_type)
             argument :ids, !GraphQL::ID_TYPE.to_list_type
             resolve -> (obj, args, ctx) {
               args['ids'].map do |id|
@@ -77,7 +83,7 @@ module Prelay
             }
           }
 
-          connection_queries, other_queries = queries.sort_by(&:graphql_field_name).partition { |k| k < Prelay::Connection }
+          connection_queries, other_queries = schema.query_set.sort_by(&:graphql_field_name).partition { |k| k < Prelay::Connection }
 
           # Relay wants connection queries to be located under a wrapper field, so
           # just call it 'connections'.
@@ -99,7 +105,7 @@ module Prelay
         mutation: GraphQL::ObjectType.define {
           name "#{prefix}Mutation"
           description "Mutations the client can run"
-          mutations.sort_by(&:graphql_field_name).each { |m| m.create_graphql_field(self) }
+          schema.mutation_set.sort_by(&:graphql_field_name).each { |m| m.create_graphql_field(self) }
         },
 
         # We don't support subscriptions yet, but have an empty object here so

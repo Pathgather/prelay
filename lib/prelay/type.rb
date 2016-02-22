@@ -84,8 +84,6 @@ module Prelay
         @graphql_object || raise("GraphQL Object not defined for #{self} (was it included in the schema?)")
       end
 
-      attr_accessor :node_identification
-
       def graphql_object
         @graphql_object ||= begin
           type = self
@@ -94,7 +92,7 @@ module Prelay
             name(type.name.split('::').last.chomp('Type'))
             description(type.description)
 
-            interfaces([type.node_identification.interface] + type.interfaces.keys.map(&:graphql_object))
+            interfaces([type.schema.node_identification.interface] + type.interfaces.keys.map(&:graphql_object))
             global_id_field :id
 
             type.attributes.each_value do |attribute|
