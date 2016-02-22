@@ -9,6 +9,9 @@ require 'graphql/relay'
 Sequel::Database.extension :seek_pagination
 
 module Prelay
+  class InvalidGraphQLQuery < StandardError; end
+  class DefinitionError < StandardError; end
+
   # Frozen empty objects, mostly for use as argument defaults. Makes sure that
   # we don't accidentally modify arguments passed to our methods, and cuts
   # down on the number of allocated objects.
@@ -18,17 +21,16 @@ module Prelay
   # Array of all permanent Prelay schemas that have been instantiated.
   SCHEMAS = []
 
-  class InvalidGraphQLQuery < StandardError; end
-  class DefinitionError < StandardError; end
-
-  %w(Type Interface Query Mutation).each do |subclassable|
-    eval <<-RUBY
-      def self.#{subclassable}(schema:)
-        c = Class.new(#{subclassable})
-        c.schema = schema
-        c
-      end
-    RUBY
+  class << self
+    %w(Type Interface Query Mutation).each do |subclassable|
+      eval <<-RUBY
+        def #{subclassable}(schema:)
+          c = Class.new(#{subclassable})
+          c.schema = schema
+          c
+        end
+      RUBY
+    end
   end
 end
 
