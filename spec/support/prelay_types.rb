@@ -8,9 +8,9 @@ class ReleaseInterface < Prelay::Interface
   attribute :high_quality, "Whether the release is good or not.", datatype: :boolean
   attribute :popularity,   "The normalized popularity of the release, on a scale from 0 to 1.", datatype: :float
 
-  many_to_one :artist,    "The artist who released the release.", target: :"PrelaySpec::ArtistType", nullable: false
-  one_to_many :tracks,    "The tracks on this release.", target: :"PrelaySpec::TrackType"
-  one_to_one  :publisher, "The publisher responsible for releasing the release.", target: :"PrelaySpec::PublisherType", nullable: true
+  many_to_one :artist,    "The artist who released the release.", target: :ArtistType, nullable: false
+  one_to_many :tracks,    "The tracks on this release.", target: :TrackType
+  one_to_one  :publisher, "The publisher responsible for releasing the release.", target: :PublisherType, nullable: true
 end
 
 class GenreType < Prelay::Type
