@@ -44,4 +44,8 @@ class MutationSpec < PrelaySpec
       end
     end
   end
+
+  describe "when introspected" do
+    it "should be correct"
+  end
 end
