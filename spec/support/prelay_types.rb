@@ -60,25 +60,6 @@ class AlbumType < Prelay::Type
   filter(:upvotes_greater_than, :integer) { |ds, count| ds.where{upvotes > count} }
 end
 
-# For specs on types on models that are on arbitrary datasets.
-class BestAlbumType < Prelay::Type
-  model BestAlbum
-
-  description "A good album released by a musician"
-
-  attribute :name,         "The name of the album", datatype: :string
-  attribute :upvotes,      "How many people voted up the album.", datatype: :integer
-  attribute :high_quality, "Whether the album is good or not.", datatype: :boolean
-  attribute :popularity,   "The normalized popularity of the album, on a scale from 0 to 1.", datatype: :float
-
-  many_to_one :artist,    "The artist who released the album.", nullable: false
-  one_to_many :tracks,    "The tracks on this album."
-  one_to_one  :publisher, "The publisher responsible for releasing the album.", nullable: true
-
-  one_to_one  :first_track,       "The first track on the album.", nullable: true
-  one_to_many :first_five_tracks, "The first five tracks on the album"
-end
-
 class CompilationType < Prelay::Type
   model Compilation
   interface ReleaseInterface, :release_id

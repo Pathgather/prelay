@@ -23,15 +23,6 @@ class Album < Sequel::Model
   one_to_many :first_five_tracks, class_name: :Track, order: :number, &:in_first_five
 end
 
-class BestAlbum < Sequel::Model(DB[:albums].where(:high_quality))
-  many_to_one :artist
-  one_to_many :tracks, key: :album_id
-  one_to_one :publisher, key: :album_id
-
-  one_to_one  :first_track,       class_name: :Track, key: :album_id,                 &:is_first
-  one_to_many :first_five_tracks, class_name: :Track, key: :album_id, order: :number, &:in_first_five
-end
-
 class Compilation < Sequel::Model
   many_to_one :artist
   one_to_many :tracks, order: :number
