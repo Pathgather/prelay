@@ -109,14 +109,17 @@ module SpecHelperMethods
     Base64.strict_encode64 "#{type}:#{pk}"
   end
 
-  def mock_type(schema: Prelay::Schema.new(temporary: true), &block)
-    c = Class.new(Prelay::Type(schema: schema))
-    c.class_eval(&block)
-    c
-  end
+  def mock(thing, schema: Prelay::Schema.new(temporary: true), &block)
+    superclass =
+      case thing
+      when :type      then Prelay::Type(schema: schema)
+      when :interface then Prelay::Interface(schema: schema)
+      when :query     then Prelay::Query(schema: schema)
+      when :mutation  then Prelay::Mutation(schema: schema)
+      else raise "Unmockable thing! #{thing.inspect}"
+      end
 
-  def mock_interface(schema: Prelay::Schema.new(temporary: true), &block)
-    c = Class.new(Prelay::Interface(schema: schema))
+    c = Class.new(superclass)
     c.class_eval(&block)
     c
   end

@@ -47,7 +47,7 @@ class TypeSpec < PrelaySpec
 
   describe "when introspected" do
     let :type do
-      mock_type do
+      mock :type do
         name "Album"
         model Album
         description "An album released by a musician"

@@ -6,7 +6,7 @@ class DatasetScopeSpec < PrelaySpec
   let(:track) { Track.where(:high_quality).first }
 
   let :type do
-    mock_type do
+    mock :type do
       name "Track"
       model Track
       attribute :name, "Track name", datatype: :string

@@ -47,7 +47,7 @@ class InterfaceSpec < PrelaySpec
 
   describe "when introspected" do
     let :interface do
-      mock_interface do
+      mock :interface do
         name "Release"
         description "A collection of songs released by an artist."
         attribute :name, "The name of the release", datatype: :string
