@@ -118,6 +118,7 @@ module Prelay
       order = association.derived_order
       records = []
       remote_column = association.remote_columns.first # TODO: Multiple columns?
+      overall_order = nil
 
       @types.each_key do |type|
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
@@ -129,6 +130,11 @@ module Prelay
         supplemental_columns << :cursor if @types.length > 1
 
         ds = apply_query_to_dataset(ds, type: type, supplemental_columns: supplemental_columns)
+
+        derived_order = ds.opts[:order]
+        overall_order ||= derived_order
+        raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
+
         ds = block.call(ds) if block
         ds = ds.where(qualified_remote_column => ids)
 
@@ -145,7 +151,7 @@ module Prelay
         records += results_for_dataset(ds, type: type)
       end
 
-      sort_records_by_order(records, order) if @types.length > 1
+      sort_records_by_order(records, overall_order) if @types.length > 1
 
       ResultArray.new(records)
     end

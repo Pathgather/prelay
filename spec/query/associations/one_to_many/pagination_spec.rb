@@ -3,8 +3,9 @@
 require 'spec_helper'
 
 class OneToManyPaginationSpec < PrelaySpec
-  let(:artist) { Artist.first }
-  let(:albums) { artist.albums.sort_by(&:release_date).reverse }
+  let(:artist)   { Artist.first }
+  let(:albums)   { artist.albums.sort_by(&:release_date).reverse }
+  let(:releases) { (artist.albums + artist.compilations).sort_by(&:release_date).reverse }
 
   it "should raise an error if a connection is requested without a first or last argument" do
     artist_id = id_for(artist)
@@ -68,7 +69,7 @@ class OneToManyPaginationSpec < PrelaySpec
                   expected_albums = expected_albums.reverse unless paginating_forward
 
                   args = {}
-                  args[paginating_forward ? :first : :last  ] = all_records_requested ? 10 : 3
+                  args[paginating_forward ? :first : :last  ] = all_records_requested ? all_albums.length : 3
                   args[paginating_forward ? :after : :before] = to_cursor(expected_albums[1].release_date) if cursor_passed
 
                   expected_albums = expected_albums[2..-1] if cursor_passed
@@ -79,14 +80,9 @@ class OneToManyPaginationSpec < PrelaySpec
                 end
 
                 it "on a one-to-many association should support #{desc}" do
-                  skip if paginating_through_interface
-
                   artist_id = id_for(artist)
 
-                  # Will need to update the spec logic if this changes.
-                  assert_equal 10, albums.length
-
-                  args, expected_albums = args_and_expected_albums.call(albums)
+                  args, expected_albums = $values = args_and_expected_albums.call(paginating_through_interface ? releases : albums)
 
                   graphql =
                     <<-GRAPHQL
