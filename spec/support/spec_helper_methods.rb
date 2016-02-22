@@ -36,7 +36,7 @@ module SpecHelperMethods
   end
 
   def assert_invalid_query(message, graphql)
-    error = assert_raises(Prelay::InvalidGraphQLQuery) { execute_query(graphql) }
+    error = assert_raises(Prelay::Error) { execute_query(graphql) }
     assert_equal message, error.message
   end
 
@@ -91,8 +91,12 @@ module SpecHelperMethods
     encode_prelay_id type: type_name_for(object), pk: object.pk
   end
 
+  def schema
+    Prelay.primary_schema
+  end
+
   def type_for(object)
-    Prelay::Type::BY_MODEL.fetch(object.class)
+    schema.type_for_model(object.class)
   end
 
   def type_name_for(object)

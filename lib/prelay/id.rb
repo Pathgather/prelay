@@ -31,8 +31,8 @@ module Prelay
         Base64.strict_encode64 "#{type}:#{pk}"
       end
 
-      def for(record)
-        type = Type::BY_MODEL.fetch(record.class) { raise "Could not find a Prelay::Type subclass corresponding to the #{record.class} model" }
+      def for(record, schema: Prelay.primary_schema)
+        type = schema.type_for_model!(record.class)
         encode type: type.graphql_object, pk: record.pk
       end
 
@@ -47,9 +47,9 @@ module Prelay
 
     attr_reader :type, :pk
 
-    def initialize(type:, pk:)
+    def initialize(type:, pk:, schema: Prelay.primary_schema)
       @pk   = pk
-      @type = Type::BY_NAME.fetch(type) { raise InvalidGraphQLQuery, "Not a valid object type: #{type}" }
+      @type = schema.type_for_name!(type)
     end
 
     def get

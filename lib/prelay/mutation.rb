@@ -87,7 +87,7 @@ module Prelay
           ids = new(arguments: args).execute
 
           result = {}
-          selections = GraphQLProcessor.new(ctx).ast.selections
+          selections = GraphQLProcessor.new(ctx, schema: schema).ast.selections
 
           result_fields.each_value do |result_field|
             if selection = selections[result_field.name]

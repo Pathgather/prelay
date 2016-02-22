@@ -62,7 +62,7 @@ module Prelay
             Kernel.const_get(@specified_target.to_s)
           elsif parent < Type
             target_class = sequel_association.associated_class
-            Type::BY_MODEL.fetch(target_class) { raise "Could not find a Prelay::Type for #{target_class}" }
+            parent.schema.type_for_model!(target_class)
           end
         )
       end

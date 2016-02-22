@@ -5,11 +5,6 @@ module Prelay
     extend Subclassable
 
     class << self
-      def inherited(subclass)
-        super
-        Type::BY_NAME[subclass.to_s.split('::').last.chomp('Interface')] = subclass
-      end
-
       # Eval is evil, but use it to define some fast class accessors:
       [:description].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
 
@@ -33,6 +28,14 @@ module Prelay
 
       def order(o = nil)
         o ? @order = o : @order
+      end
+
+      def name(n = nil)
+        if n
+          @name = n
+        else
+          @name ||= super().split('::').last.chomp('Interface')
+        end
       end
 
       def types
@@ -66,9 +69,7 @@ module Prelay
             }
             field :id, field: id_field
 
-            resolve_type -> (object) {
-              Type::BY_MODEL.fetch(object.record.class){|k| raise "No Prelay::Type found for class #{k}"}.graphql_object
-            }
+            resolve_type -> (object) { interface.schema.type_for_model!(object.record.class).graphql_object }
 
             interface.attributes.each_value do |attribute|
               field attribute.name do

@@ -7,9 +7,6 @@ module Prelay
   class Type
     extend Subclassable
 
-    BY_MODEL = {}
-    BY_NAME  = {}
-
     attr_reader :record, :associations
 
     def initialize(record)
@@ -22,11 +19,6 @@ module Prelay
     end
 
     class << self
-      def inherited(subclass)
-        super
-        BY_NAME[subclass.to_s.split('::').last.chomp('Type')] = subclass
-      end
-
       def attributes
         @attributes ||= {}
       end
@@ -72,7 +64,11 @@ module Prelay
       end
 
       def associate_with_model(model)
-        BY_MODEL[model] = self
+        associated_models << model
+      end
+
+      def associated_models
+        @associated_models ||= []
       end
 
       [:one_to_one, :one_to_many, :many_to_one].each do |association_type|
@@ -152,6 +148,14 @@ module Prelay
           associate_with_model(m)
         else
           @model
+        end
+      end
+
+      def name(n = nil)
+        if n
+          @name = n
+        else
+          @name ||= super().split('::').last.chomp('Type')
         end
       end
     end

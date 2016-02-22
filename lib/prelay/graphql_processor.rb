@@ -4,7 +4,9 @@ module Prelay
   class GraphQLProcessor
     attr_reader :ast
 
-    def initialize(input, fragments: nil)
+    # TODO: Remove this default for schema, since it shouldn't be an external
+    # API for long.
+    def initialize(input, fragments: nil, schema: Prelay.primary_schema)
       case input
       when GraphQL::Query::Context
         root_field = input.ast_node
@@ -17,6 +19,7 @@ module Prelay
       end
 
       @fragments = fragments
+      @schema = schema
       @ast = field_to_selection(root_field)
     end
 
@@ -56,14 +59,14 @@ module Prelay
             selections[key] = new_attr
           end
         when GraphQL::Language::Nodes::InlineFragment
-          type = Type::BY_NAME.fetch(thing.type)
+          type = @schema.type_for_name!(thing.type)
           s, f = parse_field_selections_and_fragments(thing)
           fragments.merge!(f) { |k,o,n| o + n }
           (fragments[type] ||= []) << s
         when GraphQL::Language::Nodes::FragmentSpread
           fragment = @fragments.fetch(thing.name) { raise InvalidGraphQLQuery, "fragment not found with name #{thing.name}" }
 
-          if type = Type::BY_NAME[fragment.type]
+          if type = @schema.type_for_name(fragment.type)
             s, f = parse_field_selections_and_fragments(fragment)
             fragments.merge!(f) { |k,o,n| o + n }
             (fragments[type] ||= []) << s

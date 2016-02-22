@@ -114,7 +114,7 @@ class NodeQuerySpec < PrelaySpec
 
   it "should return an error when given an id that refers to a nonexistent object type" do
     id = encode_prelay_id(type: 'NonexistentObjectClass', pk: SecureRandom.uuid)
-    assert_invalid_query "Not a valid object type: NonexistentObjectClass", "query Query { node(id: \"#{id}\") { id ... on Album { name } } }"
+    assert_invalid_query "Type not found by name: NonexistentObjectClass", "query Query { node(id: \"#{id}\") { id ... on Album { name } } }"
     assert_sqls []
   end
 

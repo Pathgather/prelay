@@ -13,11 +13,29 @@ module Prelay
       SCHEMAS << self unless temporary
     end
 
+    # TODO: Cache.
+    def type_for_name(name)
+      (@type_set + @interface_set).find{|t| t.name == name}
+    end
+
+    # TODO: Cache.
+    def type_for_model(model)
+      @type_set.find{|t| t.associated_models.include?(model)}
+    end
+
+    def type_for_name!(name)
+      type_for_name(name) || raise(Error, "Type not found by name: #{name}")
+    end
+
+    def type_for_model!(model)
+      type_for_model(model) || raise(Error, "Type not found for model: #{model}")
+    end
+
     def to_graphql_schema(prefix:)
+      schema = self
+
       node_identification = GraphQL::Relay::GlobalNodeIdentification.define do
-        type_from_object -> (object) do
-          Prelay::Type::BY_MODEL.fetch(object.record.class){|k| raise "No Prelay type found for class #{k}"}.graphql_object
-        end
+        type_from_object -> (object) { schema.type_for_model!(object.record.class).graphql_object }
       end
 
       def node_identification.to_global_id(type, pk)
@@ -40,7 +58,7 @@ module Prelay
             argument :id, !GraphQL::ID_TYPE
             resolve -> (obj, args, ctx) {
               id = ID.parse(args['id'])
-              ast = GraphQLProcessor.new(ctx).ast
+              ast = GraphQLProcessor.new(ctx, schema: schema).ast
               RelayProcessor.new(ast, type: id.type, entry_point: :field).
                 to_resolver.resolve_singular{|ds| ds.where(Sequel.qualify(id.type.model.table_name, :id) => id.pk)}
             }
@@ -52,7 +70,7 @@ module Prelay
             resolve -> (obj, args, ctx) {
               args['ids'].map do |id|
                 id = ID.parse(id)
-                ast = GraphQLProcessor.new(ctx).ast
+                ast = GraphQLProcessor.new(ctx, schema: schema).ast
                 RelayProcessor.new(ast, type: id.type, entry_point: :field).
                   to_resolver.resolve_singular{|ds| ds.where(Sequel.qualify(id.type.model.table_name, :id) => id.pk)}
               end

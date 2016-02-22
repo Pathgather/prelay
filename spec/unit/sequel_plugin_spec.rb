@@ -27,7 +27,7 @@ class SequelPluginSpec < PrelaySpec
     instance = PrelaySequelPluginTestModel.new
     instance.id = "89565d7e-5fe8-4a66-be2c-3fcdaac3a721"
 
-    error = assert_raises(RuntimeError) { instance.prelay_id }
-    assert_equal "Could not find a Prelay::Type subclass corresponding to the SequelPluginSpec::PrelaySequelPluginTestModel model", error.message
+    error = assert_raises(Prelay::Error) { instance.prelay_id }
+    assert_equal "Type not found for model: SequelPluginSpec::PrelaySequelPluginTestModel", error.message
   end
 end
