@@ -1,10 +1,16 @@
 # frozen_string_literal: true
 
 module SpecHelperMethods
+  # Let spec classes define their own schema methods (or use
+  # let(:schema){...}), but default to the main test schema one.
+  def schema
+    PrelaySpec::SCHEMA
+  end
+
   def execute_query(graphql)
     sqls.clear
     self.track_sqls = true
-    @result = PrelaySpec::GRAPHQL_SCHEMA.execute(graphql, debug: true)
+    @result = schema.graphql_schema.execute(graphql, debug: true)
     assert_nil @result['errors']
   ensure
     self.track_sqls = false
@@ -89,10 +95,6 @@ module SpecHelperMethods
 
   def id_for(object)
     encode_prelay_id type: type_name_for(object), pk: object.pk
-  end
-
-  def schema
-    Prelay.primary_schema
   end
 
   def type_for(object)

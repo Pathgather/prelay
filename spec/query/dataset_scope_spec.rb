@@ -5,14 +5,27 @@ require 'spec_helper'
 class DatasetScopeSpec < PrelaySpec
   let(:track) { Track.where(:high_quality).first }
 
+  let :type do
+    mock_type do
+      name "Track"
+      model Track
+      attribute :name, "Track name", datatype: :string
+      dataset_scope { |ds| ds.where(:high_quality).select{random{}.as(:rand)} }
+    end
+  end
+
+  let :schema do
+    type.schema
+  end
+
   it "should support dataset scopes on types" do
-    id = encode_prelay_id(type: 'BestTrack', pk: track.pk)
+    id = encode_prelay_id(type: 'Track', pk: track.pk)
 
     execute_query <<-GRAPHQL
       query Query {
         node(id: "#{id}") {
           id,
-          ... on BestTrack {
+          ... on Track {
             name
           }
         }

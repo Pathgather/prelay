@@ -3,7 +3,7 @@
 module Prelay
   class ID
     class << self
-      def parse(string, expected_type: nil)
+      def parse(string, expected_type: nil, schema: Prelay.primary_schema)
         type, pk = parts = Base64.decode64(string).split(':')
         raise InvalidGraphQLQuery, "Not a valid object id: \"#{string}\"" unless parts.length == 2
 
@@ -24,7 +24,7 @@ module Prelay
           end
         end
 
-        new(type: type, pk: pk)
+        new(type: type, pk: pk, schema: schema)
       end
 
       def encode(type:, pk:)

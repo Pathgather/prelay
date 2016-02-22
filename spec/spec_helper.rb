@@ -50,5 +50,3 @@ require_relative 'support/sequel_models'
 require_relative 'support/prelay_types'
 require_relative 'support/prelay_queries'
 require_relative 'support/prelay_mutations'
-
-PrelaySpec::GRAPHQL_SCHEMA = PrelaySpec::SCHEMA.to_graphql_schema(prefix: 'Client')
