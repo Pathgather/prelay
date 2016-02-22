@@ -47,7 +47,12 @@ class TypeSpec < PrelaySpec
 
   describe "when introspected" do
     let :type do
-      AlbumType
+      mock_type do
+        name "Album"
+        model Album
+        description "An album released by a musician"
+        attribute :name, "The name of the album", datatype: :string
+      end
     end
 
     let :graphql_object do
@@ -57,7 +62,7 @@ class TypeSpec < PrelaySpec
     it "should translate it to a GraphQL object" do
       assert_instance_of GraphQL::ObjectType, graphql_object
       assert_equal 'Album', graphql_object.name
-      assert_equal ['id', 'name', 'upvotes', 'high_quality', 'popularity', 'artist', 'tracks', 'publisher', 'first_track', 'first_five_tracks'], graphql_object.fields.keys
+      assert_equal ['id', 'name'], graphql_object.fields.keys
       assert_equal "An album released by a musician", graphql_object.description
     end
 
@@ -71,6 +76,7 @@ class TypeSpec < PrelaySpec
     end
 
     it "should translate its many_to_one associations to GraphQL fields" do
+      skip
       field = graphql_object.fields['artist']
 
       assert_instance_of GraphQL::Field, field
@@ -80,6 +86,7 @@ class TypeSpec < PrelaySpec
     end
 
     it "should translate its one_to_many associations to GraphQL connections" do
+      skip
       field = graphql_object.fields['tracks']
 
       assert_instance_of GraphQL::Field, field
@@ -89,6 +96,7 @@ class TypeSpec < PrelaySpec
     end
 
     it "should translate its one_to_one associations to GraphQL fields" do
+      skip
       field = graphql_object.fields['publisher']
 
       assert_instance_of GraphQL::Field, field

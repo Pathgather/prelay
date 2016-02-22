@@ -106,4 +106,16 @@ module SpecHelperMethods
   def encode_prelay_id(type:, pk:)
     Base64.strict_encode64 "#{type}:#{pk}"
   end
+
+  def mock_type(schema: Prelay::Schema.new(temporary: true), &block)
+    c = Class.new(Prelay::Type(schema: schema))
+    c.class_eval(&block)
+    c
+  end
+
+  def mock_interface(schema: Prelay::Schema.new(temporary: true), &block)
+    c = Class.new(Prelay::Interface(schema: schema))
+    c.class_eval(&block)
+    c
+  end
 end
