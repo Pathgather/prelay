@@ -28,9 +28,9 @@ module Prelay
       end
 
       def type(type = nil)
-        if type
-          type.filters.each do |name, (type, _)|
-            arguments[name] = Query::Argument.new(self, name, type)
+        if type && t = schema.find_type(type)
+          t.filters.each do |name, (type, _)|
+            arguments[name] = Query::Argument.new(self, name, t)
           end
         end
 

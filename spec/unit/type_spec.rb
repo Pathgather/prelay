@@ -46,18 +46,14 @@ class TypeSpec < PrelaySpec
   end
 
   describe "when introspected" do
-    let :type do
-      mock :type do
-        name "Album"
-        model Album
+    mock_schema do
+      type :Album do
         description "An album released by a musician"
         string :name, "The name of the album"
       end
     end
 
-    let :graphql_object do
-      type.graphql_object
-    end
+    let(:graphql_object) { schema.find_type("Album").graphql_object }
 
     it "should translate it to a GraphQL object" do
       assert_instance_of GraphQL::ObjectType, graphql_object

@@ -46,15 +46,14 @@ class InterfaceSpec < PrelaySpec
   end
 
   describe "when introspected" do
-    let :interface do
-      mock :interface do
-        name "Release"
+    mock_schema do
+      interface :Release do
         description "A collection of songs released by an artist."
         string :name, "The name of the release"
       end
     end
 
-    let(:graphql_object) { interface.graphql_object }
+    let(:graphql_object) { schema.find_type("Release").graphql_object }
 
     it "should translate it to a GraphQL object" do
       assert_instance_of GraphQL::InterfaceType, graphql_object

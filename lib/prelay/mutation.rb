@@ -38,12 +38,7 @@ module Prelay
 
       def type(t = nil)
         if t
-          @type =
-            if t.is_a?(Class) && (t < Type || t < Interface)
-              t
-            else
-              schema.types_and_interfaces.find{|type| type.name == t.to_s} || raise(DefinitionError, "couldn't find a type or interface named #{t}")
-            end
+          @type = schema.find_type(t) || raise(DefinitionError, "couldn't find a type or interface named #{t}")
         else
           @type
         end

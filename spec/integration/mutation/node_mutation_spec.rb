@@ -5,29 +5,18 @@ require 'spec_helper'
 class NodeMutationSpec < PrelaySpec
   let(:album) { Album.first! }
 
-  let :schema do
-    Prelay::Schema.new(temporary: true)
-  end
-
-  let :album_type do
-    mock :type, schema: schema do
-      name "Album"
-      model Album
+  mock_schema do
+    type :Album do
       string :name
     end
-  end
 
-  let :mutation do
-    t = album_type
-    mock :mutation, schema: schema do
-      name "UpdateAlbumName"
+    mutation :UpdateAlbumName do
+      type :Album
 
       argument :id, :id
       argument :name, :string
 
       result_field :album, association: :self
-
-      type(t)
 
       def mutate(id:, name:)
         album = Prelay::ID.parse(id, schema: self.class.schema).get
@@ -38,8 +27,6 @@ class NodeMutationSpec < PrelaySpec
   end
 
   it "should support invoking a mutation that returns a node" do
-    mutation
-
     @input = {
       id: id_for(album),
       name: "New Album Name"

@@ -16,6 +16,23 @@ module DefaultSpecSchema
       c.name(name.to_s)
       c.model(Kernel.const_get("::#{name}", false))
       c.class_eval(&block)
+      c
+    end
+
+    def interface(name, &block)
+      superclass = Prelay::Interface(schema: @schema)
+      c = Class.new(superclass)
+      c.name(name.to_s)
+      c.class_eval(&block)
+      c
+    end
+
+    def query(name, &block)
+      superclass = Prelay::Query(schema: @schema)
+      c = Class.new(superclass)
+      c.name(name.to_s)
+      c.class_eval(&block)
+      c
     end
 
     def mutation(name, &block)
@@ -23,6 +40,7 @@ module DefaultSpecSchema
       c = Class.new(superclass)
       c.name(name.to_s)
       c.class_eval(&block)
+      c
     end
   end
 

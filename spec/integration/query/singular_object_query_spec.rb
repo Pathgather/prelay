@@ -3,43 +3,27 @@
 require 'spec_helper'
 
 class SingularObjectQuerySpec < PrelaySpec
-  let :schema do
-    Prelay::Schema.new(temporary: true)
-  end
-
-  let :artist_type do
-    mock :type, schema: schema do
-      name "Artist"
-      model Artist
+  mock_schema do
+    type :Artist do
       string :first_name
     end
-  end
 
-  let :album_type do
-    mock :type, schema: schema do
-      name "Album"
-      model Album
+    t = type :Album do
       string :name
       many_to_one :artist, nullable: false
     end
-  end
 
-  let :query do
-    artist_type
-    t = album_type
-    mock :query, schema: schema do
-      name "RandomAlbumQuery"
-      type AlbumType
+    query :RandomAlbum do
+      type :Album
       resolve -> (obj, args, ctx) {
         ast = Prelay::GraphQLProcessor.new(ctx).ast
-        Prelay::RelayProcessor.new(ast, type: AlbumType, entry_point: :field).
+        Prelay::RelayProcessor.new(ast, type: t, entry_point: :field).
           to_resolver.resolve_singular{|ds| ds.order{random{}}.limit(1)}
       }
     end
   end
 
   it "should support returning a singular object" do
-    query
     execute_query <<-GRAPHQL
       query Query {
         random_album {

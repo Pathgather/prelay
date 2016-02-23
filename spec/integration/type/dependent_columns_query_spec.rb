@@ -6,11 +6,8 @@ require 'spec_helper'
 class DependentColumnsQuerySpec < PrelaySpec
   let(:artist) { Artist.first }
 
-  let :type do
-    mock :type do
-      name 'Artist'
-      model Artist
-
+  mock_schema do
+    type :Artist do
       string :name, dependent_columns: [:first_name, :last_name]
       string :first_name
       integer :upvotes
@@ -19,10 +16,6 @@ class DependentColumnsQuerySpec < PrelaySpec
         record.first_name + ' ' + record.last_name
       end
     end
-  end
-
-  let :schema do
-    type.schema
   end
 
   it "should handle a field that is dependent on multiple columns" do

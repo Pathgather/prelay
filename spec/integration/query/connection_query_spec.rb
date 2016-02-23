@@ -3,42 +3,24 @@
 require 'spec_helper'
 
 class ConnectionQuerySpec < PrelaySpec
-  let :schema do
-    Prelay::Schema.new(temporary: true)
-  end
-
-  let :artist_type do
-    mock :type, schema: schema do
-      name "Artist"
-      model Artist
+  mock_schema do
+    type :Artist do
       string :first_name
     end
-  end
 
-  let :album_type do
-    mock :type, schema: schema do
-      name "Album"
-      model Album
+    type :Album do
       string :name
-
       many_to_one :artist, nullable: false
     end
-  end
 
-  let :query do
-    artist_type
-    t = album_type
-    mock :query, schema: schema do
+    query :Albums do
       include Prelay::Connection
-      name "AlbumsQuery"
-      type t
+      type :Album
       order Sequel.desc(:created_at)
     end
   end
 
   it "should support returning a connection of many objects" do
-    query
-
     execute_query <<-GRAPHQL
       query Query {
         connections {

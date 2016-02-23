@@ -27,6 +27,19 @@ module Prelay
       types + interfaces
     end
 
+    def find_type(t)
+      case t
+      when Class
+        if t < Type
+          t if types.include?(t)
+        elsif t < Interface
+          t if interfaces.include?(t)
+        end
+      when Symbol, String
+        type_for_name(t.to_s)
+      end
+    end
+
     # TODO: Cache.
     def type_for_name(name)
       types_and_interfaces.find{|t| t.name == name}

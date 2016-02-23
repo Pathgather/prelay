@@ -7,7 +7,15 @@ module Prelay
     extend Subclassable
 
     class << self
-      [:type, :description, :resolve, :types_to_skip].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
+      [:description, :resolve, :types_to_skip].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
+
+      def type(t = nil)
+        if t
+          @type = schema.find_type(t)
+        else
+          @type
+        end
+      end
 
       def name(n = nil)
         if n
