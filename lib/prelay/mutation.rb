@@ -26,13 +26,26 @@ module Prelay
     end
 
     class << self
-      [:type, :description].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
+      [:description].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
 
       def name(n = nil)
         if n
           @name = n
         else
           @name ||= super()
+        end
+      end
+
+      def type(t = nil)
+        if t
+          @type =
+            if t.is_a?(Class) && (t < Type || t < Interface)
+              t
+            else
+              schema.types_and_interfaces.find{|type| type.name == t.to_s} || raise(DefinitionError, "couldn't find a type or interface named #{t}")
+            end
+        else
+          @type
         end
       end
 

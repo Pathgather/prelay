@@ -23,14 +23,18 @@ module Prelay
       define_method(plural){@objects[klass]}
     end
 
+    def types_and_interfaces
+      types + interfaces
+    end
+
     # TODO: Cache.
     def type_for_name(name)
-      (@objects[Type] + @objects[Interface]).find{|t| t.name == name}
+      types_and_interfaces.find{|t| t.name == name}
     end
 
     # TODO: Cache.
     def type_for_model(model)
-      @objects[Type].find{|t| t.associated_models.include?(model)}
+      types.find{|t| t.associated_models.include?(model)}
     end
 
     def type_for_name!(name)
