@@ -46,6 +46,22 @@ class MutationSpec < PrelaySpec
   end
 
   describe "when introspected" do
-    it "should be correct"
+    mock_schema do
+      type :Album
+
+      mutation :UpdateAlbum do
+        type :Album
+        description "A mutation to update an album"
+      end
+    end
+
+    it "should be correct" do
+      m = schema.graphql_schema.mutation.fields['update_album']
+      assert_equal "update_album", m.name
+      skip "Not sure how to get this information from the GraphQL gem"
+      assert_equal "A mutation to update an album", m.description
+      assert_nil m.deprecation_reason
+      # Probably other stuff we should check?
+    end
   end
 end

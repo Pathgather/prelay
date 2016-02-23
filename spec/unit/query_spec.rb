@@ -46,6 +46,22 @@ class QuerySpec < PrelaySpec
   end
 
   describe "when introspected" do
-    it "should be correct"
+    mock_schema do
+      type :Album
+
+      query :Albums do
+        type :Album
+        description "A query to return all albums in the DB"
+      end
+    end
+
+    it "should be correct" do
+      q = schema.graphql_schema.query.fields['albums']
+      assert_equal "albums", q.name
+      assert_equal "A query to return all albums in the DB", q.description
+      assert_nil q.deprecation_reason
+      assert_equal({}, q.arguments)
+      assert_equal(schema.graphql_schema.types['Album'], q.type)
+    end
   end
 end

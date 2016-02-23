@@ -77,7 +77,7 @@ module Prelay
       end
 
       def build_graphql_object(config)
-        config.name(to_s)
+        config.name(name)
         config.description(description)
 
         arguments.each_value do |argument|
