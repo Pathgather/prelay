@@ -3,10 +3,10 @@
 class ReleaseInterface < Prelay::Interface
   description "A collection of songs released by an artist."
 
-  attribute :name,         :string,  "The name of the release"
-  attribute :upvotes,      :integer, "How many people voted up the release."
-  attribute :high_quality, :boolean, "Whether the release is good or not."
-  attribute :popularity,   :float,   "The normalized popularity of the release, on a scale from 0 to 1."
+  string  :name,         "The name of the release"
+  integer :upvotes,      "How many people voted up the release."
+  boolean :high_quality, "Whether the release is good or not."
+  float   :popularity,   "The normalized popularity of the release, on a scale from 0 to 1."
 
   many_to_one :artist,    "The artist who released the release.", target: :ArtistType, nullable: false
   one_to_many :tracks,    "The tracks on this release.", target: :TrackType
@@ -18,7 +18,7 @@ class GenreType < Prelay::Type
 
   description "A genre of music"
 
-  attribute :name, :string, "The genre's name"
+  string :name, "The genre's name"
 
   one_to_many :artists, "Artists who predominantly worked in this genre of music."
 end
@@ -28,11 +28,11 @@ class ArtistType < Prelay::Type
 
   description "A musician"
 
-  attribute :first_name, :string,  "The first name of the artist"
-  attribute :last_name,  :string,  "The last name of the artist"
-  attribute :upvotes,    :integer, "How many upvotes the artist got"
-  attribute :active,     :boolean, "Whether the artist is still making music"
-  attribute :popularity, :float,   "The artist's relative popularity, normalized between 0 and 1."
+  string  :first_name, "The first name of the artist"
+  string  :last_name,  "The last name of the artist"
+  integer :upvotes,    "How many upvotes the artist got"
+  boolean :active,     "Whether the artist is still making music"
+  float   :popularity, "The artist's relative popularity, normalized between 0 and 1."
 
   many_to_one :genre,  "The genre of music the artist predominantly worked in", nullable: false
   one_to_many :albums, "Albums released by the artist"
@@ -45,10 +45,10 @@ class AlbumType < Prelay::Type
 
   description "An album released by a musician"
 
-  attribute :name,         :string,  "The name of the album"
-  attribute :upvotes,      :integer, "How many people voted up the album."
-  attribute :high_quality, :boolean, "Whether the album is good or not."
-  attribute :popularity,   :float,   "The normalized popularity of the album, on a scale from 0 to 1."
+  string  :name,         "The name of the album"
+  integer :upvotes,      "How many people voted up the album."
+  boolean :high_quality, "Whether the album is good or not."
+  float   :popularity,   "The normalized popularity of the album, on a scale from 0 to 1."
 
   many_to_one :artist,    "The artist who released the album.", nullable: false
   one_to_many :tracks,    "The tracks on this album."
@@ -67,10 +67,10 @@ class CompilationType < Prelay::Type
 
   description "A release of an artist's best songs"
 
-  attribute :name,         :string,  "The name of the compilation"
-  attribute :upvotes,      :integer, "How many people voted up the compilation."
-  attribute :high_quality, :boolean, "Whether the compilation is good or not."
-  attribute :popularity,   :float,   "The normalized popularity of the compilation, on a scale from 0 to 1."
+  string  :name,         "The name of the compilation"
+  integer :upvotes,      "How many people voted up the compilation."
+  boolean :high_quality, "Whether the compilation is good or not."
+  float   :popularity,   "The normalized popularity of the compilation, on a scale from 0 to 1."
 
   many_to_one :artist,    "The artist who released the compilation.", nullable: false
   one_to_many :tracks,    "The tracks on this compilation."
@@ -82,10 +82,10 @@ class TrackType < Prelay::Type
 
   description "A song on an album"
 
-  attribute :name,         :string,  "The name of the track."
-  attribute :number,       :integer, "The number of the track listing."
-  attribute :high_quality, :boolean, "Whether the track is good or not."
-  attribute :popularity,   :float,   "The normalized popularity of the track, on a scale from 0 to 1."
+  string  :name,         "The name of the track."
+  integer :number,       "The number of the track listing."
+  boolean :high_quality, "Whether the track is good or not."
+  float   :popularity,   "The normalized popularity of the track, on a scale from 0 to 1."
 
   many_to_one :release, "The release the track belongs to.", target: :ReleaseInterface, nullable: false
 end
@@ -95,7 +95,7 @@ class PublisherType < Prelay::Type
 
   description "The publishing company for an album"
 
-  attribute :name, :string, "The name of the company."
+  string :name, "The name of the company."
 
   many_to_one :album, "The album this company was responsible for.", nullable: false
 end

@@ -50,7 +50,7 @@ class InterfaceSpec < PrelaySpec
       mock :interface do
         name "Release"
         description "A collection of songs released by an artist."
-        attribute :name, :string, "The name of the release"
+        string :name, "The name of the release"
       end
     end
 

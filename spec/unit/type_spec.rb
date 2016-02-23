@@ -51,7 +51,7 @@ class TypeSpec < PrelaySpec
         name "Album"
         model Album
         description "An album released by a musician"
-        attribute :name, :string, "The name of the album"
+        string :name, "The name of the album"
       end
     end
 

@@ -9,7 +9,7 @@ class DatasetScopeSpec < PrelaySpec
     mock :type do
       name "Track"
       model Track
-      attribute :name, :string
+      string :name
       dataset_scope { |ds| ds.where(:high_quality).select{random{}.as(:rand)} }
     end
   end

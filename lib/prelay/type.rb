@@ -34,6 +34,10 @@ module Prelay
         define_method(name){@record.send(name)}
       end
 
+      [:string, :integer, :boolean, :float].each do |datatype|
+        define_method(datatype){|name, *args| attribute(name, datatype, *args)}
+      end
+
       def interface(interface, foreign_key)
         interface.types << self
         interfaces[interface] = foreign_key

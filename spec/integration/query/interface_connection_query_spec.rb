@@ -11,7 +11,7 @@ class InterfaceConnectionQuerySpec < PrelaySpec
     mock :type, schema: schema do
       name "Artist"
       model Artist
-      attribute :first_name, :string
+      string :first_name
     end
   end
 
@@ -19,7 +19,7 @@ class InterfaceConnectionQuerySpec < PrelaySpec
     at = artist_type
     mock :interface, schema: schema do
       name "Release"
-      attribute :name, :string
+      string :name
       many_to_one :artist, nullable: false, target: at
     end
   end
@@ -30,7 +30,7 @@ class InterfaceConnectionQuerySpec < PrelaySpec
       name "Album"
       model Album
       interface i, :release_id
-      attribute :name, :string
+      string :name
       many_to_one :artist, nullable: false
     end
   end
@@ -41,7 +41,7 @@ class InterfaceConnectionQuerySpec < PrelaySpec
       name "Compilation"
       model Compilation
       interface i, :release_id
-      attribute :name, :string
+      string :name
       many_to_one :artist, nullable: false
     end
   end

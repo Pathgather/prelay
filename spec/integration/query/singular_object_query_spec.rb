@@ -11,7 +11,7 @@ class SingularObjectQuerySpec < PrelaySpec
     mock :type, schema: schema do
       name "Artist"
       model Artist
-      attribute :first_name, :string
+      string :first_name
     end
   end
 
@@ -19,7 +19,7 @@ class SingularObjectQuerySpec < PrelaySpec
     mock :type, schema: schema do
       name "Album"
       model Album
-      attribute :name, :string
+      string :name
       many_to_one :artist, nullable: false
     end
   end

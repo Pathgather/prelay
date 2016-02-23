@@ -20,6 +20,10 @@ module Prelay
         attributes[args.first] = Type::Attribute.new(self, *args)
       end
 
+      [:string, :integer, :boolean, :float].each do |datatype|
+        define_method(datatype){|name, *args| attribute(name, datatype, *args)}
+      end
+
       [:one_to_one, :one_to_many, :many_to_one].each do |association_type|
         define_method(association_type) do |*args|
           associations[args.first] = Type::Association.new(self, association_type, *args)
