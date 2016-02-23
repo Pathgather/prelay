@@ -26,4 +26,12 @@ class SchemaSpec < PrelaySpec
       end
     end
   end
+
+  describe "#freeze" do
+    it "should deep-freeze the contents of the schema"
+  end
+
+  describe "#to_graphql_schema" do
+    it "should give the query and mutation collections a prefix, which defaults to 'Client'"
+  end
 end

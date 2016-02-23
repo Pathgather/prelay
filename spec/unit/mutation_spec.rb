@@ -64,4 +64,8 @@ class MutationSpec < PrelaySpec
       # Probably other stuff we should check?
     end
   end
+
+  describe "when declared" do
+    it "should accept the actual type object as well as a name"
+  end
 end

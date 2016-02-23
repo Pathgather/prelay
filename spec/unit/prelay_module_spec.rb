@@ -30,4 +30,10 @@ class PrelayModuleSpec < PrelaySpec
       end
     end
   end
+
+  describe ".get" do
+    it "should return the model for a given prelay id"
+
+    it "should return nil if no such model exists"
+  end
 end

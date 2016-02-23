@@ -71,4 +71,12 @@ class ConnectionQuerySpec < PrelaySpec
   end
 
   it "should support fuzzed queries"
+
+  it "should support different order clauses"
+
+  it "should work with a type that has a 'cursor' field"
+
+  describe "when on an interface" do
+    it "should respect a list of specific types to return"
+  end
 end

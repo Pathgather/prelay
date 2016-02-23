@@ -106,4 +106,38 @@ class TypeSpec < PrelaySpec
       assert_equal "The publisher responsible for releasing the album.", field.description
     end
   end
+
+  describe "when an association is declared" do
+    it "should demand a :nullable option, or its absence, depending on the association"
+
+    describe "when an appropriate Sequel association exists" do
+      it "should use its foreign key data"
+
+      it "should use its association block, if any"
+
+      it "should use its default order, if any"
+
+      it "should accept a custom order option that may differ from the Sequel association's"
+
+      it "should raise an error if an appropriate ordering cannot be determined"
+    end
+
+    describe "when an appropriate Sequel association does not exist" do
+      it "should accept a foreign key specification"
+
+      it "should error if a foreign key can't be unambiguously determined"
+    end
+
+    describe "when the association is to an interface" do
+      it "should accept a set of types that are specifically supported"
+
+      it "should error if an appropriate target is not given"
+
+      it "should require a specific foreign key"
+    end
+  end
+
+  describe "when an interface is given" do
+    it "should raise an error if the type doesn't implement the interface exactly"
+  end
 end
