@@ -13,7 +13,7 @@ class EdgeMutationSpec < PrelaySpec
     mock :type, schema: schema do
       name "Artist"
       model Artist
-      attribute :first_name, datatype: :string
+      attribute :first_name, :string
     end
   end
 
@@ -22,7 +22,7 @@ class EdgeMutationSpec < PrelaySpec
     mock :type, schema: schema do
       name "Album"
       model Album
-      attribute :name, datatype: :string
+      attribute :name, :string
       many_to_one :artist, nullable: false
     end
   end
