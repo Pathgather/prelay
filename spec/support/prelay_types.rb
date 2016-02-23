@@ -20,7 +20,7 @@ class GenreType < Prelay::Type
 
   string :name, "The genre's name"
 
-  one_to_many :artists, "Artists who predominantly worked in this genre of music."
+  one_to_many :artists, "Artists who predominantly worked in this genre of music.", order: Sequel.asc(:id)
 end
 
 class ArtistType < Prelay::Type
