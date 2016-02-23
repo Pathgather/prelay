@@ -5,33 +5,18 @@ require 'spec_helper'
 class EdgeMutationSpec < PrelaySpec
   let(:artist) { Artist.first }
 
-  let :schema do
-    Prelay::Schema.new(temporary: true)
-  end
-
-  let :artist_type do
-    mock :type, schema: schema do
-      name "Artist"
-      model Artist
+  mock_schema do
+    type :Artist do
       string :first_name
     end
-  end
 
-  let :album_type do
-    at = artist_type
-    mock :type, schema: schema do
-      name "Album"
-      model Album
+    type :Album do
       string :name
       many_to_one :artist, nullable: false
     end
-  end
 
-  let :mutation do
-    t = album_type
-    mock :mutation, schema: schema do
-      name "CreateAlbum"
-      type t
+    mutation :CreateAlbum do
+      type :Album
 
       argument :artist_id, :id
       argument :name,      :string
@@ -59,9 +44,6 @@ class EdgeMutationSpec < PrelaySpec
   end
 
   it "should support invoking a mutation that returns a node and an edge for it in relation to another node" do
-    mutation
-    artist_type
-
     @input = {
       artist_id: id_for(artist),
       name: "New Album Name"
