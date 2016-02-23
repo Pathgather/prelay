@@ -30,7 +30,7 @@ module Prelay
       def type(type = nil)
         if type && t = schema.find_type(type)
           t.filters.each do |name, (type, _)|
-            arguments[name] = Query::Argument.new(self, name, t)
+            arguments[name] = Query::Argument.new(self, name, type)
           end
         end
 
