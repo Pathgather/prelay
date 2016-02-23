@@ -20,7 +20,7 @@ module Prelay
         attributes[args.first] = Type::Attribute.new(self, *args)
       end
 
-      [:string, :integer, :boolean, :float].each do |datatype|
+      [:string, :integer, :boolean, :float, :timestamp].each do |datatype|
         define_method(datatype){|name, *args| attribute(name, datatype, *args)}
       end
 

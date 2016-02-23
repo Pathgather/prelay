@@ -34,7 +34,7 @@ module Prelay
         define_method(name){@record.send(name)}
       end
 
-      [:string, :integer, :boolean, :float].each do |datatype|
+      [:string, :integer, :boolean, :float, :timestamp].each do |datatype|
         define_method(datatype){|name, *args| attribute(name, datatype, *args)}
       end
 
