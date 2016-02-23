@@ -28,10 +28,13 @@ module DefaultSpecSchema
 
   module ClassMethods
     def mock_schema(&block)
-      before do
-        @schema = Prelay::Schema.new(temporary: true)
-        SchemaMocker.new(@schema).instance_eval(&block)
-      end
+      prepend Module.new {
+        define_method :setup do
+          @schema = Prelay::Schema.new(temporary: true)
+          SchemaMocker.new(@schema).instance_eval(&block)
+          super()
+        end
+      }
     end
   end
 
