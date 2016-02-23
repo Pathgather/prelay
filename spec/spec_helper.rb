@@ -26,6 +26,7 @@ end
 #   end
 # }
 
+require_relative 'support/default_spec_schema'
 require_relative 'support/spec_helper_methods'
 
 class PrelaySpec < Minitest::Spec
@@ -34,6 +35,7 @@ class PrelaySpec < Minitest::Spec
   make_my_diffs_pretty!
 
   include Minitest::Hooks
+  include DefaultSpecSchema
   include SpecHelperMethods
 
   TEST_MUTEX = Mutex.new
