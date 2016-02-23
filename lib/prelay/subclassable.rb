@@ -24,11 +24,7 @@ module Prelay
     end
 
     def prelay_class
-      if @prelay_class
-        self
-      else
-        superclass.prelay_class
-      end
+      @prelay_class ? self : superclass.prelay_class
     end
 
     def prelay_class_name
@@ -40,9 +36,9 @@ module Prelay
     end
 
     def schema=(s)
-      set = underscored_prelay_class_name + '_set'
-      @schema.send(set).delete(self) if @schema
-      s.send(set) << self if s
+      pc = prelay_class
+      @schema.objects.fetch(pc).delete(self) if @schema
+      s.objects.fetch(pc) << self if s
       @schema = s
     end
   end

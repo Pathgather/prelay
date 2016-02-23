@@ -9,8 +9,8 @@ class QuerySpec < PrelaySpec
         assert_equal [SCHEMA], Prelay::SCHEMAS
         q = Class.new(Prelay::Query)
         assert_equal SCHEMA, q.schema
-        assert SCHEMA.query_set.include?(q)
-        SCHEMA.query_set.delete(q)
+        assert SCHEMA.queries.include?(q)
+        SCHEMA.queries.delete(q)
         assert_equal [SCHEMA], Prelay::SCHEMAS
       end
     end
@@ -32,15 +32,15 @@ class QuerySpec < PrelaySpec
     it "should have that schema as its parent" do
       TEST_MUTEX.synchronize do
         assert_equal [SCHEMA], Prelay::SCHEMAS
-        original_queries = SCHEMA.query_set
+        original_queries = SCHEMA.queries
 
         s = Prelay::Schema.new(temporary: true)
         q = Class.new(Prelay::Query(schema: s))
         assert_equal s, q.schema
-        assert_equal [q], s.query_set
+        assert_equal [q], s.queries
 
         assert_equal [SCHEMA], Prelay::SCHEMAS
-        assert_equal original_queries, SCHEMA.query_set
+        assert_equal original_queries, SCHEMA.queries
       end
     end
   end

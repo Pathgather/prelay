@@ -40,13 +40,14 @@ module Prelay
   end
 end
 
-require 'prelay/schema'
 require 'prelay/subclassable'
 
 require 'prelay/type'
 require 'prelay/interface'
 require 'prelay/query'
 require 'prelay/mutation'
+
+require 'prelay/schema'
 
 require 'prelay/graphql_processor'
 require 'prelay/relay_processor'

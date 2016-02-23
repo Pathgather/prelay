@@ -2,25 +2,35 @@
 
 module Prelay
   class Schema
-    attr_reader :type_set, :query_set, :mutation_set, :interface_set
+    attr_reader :objects
+
+    OBJECT_CLASSES = {
+      Type      => :types,
+      Interface => :interfaces,
+      Query     => :queries,
+      Mutation  => :mutations,
+    }.freeze
 
     def initialize(temporary: false)
-      @type_set      = []
-      @interface_set = []
-      @query_set     = []
-      @mutation_set  = []
+      @objects = {}
+
+      OBJECT_CLASSES.each_key { |klass| @objects[klass] = [] }
 
       SCHEMAS << self unless temporary
     end
 
+    OBJECT_CLASSES.each do |klass, plural|
+      define_method(plural){@objects[klass]}
+    end
+
     # TODO: Cache.
     def type_for_name(name)
-      (@type_set + @interface_set).find{|t| t.name == name}
+      (@objects[Type] + @objects[Interface]).find{|t| t.name == name}
     end
 
     # TODO: Cache.
     def type_for_model(model)
-      @type_set.find{|t| t.associated_models.include?(model)}
+      @objects[Type].find{|t| t.associated_models.include?(model)}
     end
 
     def type_for_name!(name)
@@ -52,9 +62,11 @@ module Prelay
       @graphql_schema ||= begin
         # Make sure that type and interface objects are defined before we
         # build the actual GraphQL schema.
-        (@type_set + @interface_set).each &:graphql_object
+        (@objects[Type] + @objects[Interface]).each &:graphql_object
 
         schema = self
+        queries = @objects[Query]
+        mutations = @objects[Mutation]
 
         GraphQL::Schema.new \
           query: GraphQL::ObjectType.define {
@@ -84,7 +96,7 @@ module Prelay
               }
             }
 
-            connection_queries, other_queries = schema.query_set.sort_by(&:graphql_field_name).partition { |k| k < Prelay::Connection }
+            connection_queries, other_queries = queries.sort_by(&:graphql_field_name).partition { |k| k < Prelay::Connection }
 
             # Relay wants connection queries to be located under a wrapper field, so
             # just call it 'connections'.
@@ -106,7 +118,7 @@ module Prelay
           mutation: GraphQL::ObjectType.define {
             name "#{prefix}Mutation"
             description "Mutations the client can run"
-            schema.mutation_set.sort_by(&:graphql_field_name).each { |m| m.create_graphql_field(self) }
+            mutations.sort_by(&:graphql_field_name).each { |m| m.create_graphql_field(self) }
           },
 
           # We don't support subscriptions yet, but have an empty object here so

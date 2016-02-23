@@ -9,8 +9,8 @@ class MutationSpec < PrelaySpec
         assert_equal [SCHEMA], Prelay::SCHEMAS
         m = Class.new(Prelay::Mutation)
         assert_equal SCHEMA, m.schema
-        assert SCHEMA.mutation_set.include?(m)
-        SCHEMA.mutation_set.delete(m)
+        assert SCHEMA.mutations.include?(m)
+        SCHEMA.mutations.delete(m)
         assert_equal [SCHEMA], Prelay::SCHEMAS
       end
     end
@@ -32,15 +32,15 @@ class MutationSpec < PrelaySpec
     it "should have that schema as its parent" do
       TEST_MUTEX.synchronize do
         assert_equal [SCHEMA], Prelay::SCHEMAS
-        original_mutations = SCHEMA.mutation_set
+        original_mutations = SCHEMA.mutations
 
         s = Prelay::Schema.new(temporary: true)
         m = Class.new(Prelay::Mutation(schema: s))
         assert_equal s, m.schema
-        assert_equal [m], s.mutation_set
+        assert_equal [m], s.mutations
 
         assert_equal [SCHEMA], Prelay::SCHEMAS
-        assert_equal original_mutations, SCHEMA.mutation_set
+        assert_equal original_mutations, SCHEMA.mutations
       end
     end
   end
