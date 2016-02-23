@@ -92,7 +92,7 @@ module SpecHelperMethods
   end
 
   def type_for(object)
-    schema.type_for_model(object.class)
+    schema.type_for_model!(object.class)
   end
 
   def type_name_for(object)

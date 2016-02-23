@@ -5,7 +5,71 @@ require 'spec_helper'
 class EdgeMutationSpec < PrelaySpec
   let(:artist) { Artist.first }
 
+  let :schema do
+    Prelay::Schema.new(temporary: true)
+  end
+
+  let :artist_type do
+    mock :type, schema: schema do
+      name "Artist"
+      model Artist
+      attribute :first_name, "The first name of the artist", datatype: :string
+    end
+  end
+
+  let :album_type do
+    at = artist_type
+    mock :type, schema: schema do
+      name "Album"
+      model Album
+      attribute :name, "The name of the album", datatype: :string
+      many_to_one :artist, "The artist that made the album", nullable: false
+    end
+  end
+
+  let :mutation do
+    t = album_type
+    mock :mutation, schema: schema do
+      name "CreateAlbum"
+      description <<-DESC
+
+        Creates an album object given some attributes, including an artist to
+        associate it with. Returns an album node and an edge for its association
+        to the artist.
+
+      DESC
+
+      type t
+
+      argument :artist_id, :id
+      argument :name,      :string
+
+      result_field :artist,     association: :artist
+      result_field :album,      association: :self
+      result_field :album_edge, association: :self, edge: true
+
+      def mutate(args)
+        args[:artist] = Prelay::ID.parse(args.delete(:artist_id), expected_type: ArtistType).get
+
+        album = Album.new(args)
+        album.upvotes = 0
+        album.high_quality = true
+        album.popularity = 0.5
+        album.release_date = Date.today
+        album.money_made = 0.0
+        album.other = Sequel.pg_json({})
+        album.created_at = Date.today.to_time
+        album.save
+
+        {artist: album.artist_id, album: album.id}
+      end
+    end
+  end
+
   it "should support invoking a mutation that returns a node and an edge for it in relation to another node" do
+    mutation
+    artist_type
+
     @input = {
       artist_id: id_for(artist),
       name: "New Album Name"
