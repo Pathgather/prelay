@@ -64,7 +64,8 @@ class OneToManyPaginationSpec < PrelaySpec
                     r
                   end
 
-                args_and_expected_albums = proc do |all_albums|
+                it "on a one-to-many association should support #{desc}" do
+                  all_albums      = paginating_through_interface ? releases : albums
                   expected_albums = all_albums
                   expected_albums = expected_albums.reverse unless paginating_forward
 
@@ -76,13 +77,7 @@ class OneToManyPaginationSpec < PrelaySpec
                   expected_albums = expected_albums[0..2] unless all_records_requested
                   expected_albums = expected_albums.reverse unless paginating_forward
 
-                  [args, expected_albums]
-                end
-
-                it "on a one-to-many association should support #{desc}" do
                   artist_id = id_for(artist)
-
-                  args, expected_albums = $values = args_and_expected_albums.call(paginating_through_interface ? releases : albums)
 
                   graphql =
                     <<-GRAPHQL

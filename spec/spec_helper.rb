@@ -34,9 +34,7 @@ class PrelaySpec < Minitest::Spec
   make_my_diffs_pretty!
 
   include Minitest::Hooks
-
   include SpecHelperMethods
-  extend  SpecHelperMethods
 
   TEST_MUTEX = Mutex.new
   SCHEMA = Prelay::Schema.new
