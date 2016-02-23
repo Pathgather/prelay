@@ -48,4 +48,3 @@ end
 
 require_relative 'support/sequel_models'
 require_relative 'support/prelay_types'
-require_relative 'support/prelay_queries'

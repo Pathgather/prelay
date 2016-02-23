@@ -58,8 +58,12 @@ module Prelay
 
       def target_type
         @target_type ||= (
-          if @specified_target
-            Kernel.const_get(@specified_target.to_s)
+          if t = @specified_target
+            if t.is_a?(Class) && (t < Type || t < Interface)
+              t
+            else
+              Kernel.const_get(@specified_target.to_s)
+            end
           elsif parent < Type
             target_class = sequel_association.associated_class
             parent.schema.type_for_model!(target_class)

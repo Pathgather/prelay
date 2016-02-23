@@ -3,7 +3,65 @@
 require 'spec_helper'
 
 class InterfaceConnectionQuerySpec < PrelaySpec
+  let :schema do
+    Prelay::Schema.new(temporary: true)
+  end
+
+  let :artist_type do
+    mock :type, schema: schema do
+      name "Artist"
+      model Artist
+      attribute :first_name, "The first name of the artist", datatype: :string
+    end
+  end
+
+  let :release_interface do
+    at = artist_type
+    mock :interface, schema: schema do
+      name "Release"
+      attribute :name, "The name of the release", datatype: :string
+      many_to_one :artist, "The artist who made the release", nullable: false, target: at
+    end
+  end
+
+  let :album_type do
+    i = release_interface
+    mock :type, schema: schema do
+      name "Album"
+      model Album
+      interface i, :release_id
+      attribute :name, "The name of the album", datatype: :string
+      many_to_one :artist, "The artist who released the album", nullable: false
+    end
+  end
+
+  let :compilation_type do
+    i = release_interface
+    mock :type, schema: schema do
+      name "Compilation"
+      model Compilation
+      interface i, :release_id
+      attribute :name, "The name of the compilation", datatype: :string
+      many_to_one :artist, "The artist who released the album", nullable: false
+    end
+  end
+
+  let :query do
+    artist_type
+    album_type
+    compilation_type
+    t = release_interface
+    mock :query, schema: schema do
+      include Prelay::Connection
+      name "ReleasesQuery"
+      description "Returns all releases in the DB."
+      type t
+      order Sequel.desc(:created_at)
+    end
+  end
+
   it "should support returning a connection on an interface" do
+    query
     execute_query <<-GRAPHQL
       query Query {
         connections {

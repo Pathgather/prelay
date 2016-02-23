@@ -9,6 +9,14 @@ module Prelay
     class << self
       [:type, :description, :resolve, :types_to_skip].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
 
+      def name(n = nil)
+        if n
+          @name = n
+        else
+          @name || super()
+        end
+      end
+
       def arguments
         @arguments ||= {}
       end
@@ -19,7 +27,7 @@ module Prelay
 
       def graphql_field_name
         # CamelCase to under_score
-        to_s.chomp('Query').gsub(/(.)([A-Z])/,'\1_\2').downcase
+        name.chomp('Query').gsub(/(.)([A-Z])/,'\1_\2').downcase
       end
 
       def build_graphql_object(config)
