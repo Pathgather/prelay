@@ -8,7 +8,7 @@ DB.extension :pg_json
 logger = Object.new
 
 def logger.info(sql)
-  if Thread.current[:track_sqls] && q = sql[/\(\d\.[\d]{6,6}s\) (.+)/, 1]
+  if Thread.current[:track_sqls] && q = sql[/\(\d\.[\d]{6}s\) (.+)/, 1]
     Thread.current[:sqls] << q
   end
 end
