@@ -21,13 +21,13 @@ DB.create_table :artists do
 
   text        :first_name, null: false
   text        :last_name,  null: false
-  integer     :upvotes,    null: false
-  boolean     :active,     null: false
-  float       :popularity, null: false
-  date        :birth_date, null: false
-  numeric     :money_made, null: false
-  jsonb       :other,      null: false
-  timestamptz :created_at, null: false
+  integer     :upvotes,    null: false, default: 0
+  boolean     :active,     null: false, default: true
+  float       :popularity, null: false, default: Sequel.function(:random)
+  date        :birth_date, null: false, default: Sequel::CURRENT_DATE
+  numeric     :money_made, null: false, default: Sequel.function(:random) * 1000
+  jsonb       :other,      null: false, default: Sequel.pg_jsonb({})
+  timestamptz :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
 
   foreign_key [:genre_id], :genres
 end
@@ -38,13 +38,13 @@ DB.create_table :albums do
   uuid :artist_id, null: false
 
   text        :name,         null: false
-  integer     :upvotes,      null: false
-  boolean     :high_quality, null: false
-  float       :popularity,   null: false
-  date        :release_date, null: false
-  numeric     :money_made,   null: false
-  jsonb       :other,        null: false
-  timestamptz :created_at,   null: false
+  integer     :upvotes,      null: false, default: 0
+  boolean     :high_quality, null: false, default: false
+  float       :popularity,   null: false, default: Sequel.function(:random)
+  date        :release_date, null: false, default: Sequel::CURRENT_DATE
+  numeric     :money_made,   null: false, default: Sequel.function(:random) * 1000
+  jsonb       :other,        null: false, default: Sequel.pg_jsonb({})
+  timestamptz :created_at,   null: false, default: Sequel::CURRENT_TIMESTAMP
 
   foreign_key [:artist_id], :artists
 end
@@ -55,13 +55,13 @@ DB.create_table :compilations do
   uuid :artist_id, null: false
 
   text        :name,         null: false
-  integer     :upvotes,      null: false
-  boolean     :high_quality, null: false
-  float       :popularity,   null: false
-  date        :release_date, null: false
-  numeric     :money_made,   null: false
-  jsonb       :other,        null: false
-  timestamptz :created_at,   null: false
+  integer     :upvotes,      null: false, default: 0
+  boolean     :high_quality, null: false, default: false
+  float       :popularity,   null: false, default: Sequel.function(:random)
+  date        :release_date, null: false, default: Sequel::CURRENT_DATE
+  numeric     :money_made,   null: false, default: Sequel.function(:random) * 1000
+  jsonb       :other,        null: false, default: Sequel.pg_jsonb({})
+  timestamptz :created_at,   null: false, default: Sequel::CURRENT_TIMESTAMP
 
   foreign_key [:artist_id], :artists
 end
@@ -79,12 +79,12 @@ DB.create_table :tracks do
 
   text        :name,         null: false
   integer     :number,       null: false
-  boolean     :high_quality, null: false
-  float       :popularity,   null: false
-  date        :single_date,  null: false
-  numeric     :money_made,   null: false
-  jsonb       :other,        null: false
-  timestamptz :created_at,   null: false
+  boolean     :high_quality, null: false, default: false
+  float       :popularity,   null: false, default: Sequel.function(:random)
+  date        :single_date,  null: false, default: Sequel::CURRENT_DATE
+  numeric     :money_made,   null: false, default: Sequel.function(:random) * 1000
+  jsonb       :other,        null: false, default: Sequel.pg_jsonb({})
+  timestamptz :created_at,   null: false, default: Sequel::CURRENT_TIMESTAMP
 
   unique [:release_id, :number]
   index  [:album_id]

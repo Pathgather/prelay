@@ -28,15 +28,7 @@ class EdgeMutationSpec < PrelaySpec
       def mutate(args)
         args[:artist] = Prelay::ID.parse(args.delete(:artist_id), expected_type: ArtistType).get
 
-        album = Album.new(args)
-        album.upvotes = 0
-        album.high_quality = true
-        album.popularity = 0.5
-        album.release_date = Date.today
-        album.money_made = 0.0
-        album.other = Sequel.pg_json({})
-        album.created_at = Date.today.to_time
-        album.save
+        album = Album.create(args)
 
         {artist: album.artist_id, album: album.id}
       end
