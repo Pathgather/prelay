@@ -70,5 +70,7 @@ class ConnectionQuerySpec < PrelaySpec
       }
   end
 
+  it "should support fuzzed queries"
+
   it "should support all types of pagination"
 end

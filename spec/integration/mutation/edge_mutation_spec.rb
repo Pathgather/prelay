@@ -96,4 +96,6 @@ class EdgeMutationSpec < PrelaySpec
         'name' => album.name,
       }
   end
+
+  it "should support fuzzed queries for item edges"
 end

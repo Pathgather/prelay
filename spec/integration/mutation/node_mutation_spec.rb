@@ -55,4 +55,6 @@ class NodeMutationSpec < PrelaySpec
         'name' => "New Album Name"
       }
   end
+
+  it "should support fuzzed queries provided alongside mutations"
 end
