@@ -11,7 +11,7 @@ class SingularObjectQuerySpec < PrelaySpec
     mock :type, schema: schema do
       name "Artist"
       model Artist
-      attribute :first_name, "The first name of the artist", datatype: :string
+      attribute :first_name, datatype: :string
     end
   end
 
@@ -19,9 +19,8 @@ class SingularObjectQuerySpec < PrelaySpec
     mock :type, schema: schema do
       name "Album"
       model Album
-      attribute :name, "The name of the album", datatype: :string
-
-      many_to_one :artist, "The artist who released the album", nullable: false
+      attribute :name, datatype: :string
+      many_to_one :artist, nullable: false
     end
   end
 
@@ -30,7 +29,6 @@ class SingularObjectQuerySpec < PrelaySpec
     t = album_type
     mock :query, schema: schema do
       name "RandomAlbumQuery"
-      description "Returns a random album."
       type AlbumType
       resolve -> (obj, args, ctx) {
         ast = Prelay::GraphQLProcessor.new(ctx).ast

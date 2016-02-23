@@ -13,7 +13,7 @@ class EdgeMutationSpec < PrelaySpec
     mock :type, schema: schema do
       name "Artist"
       model Artist
-      attribute :first_name, "The first name of the artist", datatype: :string
+      attribute :first_name, datatype: :string
     end
   end
 
@@ -22,8 +22,8 @@ class EdgeMutationSpec < PrelaySpec
     mock :type, schema: schema do
       name "Album"
       model Album
-      attribute :name, "The name of the album", datatype: :string
-      many_to_one :artist, "The artist that made the album", nullable: false
+      attribute :name, datatype: :string
+      many_to_one :artist, nullable: false
     end
   end
 
@@ -31,14 +31,6 @@ class EdgeMutationSpec < PrelaySpec
     t = album_type
     mock :mutation, schema: schema do
       name "CreateAlbum"
-      description <<-DESC
-
-        Creates an album object given some attributes, including an artist to
-        associate it with. Returns an album node and an edge for its association
-        to the artist.
-
-      DESC
-
       type t
 
       argument :artist_id, :id

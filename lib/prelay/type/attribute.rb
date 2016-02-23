@@ -5,7 +5,7 @@ module Prelay
     class Attribute
       attr_reader :parent, :name, :dependent_columns, :description, :graphql_type
 
-      def initialize(parent, name, description, datatype:, nullable: false, dependent_columns: nil)
+      def initialize(parent, name, description = nil, datatype:, nullable: false, dependent_columns: nil)
         @parent            = parent
         @name              = name
         @description       = description

@@ -11,11 +11,9 @@ class DependentColumnsQuerySpec < PrelaySpec
       name 'Artist'
       model Artist
 
-      description "A musician"
-
-      attribute :name, "The full name of the artist", datatype: :string, dependent_columns: [:first_name, :last_name]
-      attribute :first_name, "The first name of the artist", datatype: :string
-      attribute :upvotes, "How many upvotes the artist got", datatype: :integer
+      attribute :name, datatype: :string, dependent_columns: [:first_name, :last_name]
+      attribute :first_name, datatype: :string
+      attribute :upvotes, datatype: :integer
 
       def name
         record.first_name + ' ' + record.last_name

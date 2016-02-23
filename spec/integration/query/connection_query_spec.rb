@@ -11,7 +11,7 @@ class ConnectionQuerySpec < PrelaySpec
     mock :type, schema: schema do
       name "Artist"
       model Artist
-      attribute :first_name, "The first name of the artist", datatype: :string
+      attribute :first_name, datatype: :string
     end
   end
 
@@ -19,9 +19,9 @@ class ConnectionQuerySpec < PrelaySpec
     mock :type, schema: schema do
       name "Album"
       model Album
-      attribute :name, "The name of the album", datatype: :string
+      attribute :name, datatype: :string
 
-      many_to_one :artist, "The artist who released the album", nullable: false
+      many_to_one :artist, nullable: false
     end
   end
 
@@ -31,13 +31,6 @@ class ConnectionQuerySpec < PrelaySpec
     mock :query, schema: schema do
       include Prelay::Connection
       name "AlbumsQuery"
-
-      description <<-DESC
-
-        Returns all albums in the DB.
-
-      DESC
-
       type t
       order Sequel.desc(:created_at)
     end

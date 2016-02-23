@@ -13,7 +13,7 @@ class NodeMutationSpec < PrelaySpec
     mock :type, schema: schema do
       name "Album"
       model Album
-      attribute :name, "The name of the album", datatype: :string
+      attribute :name, datatype: :string
     end
   end
 
@@ -21,7 +21,6 @@ class NodeMutationSpec < PrelaySpec
     t = album_type
     mock :mutation, schema: schema do
       name "UpdateAlbumName"
-      description "Updates an album with the given id."
 
       argument :id, :id
       argument :name, :string

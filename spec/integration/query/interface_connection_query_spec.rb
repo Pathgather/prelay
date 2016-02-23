@@ -11,7 +11,7 @@ class InterfaceConnectionQuerySpec < PrelaySpec
     mock :type, schema: schema do
       name "Artist"
       model Artist
-      attribute :first_name, "The first name of the artist", datatype: :string
+      attribute :first_name, datatype: :string
     end
   end
 
@@ -19,8 +19,8 @@ class InterfaceConnectionQuerySpec < PrelaySpec
     at = artist_type
     mock :interface, schema: schema do
       name "Release"
-      attribute :name, "The name of the release", datatype: :string
-      many_to_one :artist, "The artist who made the release", nullable: false, target: at
+      attribute :name, datatype: :string
+      many_to_one :artist, nullable: false, target: at
     end
   end
 
@@ -30,8 +30,8 @@ class InterfaceConnectionQuerySpec < PrelaySpec
       name "Album"
       model Album
       interface i, :release_id
-      attribute :name, "The name of the album", datatype: :string
-      many_to_one :artist, "The artist who released the album", nullable: false
+      attribute :name, datatype: :string
+      many_to_one :artist, nullable: false
     end
   end
 
@@ -41,8 +41,8 @@ class InterfaceConnectionQuerySpec < PrelaySpec
       name "Compilation"
       model Compilation
       interface i, :release_id
-      attribute :name, "The name of the compilation", datatype: :string
-      many_to_one :artist, "The artist who released the album", nullable: false
+      attribute :name, datatype: :string
+      many_to_one :artist, nullable: false
     end
   end
 
@@ -54,7 +54,6 @@ class InterfaceConnectionQuerySpec < PrelaySpec
     mock :query, schema: schema do
       include Prelay::Connection
       name "ReleasesQuery"
-      description "Returns all releases in the DB."
       type t
       order Sequel.desc(:created_at)
     end
