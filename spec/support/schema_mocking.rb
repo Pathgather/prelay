@@ -49,7 +49,7 @@ module SchemaMocking
       c = Class.new(superclass)
       c.name(name.to_s)
       yield c if block_given?
-      c.class_eval(&definition)
+      c.class_eval(&definition) if definition
       c
     end
   end

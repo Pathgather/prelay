@@ -47,9 +47,17 @@ class InterfaceSpec < PrelaySpec
 
   describe "when introspected" do
     mock_schema do
+      a = type :Artist
+      t = type :Track
+      p = type :Publisher
+
       interface :Release do
         description "A collection of songs released by an artist."
         string :name, "The name of the release"
+
+        many_to_one :artist, "The artist who released the release.", target: a, nullable: false
+        one_to_many :tracks, "The tracks on this release.", target: t
+        one_to_one  :publisher, "The publisher responsible for releasing the release.", target: p, nullable: true
       end
     end
 
@@ -58,7 +66,7 @@ class InterfaceSpec < PrelaySpec
     it "should translate it to a GraphQL object" do
       assert_instance_of GraphQL::InterfaceType, graphql_object
       assert_equal 'Release', graphql_object.name
-      assert_equal ['id', 'name'], graphql_object.fields.keys
+      assert_equal ['id', 'name', 'artist', 'tracks', 'publisher'], graphql_object.fields.keys
       assert_equal "A collection of songs released by an artist.", graphql_object.description
     end
 
@@ -72,7 +80,6 @@ class InterfaceSpec < PrelaySpec
     end
 
     it "should translate its many_to_one associations to GraphQL fields" do
-      skip
       field = graphql_object.fields['artist']
 
       assert_instance_of GraphQL::Field, field
@@ -82,7 +89,6 @@ class InterfaceSpec < PrelaySpec
     end
 
     it "should translate its one_to_many associations to GraphQL connections" do
-      skip
       field = graphql_object.fields['tracks']
 
       assert_instance_of GraphQL::Field, field
@@ -92,7 +98,6 @@ class InterfaceSpec < PrelaySpec
     end
 
     it "should translate its one_to_one associations to GraphQL fields" do
-      skip
       field = graphql_object.fields['publisher']
 
       assert_instance_of GraphQL::Field, field
