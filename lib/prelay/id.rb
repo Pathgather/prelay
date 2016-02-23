@@ -5,7 +5,7 @@ module Prelay
     class << self
       def parse(string, expected_type: nil, schema: Prelay.primary_schema)
         type, pk = parts = Base64.decode64(string).split(':')
-        raise InvalidGraphQLQuery, "Not a valid object id: \"#{string}\"" unless parts.length == 2
+        raise Error, "Not a valid object id: \"#{string}\"" unless parts.length == 2
 
         if expected_type
           possible_types =
@@ -20,7 +20,7 @@ module Prelay
           expected_names = possible_types.map { |t| t.graphql_object.name }
 
           unless expected_names.include?(type)
-            raise InvalidGraphQLQuery, "Expected object id for a #{expected_type.graphql_object.name}, got one for a #{type}"
+            raise Error, "Expected object id for a #{expected_type.graphql_object.name}, got one for a #{type}"
           end
         end
 

@@ -39,7 +39,7 @@ module Prelay
       # records in a connection) we could, but that behavior should be thought
       # through, and a limit should probably still be applied to prevent abuse.
       unless selection.arguments[:first] || selection.arguments[:last]
-        raise InvalidGraphQLQuery, "Tried to access the connection '#{selection.name}' without a 'first' or 'last' argument."
+        raise Error, "Tried to access the connection '#{selection.name}' without a 'first' or 'last' argument."
       end
 
       if page_info = selection.selections.delete(:pageInfo)
@@ -121,7 +121,7 @@ module Prelay
               # handles them, so we can just ignore them.
               selection_set.delete(key)
             else
-              raise InvalidGraphQLQuery, "unsupported field '#{s.name}'"
+              raise Error, "unsupported field '#{s.name}'"
             end
           end
         end

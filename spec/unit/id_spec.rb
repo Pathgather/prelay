@@ -30,7 +30,7 @@ class IDSpec < PrelaySpec
   end
 
   it "should support expected types when parsing ids" do
-    error = assert_raises(Prelay::InvalidGraphQLQuery) { Prelay::ID.parse(id, expected_type: ArtistType) }
+    error = assert_raises(Prelay::Error) { Prelay::ID.parse(id, expected_type: ArtistType) }
 
     assert_equal error.message, "Expected object id for a Artist, got one for a Album"
   end

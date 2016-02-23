@@ -11,7 +11,7 @@ module Prelay
 
     coerce_input ->(value) {
       # Looks like if the client is fine with sending it, we can use Time.iso8601(value).
-      raise InvalidGraphQLQuery, "Input syntax for Time objects not finalized yet"
+      raise Error, "Input syntax for Time objects not finalized yet"
     }
     coerce_result ->(value) { value.iso8601 }
   end

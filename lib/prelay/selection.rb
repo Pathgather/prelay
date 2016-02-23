@@ -29,7 +29,7 @@ module Prelay
     # subselections, and their subselections, and...
     def merge!(other_selection, fail_on_argument_difference:)
       if fail_on_argument_difference && (arguments != other_selection.arguments)
-        raise InvalidGraphQLQuery.new("This query invokes the same field twice with different arguments")
+        raise Error, "Query invokes the same field twice with different arguments"
       end
 
       return other_selection if frozen?

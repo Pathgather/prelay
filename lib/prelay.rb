@@ -10,7 +10,6 @@ Sequel::Database.extension :seek_pagination
 
 module Prelay
   class Error < StandardError; end
-  class InvalidGraphQLQuery < Error; end
   class DefinitionError < Error; end
 
   # Frozen empty objects, mostly for use as argument defaults. Makes sure that

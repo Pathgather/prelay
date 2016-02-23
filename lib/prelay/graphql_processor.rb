@@ -64,7 +64,7 @@ module Prelay
           fragments.merge!(f) { |k,o,n| o + n }
           (fragments[type] ||= []) << s
         when GraphQL::Language::Nodes::FragmentSpread
-          fragment = @fragments.fetch(thing.name) { raise InvalidGraphQLQuery, "fragment not found with name #{thing.name}" }
+          fragment = @fragments.fetch(thing.name) { raise Error, "fragment not found with name #{thing.name}" }
 
           if type = @schema.type_for_name(fragment.type)
             s, f = parse_field_selections_and_fragments(fragment)
