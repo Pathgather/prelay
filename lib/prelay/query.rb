@@ -7,7 +7,7 @@ module Prelay
     extend Subclassable
 
     class << self
-      [:description, :resolve, :types_to_skip].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
+      [:graphql_type, :description, :resolve, :types_to_skip].each { |m| eval "def #{m}(arg = nil); arg ? @#{m} = arg : @#{m}; end" }
 
       def type(t = nil)
         if t
@@ -57,8 +57,12 @@ module Prelay
         :field
       end
 
-      def graphql_type
-        type.graphql_object
+      def graphql_type(t = nil)
+        if t
+          @graphql_type = t
+        else
+          @graphql_type || type.graphql_object
+        end
       end
     end
   end
