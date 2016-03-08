@@ -31,4 +31,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'pg',             '~> 0.18.4'
   spec.add_development_dependency 'pry'
   spec.add_development_dependency 'm'
+  spec.add_development_dependency 'graphql-libgraphqlparser', '~> 0.1.4'
 end
