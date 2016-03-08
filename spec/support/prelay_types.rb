@@ -34,7 +34,7 @@ class ArtistType < Prelay::Type
   boolean :active,     "Whether the artist is still making music"
   float   :popularity, "The artist's relative popularity, normalized between 0 and 1."
 
-  many_to_one :genre,  "The genre of music the artist predominantly worked in", nullable: false
+  many_to_one :genre,  "The genre of music the artist predominantly worked in", nullable: true
   one_to_many :albums, "Albums released by the artist"
   one_to_many :releases, "Albums and Compilations released by the artist", order: Sequel.desc(:release_date), target: :ReleaseInterface, foreign_key: :artist_id
 end
