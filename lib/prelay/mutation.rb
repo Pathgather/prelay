@@ -17,6 +17,7 @@ module Prelay
 
     private
 
+    # TODO: Remove or test. GraphQLError is app-specific, at the very least.
     def attempt_save(object)
       if !object.modified? || object.save(raise_on_failure: false)
         object
