@@ -85,6 +85,4 @@ class InterfaceConnectionQuerySpec < PrelaySpec
         }
       }
   end
-
-  it "should support filters on the given interface"
 end

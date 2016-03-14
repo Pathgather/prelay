@@ -15,7 +15,10 @@ module Prelay
     ZERO_OR_ONE = 0..1
     EMPTY_RESULT_ARRAY = ResultArray.new(EMPTY_ARRAY).freeze
 
+    attr_reader :ast
+
     def initialize(ast:)
+      @ast       = ast
       @types     = {}
       @arguments = ast.arguments
       @metadata  = ast.metadata
@@ -165,7 +168,7 @@ module Prelay
         ds = scope.call(ds)
       end
 
-      type.filters.each do |name, (type, block)|
+      ast.type.filters.each do |name, (type, block)|
         if value = @arguments[name]
           ds = block.call(ds, value)
         end

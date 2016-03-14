@@ -21,7 +21,7 @@ class FilterSpec < PrelaySpec
       filter(:name_greater_than, :text) { |ds, string| ds.where{name > string} }
     end
 
-    a.one_to_many :releases, order: Sequel.desc(:release_date), target: r, foreign_key: :artist_id
+    a.one_to_many :releases, order: Sequel.desc(:created_at), target: r, foreign_key: :artist_id
 
     type :Album do
       string :name
@@ -111,8 +111,6 @@ class FilterSpec < PrelaySpec
   end
 
   it "should support filters in top-level connection queries on Interfaces" do
-    skip
-
     execute_query <<-GRAPHQL
       query Query {
         connections {
@@ -133,8 +131,8 @@ class FilterSpec < PrelaySpec
       }
     GRAPHQL
 
-    albums = Album.order(Sequel.desc(:created_at)).limit(5).all
-    compilations = Compilation.order(Sequel.desc(:created_at)).limit(5).all
+    albums = Album.order(Sequel.desc(:created_at)).where{char_length(:name) > 3}.limit(5).all
+    compilations = Compilation.order(Sequel.desc(:created_at)).where{char_length(:name) > 3}.limit(5).all
     releases = (albums + compilations).sort_by(&:created_at).reverse.first(5)
 
     assert_result \
@@ -159,14 +157,14 @@ class FilterSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE "high_quality" ORDER BY "created_at" DESC LIMIT 5),
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE (char_length("name") > 3) ORDER BY "created_at" DESC LIMIT 5),
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
-      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE "high_quality" ORDER BY "created_at" DESC LIMIT 5),
+      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE (char_length("name") > 3) ORDER BY "created_at" DESC LIMIT 5),
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{compilations.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
     ]
   end
 
-  it "should support filters in one_to_many connections" do
+  it "should support filters in one_to_many connections against types" do
     id = id_for(artist)
 
     execute_query <<-GRAPHQL
@@ -212,7 +210,58 @@ class FilterSpec < PrelaySpec
     ]
   end
 
-  it "should support filters in nested one_to_many connections" do
+  it "should support filters in one_to_many connections against interfaces" do
+    id = id_for(artist)
+
+    execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id,
+          ... on Artist {
+            first_name,
+            releases(first: 5, has_cool_name: true) {
+              edges {
+                node {
+                  id,
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    GRAPHQL
+
+    albums = artist.albums_dataset.order(Sequel.desc(:created_at)).where{char_length(:name) > 3}.limit(5).all
+    compilations = artist.compilations_dataset.order(Sequel.desc(:created_at)).where{char_length(:name) > 3}.limit(5).all
+    releases = (albums + compilations).sort_by(&:created_at).reverse.first(5)
+
+    assert_result \
+      'data' => {
+        'node' => {
+          'id' => id,
+          'first_name' => artist.first_name,
+          'releases' => {
+            'edges' => releases.map { |release|
+              {
+                'node' => {
+                  'id' => id_for(release),
+                  'name' => release.name,
+                }
+              }
+            }
+          }
+        }
+      }
+
+    assert_sqls [
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE ((char_length("name") > 3) AND ("albums"."artist_id" IN ('#{artist.id}'))) ORDER BY "created_at" DESC LIMIT 5),
+      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE ((char_length("name") > 3) AND ("compilations"."artist_id" IN ('#{artist.id}'))) ORDER BY "created_at" DESC LIMIT 5)
+    ]
+  end
+
+  it "should support filters in nested one_to_many connections on Types" do
     id = id_for(genre)
 
     execute_query <<-GRAPHQL
@@ -274,6 +323,76 @@ class FilterSpec < PrelaySpec
       %(SELECT "genres"."id", "genres"."name" FROM "genres" WHERE ("genres"."id" = '#{genre.id}')),
       %(SELECT "artists"."first_name", "artists"."id", "artists"."genre_id" FROM "artists" WHERE ("artists"."genre_id" IN ('#{genre.id}')) ORDER BY "artists"."id" LIMIT 5),
       %(SELECT * FROM (SELECT "albums"."id", "albums"."name", "albums"."artist_id", row_number() OVER (PARTITION BY "albums"."artist_id" ORDER BY "release_date" DESC) AS "prelay_row_number" FROM "albums" WHERE (("upvotes" > 10) AND ("albums"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
+    ]
+  end
+
+  it "should support filters in nested one_to_many connections on Interfaces" do
+    id = id_for(genre)
+
+    execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id,
+          ... on Genre {
+            name,
+            artists(first: 5) {
+              edges {
+                node {
+                  first_name,
+                  releases(first: 5, name_greater_than: "p") {
+                    edges {
+                      node {
+                        id,
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    GRAPHQL
+
+    artists = genre.artists_dataset.order(:id).first(5)
+
+    assert_result \
+      'data' => {
+        'node' => {
+          'id' => id,
+          'name' => genre.name,
+          'artists' => {
+            'edges' => artists.map { |artist|
+              albums = artist.albums_dataset.order(Sequel.desc(:created_at)).where{name > 'p'}.limit(5).all
+              compilations = artist.compilations_dataset.order(Sequel.desc(:created_at)).where{name > 'p'}.limit(5).all
+              releases = (albums + compilations).sort_by(&:created_at).reverse.first(5)
+
+              {
+                'node' => {
+                  'first_name' => artist.first_name,
+                  'releases' => {
+                    'edges' => releases.map { |release|
+                      {
+                        'node' => {
+                          'id' => id_for(release),
+                          'name' => release.name,
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+    assert_sqls [
+      %(SELECT "genres"."id", "genres"."name" FROM "genres" WHERE ("genres"."id" = '#{genre.id}')),
+      %(SELECT "artists"."first_name", "artists"."id", "artists"."genre_id" FROM "artists" WHERE ("artists"."genre_id" IN ('#{genre.id}')) ORDER BY "artists"."id" LIMIT 5),
+      %(SELECT * FROM (SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor", row_number() OVER (PARTITION BY "albums"."artist_id" ORDER BY "created_at" DESC) AS "prelay_row_number" FROM "albums" WHERE (("name" > 'p') AND ("albums"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
+      %(SELECT * FROM (SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor", row_number() OVER (PARTITION BY "compilations"."artist_id" ORDER BY "created_at" DESC) AS "prelay_row_number" FROM "compilations" WHERE (("name" > 'p') AND ("compilations"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
     ]
   end
 end
