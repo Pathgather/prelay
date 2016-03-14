@@ -7,8 +7,26 @@ class FilterSpec < PrelaySpec
   let(:artist) { Artist.first }
 
   mock_schema do
+    a = type :Artist do
+      string :first_name
+      one_to_many :albums
+    end
+
+    r = interface :Release do
+      string :name
+
+      many_to_one :artist, nullable: false, target: a
+
+      filter(:has_cool_name) { |ds| ds.where{char_length(:name) > 3} }
+      filter(:name_greater_than, :text) { |ds, string| ds.where{name > string} }
+    end
+
+    a.one_to_many :releases, order: Sequel.desc(:release_date), target: r, foreign_key: :artist_id
+
     type :Album do
       string :name
+
+      interface r, :release_id
 
       many_to_one :artist, nullable: false
 
@@ -16,9 +34,12 @@ class FilterSpec < PrelaySpec
       filter(:upvotes_greater_than, :integer) { |ds, count| ds.where{upvotes > count} }
     end
 
-    type :Artist do
-      string :first_name
-      one_to_many :albums
+    type :Compilation do
+      string :name
+
+      interface r, :release_id
+
+      many_to_one :artist, nullable: false
     end
 
     type :Genre do
@@ -31,9 +52,15 @@ class FilterSpec < PrelaySpec
       type :Album
       order Sequel.desc(:created_at)
     end
+
+    query :Releases do
+      include Prelay::Connection
+      type r
+      order Sequel.desc(:created_at)
+    end
   end
 
-  it "should support filters in top-level connection queries" do
+  it "should support filters in top-level connection queries on Types" do
     execute_query <<-GRAPHQL
       query Query {
         connections {
@@ -80,6 +107,62 @@ class FilterSpec < PrelaySpec
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE "high_quality" ORDER BY "created_at" DESC LIMIT 5),
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
+    ]
+  end
+
+  it "should support filters in top-level connection queries on Interfaces" do
+    skip
+
+    execute_query <<-GRAPHQL
+      query Query {
+        connections {
+          releases(first: 5, has_cool_name: true) {
+            edges {
+              cursor
+              node {
+                id,
+                name,
+                artist {
+                  id,
+                  first_name
+                }
+              }
+            }
+          }
+        }
+      }
+    GRAPHQL
+
+    albums = Album.order(Sequel.desc(:created_at)).limit(5).all
+    compilations = Compilation.order(Sequel.desc(:created_at)).limit(5).all
+    releases = (albums + compilations).sort_by(&:created_at).reverse.first(5)
+
+    assert_result \
+      'data' => {
+        'connections' => {
+          'releases' => {
+            'edges' => releases.map { |release|
+              {
+                'cursor' => to_cursor(release.created_at),
+                'node' => {
+                  'id' => id_for(release),
+                  'name' => release.name,
+                  'artist' => {
+                    'id' => id_for(release.artist),
+                    'first_name' => release.artist.first_name,
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+    assert_sqls [
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE "high_quality" ORDER BY "created_at" DESC LIMIT 5),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
+      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE "high_quality" ORDER BY "created_at" DESC LIMIT 5),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{compilations.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
     ]
   end
 
