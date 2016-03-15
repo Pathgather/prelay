@@ -14,7 +14,7 @@ module Prelay
 
       def nullable_graphql_type
         case @type
-        when :text    then GraphQL::STRING_TYPE
+        when :string  then GraphQL::STRING_TYPE
         when :boolean then GraphQL::BOOLEAN_TYPE
         when :integer then GraphQL::INT_TYPE
         else raise "Unsupported type: #{@type}"

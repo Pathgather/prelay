@@ -18,7 +18,7 @@ class FilterSpec < PrelaySpec
       many_to_one :artist, nullable: false, target: a
 
       filter(:has_cool_name) { |ds| ds.where{char_length(:name) > 3} }
-      filter(:name_greater_than, :text) { |ds, string| ds.where{name > string} }
+      filter(:name_greater_than, :string) { |ds, string| ds.where{name > string} }
     end
 
     a.one_to_many :releases, order: Sequel.desc(:created_at), target: r, foreign_key: :artist_id
