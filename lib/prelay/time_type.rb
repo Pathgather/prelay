@@ -9,7 +9,9 @@ module Prelay
     name "Timestamp"
     description "Time and date in ISO 8601"
 
-    coerce_input ->(value) { Time.iso8601(value) }
+    # Special-case empty strings as a way to pass null values to the server,
+    # though the GraphQL gem won't actually let us return nil :(
+    coerce_input ->(value) { value == '' ? '' : Time.iso8601(value) }
     coerce_result ->(value) { value.iso8601 }
   end
 end
