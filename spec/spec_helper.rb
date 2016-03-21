@@ -48,5 +48,7 @@ class PrelaySpec < Minitest::Spec
   end
 end
 
+require_relative 'support/graphql_fuzzer'
+
 require_relative 'support/sequel_models'
 require_relative 'support/prelay_types'
