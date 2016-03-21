@@ -13,16 +13,17 @@ class GraphQLFuzzer
     @type = type
   end
 
-  def fuzz(type = @type, fragments: [])
+  def fuzz
+    fragments  = []
     types_hash = {}
 
     all_types =
-      if type < Prelay::Type
-        [type] + type.interfaces.keys
-      elsif type < Prelay::Interface
-        type.types
+      if @type < Prelay::Type
+        [@type] + @type.interfaces.keys
+      elsif @type < Prelay::Interface
+        @type.types
       else
-        raise "Unsupported type: #{type.inspect}"
+        raise "Unsupported type: #{@type.inspect}"
       end
 
     all_types.each do |t|
@@ -40,8 +41,8 @@ class GraphQLFuzzer
     end
 
     types_hash[:default] =
-      if type < Prelay::Type
-        types_hash.delete(type)
+      if @type < Prelay::Type
+        types_hash.delete(@type)
       else
         {id: true, __typename: true}
       end
@@ -61,7 +62,8 @@ class GraphQLFuzzer
           structure[this_type][field] = true
           field_text << " #{field}, "
         else
-          subgraphql, substructure = fuzz(value, fragments: fragments)
+          subgraphql, substructure, subfragments = GraphQLFuzzer.new(type: value).fuzz
+          fragments += subfragments
 
           structure[this_type][field] ||= {}
           structure[this_type][field].merge!(substructure){|k,o,n| o.merge(n, &RECURSIVE_MERGE_PROC)}
@@ -72,8 +74,8 @@ class GraphQLFuzzer
 
       if rand > 0.8
         # Shove it in a fragment!
-        fragment_name = "f#{fragments.length}"
-        t = this_type == :default ? type : this_type
+        fragment_name = random_fragment_name
+        t = this_type == :default ? @type : this_type
         fragments << %{\n fragment #{fragment_name} on #{t.graphql_object} { #{field_text} } }
         graphql << %{ ...#{fragment_name} }
       else
@@ -126,7 +128,7 @@ class GraphQLFuzzer
   end
 
   def type_for(object)
-    @type.schema.type_for_model!(object.class)
+    schema.type_for_model!(object.class)
   end
 
   def type_name_for(object)
@@ -139,5 +141,13 @@ class GraphQLFuzzer
 
   def encode_prelay_id(type:, pk:)
     Base64.strict_encode64 "#{type}:#{pk}"
+  end
+
+  def random_fragment_name
+    SecureRandom.base64.gsub(/[0-9+\/=]/, '')
+  end
+
+  def schema
+    @type.schema
   end
 end
