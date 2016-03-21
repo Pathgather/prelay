@@ -123,15 +123,13 @@ class NodeQuerySpec < PrelaySpec
     assert_sqls []
   end
 
-  def recursive_merge_proc
-    recursive_merge = proc { |k,o,n|
-      if o.is_a?(Hash) && n.is_a?(Hash)
-        o.merge(n, &recursive_merge)
-      else
-        true
-      end
-    }
-  end
+  RECURSIVE_MERGE_PROC = proc { |k,o,n|
+    if o.is_a?(Hash) && n.is_a?(Hash)
+      o.merge(n, &RECURSIVE_MERGE_PROC)
+    else
+      true
+    end
+  }
 
   def fuzz(type, fragments: [])
     types_hash = {}
@@ -184,7 +182,7 @@ class NodeQuerySpec < PrelaySpec
           subgraphql, substructure = fuzz(value, fragments: fragments)
 
           structure[this_type][field] ||= {}
-          structure[this_type][field].merge!(substructure){|k,o,n| o.merge(n, &recursive_merge_proc)}
+          structure[this_type][field].merge!(substructure){|k,o,n| o.merge(n, &RECURSIVE_MERGE_PROC)}
 
           field_text << %{\n#{field} { #{subgraphql} } }
         end
@@ -223,7 +221,7 @@ class NodeQuerySpec < PrelaySpec
 
     structure.each do |type, fieldset|
       next unless type == :default || object_implements_type?(object, type)
-      fields = fields.merge(fieldset, &recursive_merge_proc)
+      fields = fields.merge(fieldset, &RECURSIVE_MERGE_PROC)
     end
 
     fields.each_with_object({}) do |(field, value), hash|
