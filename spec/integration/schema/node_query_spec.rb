@@ -126,7 +126,7 @@ class NodeQuerySpec < PrelaySpec
   100.times do
     it "should support fragments, however they appear" do
       fuzzer = GraphQLFuzzer.new(type: AlbumType)
-      graphql, structure, fragments = fuzzer.fuzz
+      graphql, fragments = fuzzer.graphql_and_fragments
 
       execute_query <<-GRAPHQL
         query Query { node(id: "#{id_for(album)}") { id, __typename, ... on Album { #{graphql} } } }
@@ -135,7 +135,7 @@ class NodeQuerySpec < PrelaySpec
 
       assert_result \
         'data' => {
-          'node' => fuzzer.build_expected_json(object: album, structure: structure).merge('id' => id_for(album), '__typename' => "Album")
+          'node' => fuzzer.expected_json(object: album).merge('id' => id_for(album), '__typename' => "Album")
         }
     end
   end
