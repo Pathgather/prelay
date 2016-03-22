@@ -10,7 +10,6 @@ class ReleaseInterface < Prelay::Interface
 
   many_to_one :artist,    "The artist who released the release.", target: :ArtistType, nullable: false
   one_to_many :tracks,    "The tracks on this release.", target: :TrackType
-  one_to_one  :publisher, "The publisher responsible for releasing the release.", target: :PublisherType, nullable: true
 end
 
 class GenreType < Prelay::Type
@@ -71,7 +70,6 @@ class CompilationType < Prelay::Type
 
   many_to_one :artist,    "The artist who released the compilation.", nullable: false
   one_to_many :tracks,    "The tracks on this compilation."
-  one_to_one  :publisher, "The publisher responsible for releasing the compilation.", nullable: true
 end
 
 class TrackType < Prelay::Type

@@ -12,6 +12,8 @@ class GraphQLFuzzer
     end
   }
 
+  attr_reader :source
+
   def initialize(source:, entry_point: :field, current_depth: 0, maximum_depth: 3)
     @source = source
     @entry_point = entry_point
@@ -83,7 +85,13 @@ class GraphQLFuzzer
           else
             subgraphql, subfragments = value.graphql_and_fragments
             fragments += subfragments
-            field_text << %{\n#{field} { #{subgraphql} } }
+
+            args =
+              if value.source.is_a?(Prelay::Type::Association) && value.source.association_type == :one_to_many
+                "(first: 5)"
+              end
+
+            field_text << %{\n#{field}#{args} { #{subgraphql} } }
           end
         end
 
@@ -111,28 +119,67 @@ class GraphQLFuzzer
   def expected_json(object:)
     fields = {}
 
-    structure.each do |type, fieldset|
-      next unless type == :default || object_implements_type?(object, type)
-      fields = fields.merge(fieldset, &RECURSIVE_MERGE_PROC)
+    case @entry_point
+    when :field
+      h = {}
+      structure.each do |type, fieldset|
+        next unless type == :default || object_implements_type?(object, type)
+        h = h.merge(fieldset, &RECURSIVE_MERGE_PROC)
+      end
+
+      h.each do |field, value|
+        fields[field.to_s] =
+          case field
+          when :__typename
+            type_name_for(object)
+          when :id
+            id_for(object)
+          else
+            if value == true
+              object.send(field)
+            elsif subobject = object.send(field)
+              value.expected_json(object: subobject)
+            else
+              nil
+            end
+          end
+      end
+    when :connection
+      structure.each do |key, value|
+        case key
+        when :pageInfo
+          r = {}
+          r['hasPreviousPage'] = false if value[:hasPreviousPage]
+          r['hasNextPage'] = object.length > 5 if value[:hasNextPage]
+          fields['pageInfo'] = r
+        when :edges
+          fields['edges'] = object.first(5).map { |o| value.expected_json(object: o) }
+        else
+          raise "Bad key: #{key}"
+        end
+      end
+    when :edge
+      structure.each do |key, value|
+        case key
+        when :cursor
+          fields['cursor'] = to_cursor(
+            case object
+            when Track then object.number
+            when Album, Compilation then object.release_date
+            else object.created_at
+            end
+          )
+        when :node
+          fields['node'] = value.expected_json(object: object)
+        else
+          raise "Bad key: #{key}"
+        end
+      end
+    else
+      raise "Bad entry_point: #{@entry_point}"
     end
 
-    fields.each_with_object({}) do |(field, value), hash|
-      hash[field.to_s] =
-        case field
-        when :__typename
-          type_name_for(object)
-        when :id
-          id_for(object)
-        else
-          if value == true
-            object.send(field)
-          elsif subobject = object.send(field)
-            value.expected_json(object: subobject)
-          else
-            nil
-          end
-        end
-    end
+    fields
   end
 
   def object_implements_type?(object, type)
@@ -186,7 +233,6 @@ class GraphQLFuzzer
       fields = t.attributes.keys.each_with_object({}){|key, hash| hash[key] = true}
 
       t.associations.each do |key, association|
-        next if association.association_type == :one_to_many
         fields[key] = association
       end
 
@@ -217,7 +263,6 @@ class GraphQLFuzzer
             when :one_to_one, :many_to_one
               new_fuzzer(:field, value.target_type)
             when :one_to_many
-              # TODO: How to handle 'first' and 'last' arguments?
               new_fuzzer(:connection, value)
             else
               raise "Bad association type: #{value.inspect}"
@@ -272,5 +317,16 @@ class GraphQLFuzzer
     number = (rand(things.length) * limiting_factor).round
     number = 1 if number < 1
     things.sample(number).each(&block)
+  end
+
+  def to_cursor(*args)
+    args = args.map do |thing|
+      case thing
+      when Time then [thing.to_i, thing.usec]
+      else thing
+      end
+    end
+
+    Base64.strict_encode64(args.to_json)
   end
 end

@@ -15,7 +15,7 @@ module SpecHelperMethods
 
   def sort_hash(t)
     case t
-    when Hash  then t.sort.map{|k,v| [k, sort_hash(v)]}.to_h
+    when Hash  then t.sort_by(&:first).map{|k,v| [k, sort_hash(v)]}.to_h
     when Array then t.map { |e| sort_hash(e) }
     else t
     end
