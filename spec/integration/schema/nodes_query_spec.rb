@@ -115,4 +115,6 @@ class NodesQuerySpec < PrelaySpec
   it "should retrieve multiple records of the same type in the same query" do
     skip "Optimization"
   end
+
+  it "should still behave optimally with fuzzed input"
 end

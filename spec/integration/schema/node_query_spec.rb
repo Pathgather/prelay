@@ -123,8 +123,8 @@ class NodeQuerySpec < PrelaySpec
     assert_sqls []
   end
 
-  100.times do
-    it "should support fragments, however they appear" do
+  20.times do
+    it "should support fuzzed queries" do
       fuzzer = GraphQLFuzzer.new(source: AlbumType)
       graphql, fragments = fuzzer.graphql_and_fragments
 
@@ -135,7 +135,7 @@ class NodeQuerySpec < PrelaySpec
 
       assert_result \
         'data' => {
-          'node' => fuzzer.expected_json(object: album).merge('id' => id_for(album), '__typename' => "Album")
+          'node' => fuzzer.expected_json(object: album).merge('id' => id_for(album), '__typename' => 'Album')
         }
     end
   end
