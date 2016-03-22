@@ -6,10 +6,7 @@ class DatasetScopeSpec < PrelaySpec
   let(:track) { Track.where(:high_quality).first }
 
   mock_schema do
-    type :Track do
-      string :name
-      dataset_scope { |ds| ds.where(:high_quality).select{random{}.as(:rand)} }
-    end
+    TrackType.dataset_scope { |ds| ds.where(:high_quality).select{random{}.as(:rand)} }
   end
 
   it "should support dataset scopes on types" do

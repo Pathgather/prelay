@@ -4,30 +4,9 @@ require 'spec_helper'
 
 class InterfaceConnectionQuerySpec < PrelaySpec
   mock_schema do
-    a = type :Artist do
-      string :first_name
-    end
-
-    i = interface :Release do
-      string :name
-      many_to_one :artist, nullable: false, target: a
-    end
-
-    type :Album do
-      interface i, :release_id
-      string :name
-      many_to_one :artist, nullable: false
-    end
-
-    type :Compilation do
-      interface i, :release_id
-      string :name
-      many_to_one :artist, nullable: false
-    end
-
     query :Releases do
       include Prelay::Connection
-      type :Release
+      type ReleaseInterface
       order Sequel.desc(:created_at)
     end
   end

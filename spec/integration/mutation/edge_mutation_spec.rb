@@ -6,17 +6,8 @@ class EdgeMutationSpec < PrelaySpec
   let(:artist) { Artist.first }
 
   mock_schema do
-    type :Artist do
-      string :first_name
-    end
-
-    type :Album do
-      string :name
-      many_to_one :artist, nullable: false
-    end
-
     mutation :CreateAlbum do
-      type :Album
+      type AlbumType
 
       argument :artist_id, :id
       argument :name,      :string
@@ -26,7 +17,7 @@ class EdgeMutationSpec < PrelaySpec
       result_field :album_edge, association: :self, edge: true
 
       def mutate(args)
-        args[:artist] = Prelay::ID.parse(args.delete(:artist_id), expected_type: ArtistType).get
+        args[:artist] = Prelay::ID.parse(args.delete(:artist_id), expected_type: ArtistType, schema: self.class.schema).get
 
         album = Album.create(args)
 

@@ -4,20 +4,11 @@ require 'spec_helper'
 
 class SingularObjectQuerySpec < PrelaySpec
   mock_schema do
-    type :Artist do
-      string :first_name
-    end
-
-    t = type :Album do
-      string :name
-      many_to_one :artist, nullable: false
-    end
-
     query :RandomAlbum do
       type :Album
       resolve -> (obj, args, ctx) {
         ast = Prelay::GraphQLProcessor.new(ctx).ast
-        Prelay::RelayProcessor.new(ast, type: t, entry_point: :field).
+        Prelay::RelayProcessor.new(ast, type: AlbumType, entry_point: :field).
           to_resolver.resolve_singular{|ds| ds.order{random{}}.limit(1)}
       }
     end

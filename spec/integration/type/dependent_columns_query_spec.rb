@@ -7,10 +7,8 @@ class DependentColumnsQuerySpec < PrelaySpec
   let(:artist) { Artist.first }
 
   mock_schema do
-    type :Artist do
+    ArtistType.class_eval do
       string :name, dependent_columns: [:first_name, :last_name]
-      string :first_name
-      integer :upvotes
 
       def name
         record.first_name + ' ' + record.last_name
@@ -40,7 +38,7 @@ class DependentColumnsQuerySpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."upvotes" FROM "artists" WHERE ("artists"."id" = '#{artist.id}'))
+      %(SELECT "artists"."id", "artists"."upvotes", "artists"."first_name", "artists"."last_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}'))
     ]
   end
 
@@ -49,10 +47,10 @@ class DependentColumnsQuerySpec < PrelaySpec
 
     execute_query "query Query { node(id: \"#{id}\") { id, ... on Artist { first_name, name, upvotes } } }"
     assert_result 'data' => { 'node' => { 'id' => id, 'first_name' => artist.first_name, 'name' => artist.first_name + ' ' + artist.last_name, 'upvotes' => artist.upvotes } }
-    assert_sqls [%(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."upvotes" FROM "artists" WHERE ("artists"."id" = '#{artist.id}'))]
+    assert_sqls [%(SELECT "artists"."id", "artists"."first_name", "artists"."upvotes", "artists"."last_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}'))]
 
     execute_query "query Query { node(id: \"#{id}\") { id, ... on Artist { name, first_name, upvotes } } }"
     assert_result 'data' => { 'node' => { 'id' => id, 'first_name' => artist.first_name, 'name' => artist.first_name + ' ' + artist.last_name, 'upvotes' => artist.upvotes } }
-    assert_sqls [%(SELECT "artists"."id", "artists"."first_name", "artists"."last_name", "artists"."upvotes" FROM "artists" WHERE ("artists"."id" = '#{artist.id}'))]
+    assert_sqls [%(SELECT "artists"."id", "artists"."first_name", "artists"."upvotes", "artists"."last_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}'))]
   end
 end

@@ -4,11 +4,6 @@ require 'spec_helper'
 
 class CustomReturnTypeQuerySpec < PrelaySpec
   mock_schema do
-    a = type :Artist do
-      string :first_name
-      string :last_name
-    end
-
     custom_type = GraphQL::ObjectType.define do
       name "CustomReturnType"
 
@@ -21,7 +16,7 @@ class CustomReturnTypeQuerySpec < PrelaySpec
       end
 
       field :artist do
-        type a.graphql_object
+        type ArtistType.graphql_object
       end
     end
 
@@ -30,7 +25,7 @@ class CustomReturnTypeQuerySpec < PrelaySpec
 
       resolve -> (obj, args, ctx) {
         ast = Prelay::GraphQLProcessor.new(ctx, schema: self.schema).ast.selections[:artist]
-        artist = Prelay::RelayProcessor.new(ast, type: a, entry_point: :field).
+        artist = Prelay::RelayProcessor.new(ast, type: ArtistType, entry_point: :field).
           to_resolver.resolve_singular{|ds| ds.order(:id).limit(1)}
 
         OpenStruct.new(

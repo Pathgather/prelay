@@ -46,27 +46,12 @@ class TypeSpec < PrelaySpec
   end
 
   describe "when introspected" do
-    mock_schema do
-      type :Artist
-      type :Track
-      type :Publisher
-
-      type :Album do
-        description "An album released by a musician"
-        string :name, "The name of the album"
-
-        many_to_one :artist, "The artist who released the album.", nullable: false
-        one_to_many :tracks, "The tracks on this album."
-        one_to_one  :publisher, "The publisher responsible for releasing the album.", nullable: true
-      end
-    end
-
     let(:graphql_object) { schema.find_type("Album").graphql_object }
 
     it "should translate it to a GraphQL object" do
       assert_instance_of GraphQL::ObjectType, graphql_object
       assert_equal 'Album', graphql_object.name
-      assert_equal ['id', 'name', 'artist', 'tracks', 'publisher'], graphql_object.fields.keys
+      assert_equal ['id', 'name', 'upvotes', 'high_quality', 'popularity', 'artist', 'tracks', 'publisher', 'first_track', 'first_five_tracks'], graphql_object.fields.keys
       assert_equal "An album released by a musician", graphql_object.description
     end
 

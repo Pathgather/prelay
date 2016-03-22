@@ -33,7 +33,7 @@ require_relative 'support/spec_helper_methods'
 
 class PrelaySpec < Minitest::Spec
   ENV['N'] = '4'
-  parallelize_me!
+  # parallelize_me!
   make_my_diffs_pretty!
 
   include Minitest::Hooks

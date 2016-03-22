@@ -4,18 +4,9 @@ require 'spec_helper'
 
 class ConnectionQuerySpec < PrelaySpec
   mock_schema do
-    type :Artist do
-      string :first_name
-    end
-
-    type :Album do
-      string :name
-      many_to_one :artist, nullable: false
-    end
-
     query :Albums do
       include Prelay::Connection
-      type :Album
+      type AlbumType
       order Sequel.desc(:created_at)
     end
   end

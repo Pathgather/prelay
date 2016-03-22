@@ -3,6 +3,13 @@
 require 'spec_helper'
 
 class QuerySpec < PrelaySpec
+  mock_schema do
+    query :Albums do
+      type AlbumType
+      description "A query to return all albums in the DB"
+    end
+  end
+
   describe "when inherited from" do
     it "should have the first schema in Prelay::SCHEMAS as its parent schema" do
       TEST_MUTEX.synchronize do
@@ -46,15 +53,6 @@ class QuerySpec < PrelaySpec
   end
 
   describe "when introspected" do
-    mock_schema do
-      type :Album
-
-      query :Albums do
-        type :Album
-        description "A query to return all albums in the DB"
-      end
-    end
-
     it "should be correct" do
       q = schema.graphql_schema.query.fields['albums']
       assert_equal "albums", q.name

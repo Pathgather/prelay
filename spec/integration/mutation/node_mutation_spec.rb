@@ -6,12 +6,8 @@ class NodeMutationSpec < PrelaySpec
   let(:album) { Album.first! }
 
   mock_schema do
-    type :Album do
-      string :name
-    end
-
     mutation :UpdateAlbumName do
-      type :Album
+      type AlbumType
 
       argument :id, :id
       argument :name, :string

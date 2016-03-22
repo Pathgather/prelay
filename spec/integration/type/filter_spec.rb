@@ -7,55 +7,25 @@ class FilterSpec < PrelaySpec
   let(:artist) { Artist.first }
 
   mock_schema do
-    a = type :Artist do
-      string :first_name
-      one_to_many :albums
-    end
-
-    r = interface :Release do
-      string :name
-
-      many_to_one :artist, nullable: false, target: a
-
+    ReleaseInterface.class_eval do
       filter(:has_cool_name) { |ds| ds.where{char_length(:name) > 3} }
       filter(:name_greater_than, :string) { |ds, string| ds.where{name > string} }
     end
 
-    a.one_to_many :releases, order: Sequel.desc(:created_at), target: r, foreign_key: :artist_id
-
-    type :Album do
-      string :name
-
-      interface r, :release_id
-
-      many_to_one :artist, nullable: false
-
+    AlbumType.class_eval do
       filter(:are_high_quality) { |ds| ds.where(:high_quality) }
       filter(:upvotes_greater_than, :integer) { |ds, count| ds.where{upvotes > count} }
     end
 
-    type :Compilation do
-      string :name
-
-      interface r, :release_id
-
-      many_to_one :artist, nullable: false
-    end
-
-    type :Genre do
-      string :name
-      one_to_many :artists
-    end
-
     query :Albums do
       include Prelay::Connection
-      type :Album
+      type AlbumType
       order Sequel.desc(:created_at)
     end
 
     query :Releases do
       include Prelay::Connection
-      type r
+      type ReleaseInterface
       order Sequel.desc(:created_at)
     end
   end
@@ -232,9 +202,9 @@ class FilterSpec < PrelaySpec
       }
     GRAPHQL
 
-    albums = artist.albums_dataset.order(Sequel.desc(:created_at)).where{char_length(:name) > 3}.first(5)
-    compilations = artist.compilations_dataset.order(Sequel.desc(:created_at)).where{char_length(:name) > 3}.limit(5).all
-    releases = (albums + compilations).sort_by(&:created_at).reverse.first(5)
+    albums = artist.albums_dataset.order(:created_at).where{char_length(:name) > 3}.first(5)
+    compilations = artist.compilations_dataset.order(:created_at).where{char_length(:name) > 3}.first(5)
+    releases = (albums + compilations).sort_by(&:created_at).first(5)
 
     assert_result \
       'data' => {
@@ -256,8 +226,8 @@ class FilterSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE ((char_length("name") > 3) AND ("albums"."artist_id" IN ('#{artist.id}'))) ORDER BY "created_at" DESC LIMIT 5),
-      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE ((char_length("name") > 3) AND ("compilations"."artist_id" IN ('#{artist.id}'))) ORDER BY "created_at" DESC LIMIT 5)
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE ((char_length("name") > 3) AND ("albums"."artist_id" IN ('#{artist.id}'))) ORDER BY "created_at" LIMIT 5),
+      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE ((char_length("name") > 3) AND ("compilations"."artist_id" IN ('#{artist.id}'))) ORDER BY "created_at" LIMIT 5)
     ]
   end
 
@@ -366,7 +336,7 @@ class FilterSpec < PrelaySpec
             'edges' => artists.map { |artist|
               albums = artist.albums_dataset.order(Sequel.desc(:created_at)).where{name > 'p'}.limit(5).all
               compilations = artist.compilations_dataset.order(Sequel.desc(:created_at)).where{name > 'p'}.limit(5).all
-              releases = (albums + compilations).sort_by(&:created_at).reverse.first(5)
+              releases = (albums + compilations).sort_by(&:created_at).first(5)
 
               {
                 'node' => {
@@ -391,8 +361,8 @@ class FilterSpec < PrelaySpec
     assert_sqls [
       %(SELECT "genres"."id", "genres"."name" FROM "genres" WHERE ("genres"."id" = '#{genre.id}')),
       %(SELECT "artists"."first_name", "artists"."id", "artists"."genre_id" FROM "artists" WHERE ("artists"."genre_id" IN ('#{genre.id}')) ORDER BY "created_at" LIMIT 5),
-      %(SELECT * FROM (SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor", row_number() OVER (PARTITION BY "albums"."artist_id" ORDER BY "created_at" DESC) AS "prelay_row_number" FROM "albums" WHERE (("name" > 'p') AND ("albums"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
-      %(SELECT * FROM (SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor", row_number() OVER (PARTITION BY "compilations"."artist_id" ORDER BY "created_at" DESC) AS "prelay_row_number" FROM "compilations" WHERE (("name" > 'p') AND ("compilations"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
+      %(SELECT * FROM (SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor", row_number() OVER (PARTITION BY "albums"."artist_id" ORDER BY "created_at") AS "prelay_row_number" FROM "albums" WHERE (("name" > 'p') AND ("albums"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
+      %(SELECT * FROM (SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor", row_number() OVER (PARTITION BY "compilations"."artist_id" ORDER BY "created_at") AS "prelay_row_number" FROM "compilations" WHERE (("name" > 'p') AND ("compilations"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
     ]
   end
 end
