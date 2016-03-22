@@ -58,8 +58,10 @@ class GraphQLFuzzer
           subgraphql, subfragments = value.graphql_and_fragments
           graphql << "\n edges { #{subgraphql} } "
           fragments += subfragments
-        when :pageInfo
-          graphql << "\n pageInfo { #{value.keys.shuffle.join(', ')} } "
+        when :hasNextPage
+          graphql << "\n pageInfo { hasNextPage } "
+        when :hasPreviousPage
+          graphql << "\n pageInfo { hasPreviousPage } "
         else
           raise "Bad key!: #{key}"
         end
@@ -139,11 +141,10 @@ class GraphQLFuzzer
     when :connection
       structure.each do |key, value|
         case key
-        when :pageInfo
-          r = {}
-          r['hasPreviousPage'] = false if value[:hasPreviousPage]
-          r['hasNextPage'] = object.length > 5 if value[:hasNextPage]
-          fields['pageInfo'] = r
+        when :hasNextPage
+          (fields['pageInfo'] ||= {})['hasNextPage'] = object.length > 5
+        when :hasPreviousPage
+          (fields['pageInfo'] ||= {})['hasPreviousPage'] = false
         when :edges
           fields['edges'] = object.first(5).map { |o| value.expected_json(object: o) }
         else
@@ -253,7 +254,7 @@ class GraphQLFuzzer
     random_subset(CONNECTION_KEYS) do |key|
       case key
       when :edges then structure[:edges] = new_fuzzer(:edge, @source)
-      when :hasNextPage, :hasPreviousPage then (structure[:pageInfo] ||= {})[key] ||= true
+      when :hasNextPage, :hasPreviousPage then structure[key] = true
       else raise "Bad key: #{key}"
       end
     end
