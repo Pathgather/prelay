@@ -40,7 +40,7 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
           'id' => id,
           'first_name' => artist.first_name,
           'releases' => {
-            'edges' => (artist.albums + artist.compilations).sort_by(&:release_date).reverse.map { |r|
+            'edges' => artist.releases.map { |r|
               {
                 'node' => (
                   case r
@@ -70,8 +70,8 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
-      %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id", "albums"."release_date" AS "cursor" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "release_date" DESC LIMIT 200),
-      %(SELECT "compilations"."id", "compilations"."upvotes", "compilations"."high_quality", "compilations"."artist_id", "compilations"."release_date" AS "cursor" FROM "compilations" WHERE ("compilations"."artist_id" IN ('#{artist.id}')) ORDER BY "release_date" DESC LIMIT 200),
+      %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 200),
+      %(SELECT "compilations"."id", "compilations"."upvotes", "compilations"."high_quality", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE ("compilations"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 200),
     ]
   end
 

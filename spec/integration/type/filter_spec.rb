@@ -192,7 +192,7 @@ class FilterSpec < PrelaySpec
           'id' => id,
           'first_name' => artist.first_name,
           'albums' => {
-            'edges' => artist.albums_dataset.where{upvotes > 10}.sort_by(&:release_date).reverse.first(5).map { |album|
+            'edges' => artist.albums_dataset.where{upvotes > 10}.first(5).map { |album|
               {
                 'node' => {
                   'id' => id_for(album),
@@ -206,7 +206,7 @@ class FilterSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE (("upvotes" > 10) AND ("albums"."artist_id" IN ('#{artist.id}'))) ORDER BY "release_date" DESC LIMIT 5)
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE (("upvotes" > 10) AND ("albums"."artist_id" IN ('#{artist.id}'))) ORDER BY "created_at" LIMIT 5)
     ]
   end
 
@@ -232,7 +232,7 @@ class FilterSpec < PrelaySpec
       }
     GRAPHQL
 
-    albums = artist.albums_dataset.order(Sequel.desc(:created_at)).where{char_length(:name) > 3}.limit(5).all
+    albums = artist.albums_dataset.order(Sequel.desc(:created_at)).where{char_length(:name) > 3}.first(5)
     compilations = artist.compilations_dataset.order(Sequel.desc(:created_at)).where{char_length(:name) > 3}.limit(5).all
     releases = (albums + compilations).sort_by(&:created_at).reverse.first(5)
 
@@ -290,7 +290,7 @@ class FilterSpec < PrelaySpec
       }
     GRAPHQL
 
-    artists = genre.artists_dataset.order(:id).first(5)
+    artists = genre.artists_dataset.first(5)
 
     assert_result \
       'data' => {
@@ -303,7 +303,7 @@ class FilterSpec < PrelaySpec
                 'node' => {
                   'first_name' => artist.first_name,
                   'albums' => {
-                    'edges' => artist.albums_dataset.where{upvotes > 10}.all.sort_by(&:release_date).reverse.first(5).map { |album|
+                    'edges' => artist.albums_dataset.where{upvotes > 10}.first(5).map { |album|
                       {
                         'node' => {
                           'id' => id_for(album),
@@ -321,8 +321,8 @@ class FilterSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "genres"."id", "genres"."name" FROM "genres" WHERE ("genres"."id" = '#{genre.id}')),
-      %(SELECT "artists"."first_name", "artists"."id", "artists"."genre_id" FROM "artists" WHERE ("artists"."genre_id" IN ('#{genre.id}')) ORDER BY "artists"."id" LIMIT 5),
-      %(SELECT * FROM (SELECT "albums"."id", "albums"."name", "albums"."artist_id", row_number() OVER (PARTITION BY "albums"."artist_id" ORDER BY "release_date" DESC) AS "prelay_row_number" FROM "albums" WHERE (("upvotes" > 10) AND ("albums"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
+      %(SELECT "artists"."first_name", "artists"."id", "artists"."genre_id" FROM "artists" WHERE ("artists"."genre_id" IN ('#{genre.id}')) ORDER BY "created_at" LIMIT 5),
+      %(SELECT * FROM (SELECT "albums"."id", "albums"."name", "albums"."artist_id", row_number() OVER (PARTITION BY "albums"."artist_id" ORDER BY "created_at") AS "prelay_row_number" FROM "albums" WHERE (("upvotes" > 10) AND ("albums"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
     ]
   end
 
@@ -390,7 +390,7 @@ class FilterSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "genres"."id", "genres"."name" FROM "genres" WHERE ("genres"."id" = '#{genre.id}')),
-      %(SELECT "artists"."first_name", "artists"."id", "artists"."genre_id" FROM "artists" WHERE ("artists"."genre_id" IN ('#{genre.id}')) ORDER BY "artists"."id" LIMIT 5),
+      %(SELECT "artists"."first_name", "artists"."id", "artists"."genre_id" FROM "artists" WHERE ("artists"."genre_id" IN ('#{genre.id}')) ORDER BY "created_at" LIMIT 5),
       %(SELECT * FROM (SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor", row_number() OVER (PARTITION BY "albums"."artist_id" ORDER BY "created_at" DESC) AS "prelay_row_number" FROM "albums" WHERE (("name" > 'p') AND ("albums"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
       %(SELECT * FROM (SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor", row_number() OVER (PARTITION BY "compilations"."artist_id" ORDER BY "created_at" DESC) AS "prelay_row_number" FROM "compilations" WHERE (("name" > 'p') AND ("compilations"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
     ]

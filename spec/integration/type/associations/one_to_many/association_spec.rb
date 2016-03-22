@@ -34,9 +34,9 @@ class OneToManyAssociationSpec < PrelaySpec
           'id' => id,
           'name' => album.name,
           'tracks' => {
-            'edges' => album.tracks.sort_by(&:number).map { |track|
+            'edges' => album.tracks.map { |track|
               {
-                'cursor' => to_cursor(track.number),
+                'cursor' => to_cursor(track.created_at),
                 'node' => {
                   'id' => id_for(track),
                   'name' => track.name,
@@ -49,7 +49,7 @@ class OneToManyAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", "tracks"."number" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 50)
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", "tracks"."created_at" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "created_at" LIMIT 50)
     ]
   end
 
@@ -91,7 +91,7 @@ class OneToManyAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", "tracks"."number" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 50)
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", "tracks"."created_at" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "created_at" LIMIT 50)
     ]
   end
 
@@ -120,9 +120,9 @@ class OneToManyAssociationSpec < PrelaySpec
           'id' => id,
           'name' => album.name,
           'tracks' => {
-            'edges' => album.tracks.sort_by(&:number).map { |track|
+            'edges' => album.tracks.map { |track|
               {
-                'cursor' => to_cursor(track.number)
+                'cursor' => to_cursor(track.created_at)
               }
             }
           }
@@ -131,7 +131,7 @@ class OneToManyAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "tracks"."album_id", "tracks"."number" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 50)
+      %(SELECT "tracks"."album_id", "tracks"."created_at" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "created_at" LIMIT 50)
     ]
   end
 
@@ -169,7 +169,7 @@ class OneToManyAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "tracks"."id", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 51)
+      %(SELECT "tracks"."id", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "created_at" LIMIT 51)
     ]
   end
 end

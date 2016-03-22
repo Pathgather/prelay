@@ -711,9 +711,9 @@ class FragmentedQuerySpec < PrelaySpec
               'active' => album.artist.active,
             },
             'tracks' => {
-              'edges' => album.tracks.sort_by(&:number).map { |track|
+              'edges' => album.tracks.map { |track|
                 {
-                  'cursor' => to_cursor(track.number),
+                  'cursor' => to_cursor(track.created_at),
                   'node' => {
                     'id' => id_for(track),
                     'name' => track.name,
@@ -733,7 +733,7 @@ class FragmentedQuerySpec < PrelaySpec
       assert_sqls [
         %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."high_quality", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
         %(SELECT "artists"."id", "artists"."first_name", "artists"."upvotes", "artists"."active" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist_id}')) ORDER BY "artists"."id"),
-        %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id", "tracks"."number" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 51)
+        %(SELECT "tracks"."id", "tracks"."name", "tracks"."number", "tracks"."high_quality", "tracks"."album_id", "tracks"."created_at" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "created_at" LIMIT 51)
       ]
     end
   end

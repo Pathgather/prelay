@@ -9,7 +9,7 @@ class ReleaseInterface < Prelay::Interface
   float   :popularity,   "The normalized popularity of the release, on a scale from 0 to 1."
 
   many_to_one :artist,    "The artist who released the release.", target: :ArtistType, nullable: false
-  one_to_many :tracks,    "The tracks on this release.", target: :TrackType
+  one_to_many :tracks,    "The tracks on this release.", target: :TrackType, order: :created_at
 end
 
 class GenreType < Prelay::Type
@@ -19,7 +19,7 @@ class GenreType < Prelay::Type
 
   string :name, "The genre's name"
 
-  one_to_many :artists, "Artists who predominantly worked in this genre of music.", order: Sequel.asc(:id)
+  one_to_many :artists, "Artists who predominantly worked in this genre of music.", order: :created_at
 end
 
 class ArtistType < Prelay::Type
@@ -34,8 +34,8 @@ class ArtistType < Prelay::Type
   float   :popularity, "The artist's relative popularity, normalized between 0 and 1."
 
   many_to_one :genre,  "The genre of music the artist predominantly worked in", nullable: true
-  one_to_many :albums, "Albums released by the artist"
-  one_to_many :releases, "Albums and Compilations released by the artist", order: Sequel.desc(:release_date), target: :ReleaseInterface, foreign_key: :artist_id
+  one_to_many :albums, "Albums released by the artist", order: :created_at
+  one_to_many :releases, "Albums and Compilations released by the artist", order: :created_at, target: :ReleaseInterface, foreign_key: :artist_id
 end
 
 class AlbumType < Prelay::Type
@@ -50,11 +50,11 @@ class AlbumType < Prelay::Type
   float   :popularity,   "The normalized popularity of the album, on a scale from 0 to 1."
 
   many_to_one :artist,    "The artist who released the album.", nullable: false
-  one_to_many :tracks,    "The tracks on this album."
+  one_to_many :tracks,    "The tracks on this album.", order: :created_at
   one_to_one  :publisher, "The publisher responsible for releasing the album.", nullable: true
 
   one_to_one  :first_track,       "The first track on the album.", nullable: true
-  one_to_many :first_five_tracks, "The first five tracks on the album"
+  one_to_many :first_five_tracks, "The first five tracks on the album", order: :created_at
 end
 
 class CompilationType < Prelay::Type
@@ -68,8 +68,8 @@ class CompilationType < Prelay::Type
   boolean :high_quality, "Whether the compilation is good or not."
   float   :popularity,   "The normalized popularity of the compilation, on a scale from 0 to 1."
 
-  many_to_one :artist,    "The artist who released the compilation.", nullable: false
-  one_to_many :tracks,    "The tracks on this compilation."
+  many_to_one :artist, "The artist who released the compilation.", nullable: false
+  one_to_many :tracks, "The tracks on this compilation.", order: :created_at
 end
 
 class TrackType < Prelay::Type

@@ -5,8 +5,8 @@ require 'spec_helper'
 class PaginationSpec < PrelaySpec
   describe "on a one_to_many association" do
     let(:artist)   { Artist.first }
-    let(:albums)   { artist.albums.sort_by(&:release_date).reverse }
-    let(:releases) { (artist.albums + artist.compilations).sort_by(&:release_date).reverse }
+    let(:albums)   { artist.albums }
+    let(:releases) { artist.releases }
 
     describe "against a type" do
       it "should raise an error if a 'first' or 'last' argument is not passed" do
@@ -73,7 +73,7 @@ class PaginationSpec < PrelaySpec
 
                       args = {}
                       args[paginating_forward ? :first : :last  ] = all_records_requested ? all_albums.length : 3
-                      args[paginating_forward ? :after : :before] = to_cursor(expected_albums[1].release_date) if cursor_passed
+                      args[paginating_forward ? :after : :before] = to_cursor(expected_albums[1].created_at) if cursor_passed
 
                       expected_albums = expected_albums[2..-1] if cursor_passed
                       expected_albums = expected_albums[0..2] unless all_records_requested
@@ -108,7 +108,7 @@ class PaginationSpec < PrelaySpec
                       expectation = {
                         'edges' => expected_albums.map { |a|
                           h = {'node' => {'id' => id_for(a), 'name' => a.name}}
-                          h['cursor'] = to_cursor(a.release_date) if cursor_requested
+                          h['cursor'] = to_cursor(a.created_at) if cursor_requested
                           h
                         }
                       }

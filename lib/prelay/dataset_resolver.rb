@@ -206,7 +206,7 @@ module Prelay
             values = JSON.parse(Base64.decode64(cursor))
 
             expressions = ds.opts[:order].zip(values).map do |o, v|
-              e = o.expression
+              e = unwrap_order_expression(o)
 
               if e.is_a?(Sequel::SQL::Function) && e.name == :ts_rank_cd
                 # Minor hack for full-text search, which returns reals when
@@ -237,6 +237,15 @@ module Prelay
       records.reverse! if o.is_a?(Sequel::SQL::OrderedExpression) && o.descending
 
       records
+    end
+
+    def unwrap_order_expression(oe)
+      case oe
+      when Sequel::SQL::OrderedExpression
+        oe.expression
+      else
+        oe
+      end
     end
 
     def qualify_column(table_name, column)

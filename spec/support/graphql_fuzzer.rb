@@ -162,13 +162,7 @@ class GraphQLFuzzer
       structure.each do |key, value|
         case key
         when :cursor
-          fields['cursor'] = to_cursor(
-            case object
-            when Track then object.number
-            when Album, Compilation then object.release_date
-            else object.created_at
-            end
-          )
+          fields['cursor'] = to_cursor(object.created_at)
         when :node
           fields['node'] = value.expected_json(object: object)
         else

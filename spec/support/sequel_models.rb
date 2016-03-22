@@ -1,35 +1,35 @@
 # frozen_string_literal: true
 
 class Genre < Sequel::Model
-  one_to_many :artists
+  one_to_many :artists, order: :created_at
 end
 
 class Artist < Sequel::Model
   many_to_one :genre
-  one_to_many :albums,       order: Sequel.desc(:release_date)
-  one_to_many :compilations, order: Sequel.desc(:release_date)
+  one_to_many :albums, order: :created_at
+  one_to_many :compilations, order: :created_at
 
   def releases
-    (albums + compilations).sort_by(&:release_date).reverse
+    (albums + compilations).sort_by(&:created_at)
   end
 end
 
 class Album < Sequel::Model
   many_to_one :artist
-  one_to_many :tracks, order: :number
+  one_to_many :tracks, order: :created_at
   one_to_one :publisher
 
-  one_to_one  :first_track,       class_name: :Track,                 &:is_first
-  one_to_many :first_five_tracks, class_name: :Track, order: :number, &:in_first_five
+  one_to_one  :first_track,       class_name: :Track,                     &:is_first
+  one_to_many :first_five_tracks, class_name: :Track, order: :created_at, &:in_first_five
 end
 
 class Compilation < Sequel::Model
   many_to_one :artist
-  one_to_many :tracks, order: :number
+  one_to_many :tracks, order: :created_at
   one_to_one :publisher
 
-  one_to_one  :first_track,       class_name: :Track,                 &:is_first
-  one_to_many :first_five_tracks, class_name: :Track, order: :number, &:in_first_five
+  one_to_one  :first_track,       class_name: :Track,                     &:is_first
+  one_to_many :first_five_tracks, class_name: :Track, order: :created_at, &:in_first_five
 end
 
 class Track < Sequel::Model

@@ -108,7 +108,7 @@ class AliasQuerySpec < PrelaySpec
       }
     GRAPHQL
 
-    tracks = album1.tracks.sort_by(&:number)
+    tracks = album1.tracks.sort_by(&:created_at)
     first_half = tracks[0..4]
     last_half  = tracks[5..9]
 
@@ -141,8 +141,8 @@ class AliasQuerySpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id" FROM "albums" WHERE ("albums"."id" = '#{album1.id}')),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album1.id}')) ORDER BY "number" LIMIT 5),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album1.id}')) ORDER BY "number" DESC LIMIT 5),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album1.id}')) ORDER BY "created_at" LIMIT 5),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album1.id}')) ORDER BY "created_at" DESC LIMIT 5),
     ]
   end
 end
