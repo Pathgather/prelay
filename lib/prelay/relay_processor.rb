@@ -29,9 +29,6 @@ module Prelay
     private
 
     def process_connection(selection)
-      raise "Can't yet handle connections without edges" unless edges = selection.selections.delete(:edges)
-      process_edge(edges)
-
       # It's against the Relay spec for connections to be invoked without either
       # a 'first' or 'last' argument, but since the gem doesn't stop it from
       # happening, throw an error when/if that happens, just to be safe. If we
@@ -42,29 +39,40 @@ module Prelay
         raise Error, "Tried to access the connection '#{selection.name}' without a 'first' or 'last' argument."
       end
 
-      if page_info = selection.selections.delete(:pageInfo)
-        selection.metadata[:has_next_page]     = true if page_info.selections[:hasNextPage]
-        selection.metadata[:has_previous_page] = true if page_info.selections[:hasPreviousPage]
+      page_info = selection.selections.delete(:pageInfo)
+
+      if edges = selection.selections.delete(:edges)
+        process_edge(edges)
+        selection.selections = edges.selections
       end
 
-      selection.selections = edges.selections
+      if page_info
+        selection.metadata[:has_next_page]     = true if page_info.selections[:hasNextPage]
+        selection.metadata[:has_previous_page] = true if page_info.selections[:hasPreviousPage]
+
+        target_types.each do |type|
+          (selection.selections[type] ||= {})[:id] ||= Selection.new(name: :id, type: type)
+        end
+      end
+
       selection.type = current_type
       selection
     end
 
     def process_edge(selection)
-      # TODO: Don't require a 'node' field, as it's valid to just do a query to
-      # get cursors.
-      raise "Can't yet handle edges without nodes" unless node = selection.selections.delete(:node)
-      process_field(node)
+      cursor = selection.selections.delete(:cursor)
 
-      if cursor = selection.selections.delete(:cursor)
+      if node = selection.selections.delete(:node)
+        process_field(node)
+        selection.selections = node.selections
+      end
+
+      if cursor
         target_types.each do |type|
-          node.selections[type][:cursor] ||= Selection.new(name: :cursor, type: type)
+          (selection.selections[type] ||= {})[:cursor] ||= Selection.new(name: :cursor, type: type)
         end
       end
 
-      selection.selections = node.selections
       selection.type = current_type
       selection
     end

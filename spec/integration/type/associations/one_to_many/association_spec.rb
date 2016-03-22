@@ -94,4 +94,82 @@ class OneToManyAssociationSpec < PrelaySpec
       %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", "tracks"."number" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 50)
     ]
   end
+
+  it "should support fetching cursors but no nodes" do
+    id = id_for(album)
+
+    execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id,
+          ... on Album {
+            name,
+            tracks(first: 50) {
+              edges {
+                cursor
+              }
+            }
+          }
+        }
+      }
+    GRAPHQL
+
+    assert_result \
+      'data' => {
+        'node' => {
+          'id' => id,
+          'name' => album.name,
+          'tracks' => {
+            'edges' => album.tracks.sort_by(&:number).map { |track|
+              {
+                'cursor' => to_cursor(track.number)
+              }
+            }
+          }
+        }
+      }
+
+    assert_sqls [
+      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
+      %(SELECT "tracks"."album_id", "tracks"."number" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 50)
+    ]
+  end
+
+  it "should support fetching pagination info but no edges" do
+    id = id_for(album)
+
+    execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id,
+          ... on Album {
+            name,
+            tracks(first: 50) {
+              pageInfo {
+                hasNextPage
+              }
+            }
+          }
+        }
+      }
+    GRAPHQL
+
+    assert_result \
+      'data' => {
+        'node' => {
+          'id' => id,
+          'name' => album.name,
+          'tracks' => {
+            'pageInfo' => {
+              'hasNextPage' => false
+            }
+          }
+        }
+      }
+
+    assert_sqls [
+      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
+      %(SELECT "tracks"."id", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "number" LIMIT 51)
+    ]
+  end
 end
