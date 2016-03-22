@@ -23,16 +23,6 @@ class GraphQLFuzzer
     @maximum_depth = maximum_depth
   end
 
-  def structure
-    @structure ||=
-      case entry_point
-      when :field      then fuzzed_structure_for_field
-      when :connection then fuzzed_structure_for_connection
-      when :edge       then fuzzed_structure_for_edge
-      else raise "Bad entry_point: #{entry_point.inspect}"
-      end
-  end
-
   def graphql_and_fragments
     fragments = []
     graphql = String.new
@@ -40,67 +30,66 @@ class GraphQLFuzzer
     case entry_point
     when :edge
       random_superset(structure.to_a) do |key, value|
-        case key
-        when :node
-          subgraphql, subfragments = value.graphql_and_fragments
-          graphql << "\n node { #{subgraphql} } "
-          fragments += subfragments
-        when :cursor
-          graphql << "\n cursor "
-        else
-          raise "Bad key!: #{key}"
-        end
+        graphql <<
+          case key
+          when :cursor then "\n cursor "
+          when :node
+            subgraphql, subfragments = value.graphql_and_fragments
+            fragments += subfragments
+            "\n node { #{subgraphql} } "
+          else
+            raise "Bad key!: #{key}"
+          end
       end
     when :connection
       random_superset(structure.to_a) do |key, value|
-        case key
-        when :edges
-          subgraphql, subfragments = value.graphql_and_fragments
-          graphql << "\n edges { #{subgraphql} } "
-          fragments += subfragments
-        when :hasNextPage
-          graphql << "\n pageInfo { hasNextPage } "
-        when :hasPreviousPage
-          graphql << "\n pageInfo { hasPreviousPage } "
-        else
-          raise "Bad key!: #{key}"
-        end
+        graphql <<
+          case key
+          when :hasNextPage     then "\n pageInfo { hasNextPage } "
+          when :hasPreviousPage then "\n pageInfo { hasPreviousPage } "
+          when :edges
+            subgraphql, subfragments = value.graphql_and_fragments
+            fragments += subfragments
+            "\n edges { #{subgraphql} } "
+          else
+            raise "Bad key!: #{key}"
+          end
       end
     when :field
-      structure.each do |this_type, fields|
+      random_superset(structure.to_a) do |this_type, fields|
         graphql << "\n"
-
         field_text = String.new
 
         random_superset(fields.to_a) do |field, value|
-          if value == true
-            field_text << " #{field}, "
-          else
-            subgraphql, subfragments = value.graphql_and_fragments
-            fragments += subfragments
+          field_text <<
+            if value == true
+              " #{field}, "
+            else
+              subgraphql, subfragments = value.graphql_and_fragments
+              fragments += subfragments
+              args =
+                if value.source.is_a?(Prelay::Type::Association) && value.source.association_type == :one_to_many
+                  "(first: 5)"
+                end
 
-            args =
-              if value.source.is_a?(Prelay::Type::Association) && value.source.association_type == :one_to_many
-                "(first: 5)"
-              end
-
-            field_text << %{\n#{field}#{args} { #{subgraphql} } }
-          end
+              "\n #{field}#{args} { #{subgraphql} } "
+            end
         end
 
-        if rand < 0.2
-          # Shove it in a fragment!
-          fragment_name = random_fragment_name
-          t = this_type == :default ? @source : this_type
-          fragments << %{\n fragment #{fragment_name} on #{t.graphql_object} { #{field_text} } }
-          graphql << %{ ...#{fragment_name} }
-        else
-          if this_type == :default
-            graphql << field_text
+        graphql <<
+          if rand < 0.2
+            # Shove it in a fragment!
+            fragment_name = random_fragment_name
+            t = this_type == :default ? @source : this_type
+            fragments << "\n fragment #{fragment_name} on #{t.graphql_object} { #{field_text} } "
+            " ...#{fragment_name} "
           else
-            graphql << %{\n... on #{this_type.graphql_object} { #{field_text} } }
+            if this_type == :default
+              field_text
+            else
+              " ... on #{this_type.graphql_object} { #{field_text} } "
+            end
           end
-        end
       end
     else
       raise "Bad entry_point: #{entry_point}"
@@ -114,20 +103,14 @@ class GraphQLFuzzer
 
     case entry_point
     when :field
-      h = {}
-
-      structure.each do |type, fieldset|
+      structure.each_with_object({}) { |(type, fieldset), hash|
         next unless type == :default || object_implements_type?(object, type)
-        h = h.merge(fieldset, &RECURSIVE_MERGE_PROC)
-      end
-
-      h.each do |field, value|
+        hash.merge!(fieldset, &RECURSIVE_MERGE_PROC)
+      }.each do |field, value|
         fields[field.to_s] =
           case field
-          when :__typename
-            type_name_for(object)
-          when :id
-            id_for(object)
+          when :__typename then type_name_for(object)
+          when :id         then id_for(object)
           else
             if value == true
               object.send(field)
@@ -141,25 +124,18 @@ class GraphQLFuzzer
     when :connection
       structure.each do |key, value|
         case key
-        when :hasNextPage
-          (fields['pageInfo'] ||= {})['hasNextPage'] = object.length > 5
-        when :hasPreviousPage
-          (fields['pageInfo'] ||= {})['hasPreviousPage'] = false
-        when :edges
-          fields['edges'] = object.first(5).map { |o| value.expected_json(object: o) }
-        else
-          raise "Bad key: #{key}"
+        when :hasNextPage     then (fields['pageInfo'] ||= {})['hasNextPage'] = object.length > 5
+        when :hasPreviousPage then (fields['pageInfo'] ||= {})['hasPreviousPage'] = false
+        when :edges           then fields['edges'] = object.first(5).map { |o| value.expected_json(object: o) }
+        else raise "Bad key: #{key}"
         end
       end
     when :edge
       structure.each do |key, value|
         case key
-        when :cursor
-          fields['cursor'] = to_cursor(object.created_at)
-        when :node
-          fields['node'] = value.expected_json(object: object)
-        else
-          raise "Bad key: #{key}"
+        when :cursor then fields['cursor'] = to_cursor(object.created_at)
+        when :node   then fields['node'] = value.expected_json(object: object)
+        else raise "Bad key: #{key}"
         end
       end
     else
@@ -167,6 +143,18 @@ class GraphQLFuzzer
     end
 
     fields
+  end
+
+  private
+
+  def structure
+    @structure ||=
+      case entry_point
+      when :field      then fuzzed_structure_for_field
+      when :connection then fuzzed_structure_for_connection
+      when :edge       then fuzzed_structure_for_edge
+      else raise "Bad entry_point: #{entry_point.inspect}"
+      end
   end
 
   def object_implements_type?(object, type)
