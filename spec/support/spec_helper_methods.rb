@@ -1,6 +1,26 @@
 # frozen_string_literal: true
 
 module SpecHelperMethods
+  # We often assert_equal() deeply nested hash structures, to make sure that
+  # we're returning the correct JSON output, but Minitest's built-in diffing
+  # doesn't special-case hashes, so normal variations in key order are
+  # flagged. To get around this, deep-sort hashes by their keys when diffing.
+  def diff(a, b)
+    if a.is_a?(Hash) && b.is_a?(Hash)
+      super(sort_hash(a), sort_hash(b))
+    else
+      super
+    end
+  end
+
+  def sort_hash(t)
+    case t
+    when Hash  then t.sort.map{|k,v| [k, sort_hash(v)]}.to_h
+    when Array then t.map { |e| sort_hash(e) }
+    else t
+    end
+  end
+
   def execute_query(graphql)
     sqls.clear
     self.track_sqls = true
