@@ -143,7 +143,7 @@ class GraphQLFuzzer
 
       t.associations.each do |key, association|
         next if association.association_type == :one_to_many
-        fields[key] = association.target_type
+        fields[key] = association
       end
 
       fields[:id] = true
@@ -164,7 +164,20 @@ class GraphQLFuzzer
       structure[this_type] ||= {}
 
       fields.to_a.sample(rand(fields.length) + 1).each do |field, value|
-        structure[this_type][field] = (value == true) || GraphQLFuzzer.new(type: value)
+        structure[this_type][field] =
+          case value
+          when TrueClass
+            true
+          when Prelay::Type::Association
+            case value.association_type
+            when :one_to_one, :many_to_one
+              GraphQLFuzzer.new(type: value.target_type)
+            else
+              raise "Bad association type: #{value.inspect}"
+            end
+          else
+            raise "Bad value to fuzz: #{value.inspect}"
+          end
       end
     end
 
