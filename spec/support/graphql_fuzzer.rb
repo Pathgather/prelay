@@ -12,9 +12,11 @@ class GraphQLFuzzer
     end
   }
 
-  def initialize(source:, entry_point: :field)
+  def initialize(source:, entry_point: :field, current_depth: 0, maximum_depth: 3)
     @source = source
     @entry_point = entry_point
+    @current_depth = current_depth
+    @maximum_depth = maximum_depth
   end
 
   def structure
@@ -205,7 +207,7 @@ class GraphQLFuzzer
       this_type, fields = types_hash.to_a.sample
       structure[this_type] ||= {}
 
-      fields.to_a.sample(rand(fields.length) + 1).each do |field, value|
+      random_subset(fields.to_a) do |field, value|
         structure[this_type][field] =
           case value
           when TrueClass
@@ -213,10 +215,10 @@ class GraphQLFuzzer
           when Prelay::Type::Association
             case value.association_type
             when :one_to_one, :many_to_one
-              GraphQLFuzzer.new(source: value.target_type)
+              new_fuzzer(:field, value.target_type)
             when :one_to_many
               # TODO: How to handle 'first' and 'last' arguments?
-              GraphQLFuzzer.new(source: value, entry_point: :connection)
+              new_fuzzer(:connection, value)
             else
               raise "Bad association type: #{value.inspect}"
             end
@@ -229,33 +231,46 @@ class GraphQLFuzzer
     structure
   end
 
+  CONNECTION_KEYS = [:edges, :hasNextPage, :hasPreviousPage].freeze
+
   def fuzzed_structure_for_connection
-    keys = [:edges, :hasNextPage, :hasPreviousPage]
+    structure = {}
 
-    keys.
-
-    structure = {edges: GraphQLFuzzer.new(source: @source, entry_point: :edge)}
-
-    rand(2).times do
-      page_info = structure[:pageInfo] ||= {}
-
-      case i = rand(2)
-      when 0 then page_info[:hasNextPage] ||= true
-      when 1 then page_info[:hasPreviousPage] ||= true
-      else raise "Bad value: #{i}"
+    random_subset(CONNECTION_KEYS) do |key|
+      case key
+      when :edges then structure[:edges] = new_fuzzer(:edge, @source)
+      when :hasNextPage, :hasPreviousPage then (structure[:pageInfo] ||= {})[key] ||= true
+      else raise "Bad key: #{key}"
       end
     end
 
     structure
   end
 
-  def fuzzed_structure_for_edge
-    structure = {node: GraphQLFuzzer.new(source: @source.target_type, entry_point: :field)}
+  EDGE_KEYS = [:node, :cursor].freeze
 
-    if rand < 0.5
-      structure[:cursor] = true
+  def fuzzed_structure_for_edge
+    structure = {}
+
+    random_subset(EDGE_KEYS) do |key|
+      case key
+      when :node then structure[:node] = new_fuzzer(:field, @source.target_type)
+      when :cursor then structure[:cursor] = true
+      else raise "Bad key: #{key}"
+      end
     end
 
     structure
+  end
+
+  def new_fuzzer(entry_point, source)
+    GraphQLFuzzer.new(source: source, entry_point: entry_point, current_depth: @current_depth + 1, maximum_depth: @maximum_depth)
+  end
+
+  def random_subset(things, &block)
+    limiting_factor = 1.0 - (@current_depth.to_f / @maximum_depth)
+    number = (rand(things.length) * limiting_factor).round
+    number = 1 if number < 1
+    things.sample(number).each(&block)
   end
 end
