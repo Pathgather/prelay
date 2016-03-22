@@ -12,53 +12,95 @@ class GraphQLFuzzer
     end
   }
 
-  def initialize(type:)
-    @type = type
+  def initialize(source:, entry_point: :field)
+    @source = source
+    @entry_point = entry_point
   end
 
   def structure
-    @structure ||= build_fuzzed_structure
+    @structure ||=
+      case @entry_point
+      when :field      then fuzzed_structure_for_field
+      when :connection then fuzzed_structure_for_connection
+      when :edge       then fuzzed_structure_for_edge
+      else raise "Bad entry_point: #{@entry_point.inspect}"
+      end
   end
 
   def graphql_and_fragments
     fragments = []
     graphql = String.new
 
-    structure.each do |this_type, fields|
-      graphql << "\n"
+    case @entry_point
+    when :edge
+      # TODO: Introduce random duplication.
 
-      field_text = String.new
-      fields_array = fields.to_a
-
-      # This number is tricky. We want fields to be duplicated enough that our
-      # duplicate detection is tested, but if we're not careful to keep this
-      # number relatively low, query sizes can really explode, and cause specs
-      # to take a loooong time. This seems to be a decent compromise.
-      number_of_fields_to_duplicate = (rand(fields_array.length) * rand * rand).round
-
-      (fields_array + fields_array.sample(number_of_fields_to_duplicate)).each do |field, value|
-        if value == true
-          field_text << " #{field}, "
-        else
+      structure.each do |key, value|
+        case key
+        when :node
           subgraphql, subfragments = value.graphql_and_fragments
+          graphql << "\n node { #{subgraphql} } "
           fragments += subfragments
-          field_text << %{\n#{field} { #{subgraphql} } }
-        end
-      end
-
-      if rand < 0.2
-        # Shove it in a fragment!
-        fragment_name = random_fragment_name
-        t = this_type == :default ? @type : this_type
-        fragments << %{\n fragment #{fragment_name} on #{t.graphql_object} { #{field_text} } }
-        graphql << %{ ...#{fragment_name} }
-      else
-        if this_type == :default
-          graphql << field_text
+        when :cursor
+          graphql << "\n cursor "
         else
-          graphql << %{\n... on #{this_type.graphql_object} { #{field_text} } }
+          raise "Bad key!: #{key}"
         end
       end
+    when :connection
+      # TODO: Introduce random duplication.
+
+      structure.each do |key, value|
+        case key
+        when :edges
+          subgraphql, subfragments = value.graphql_and_fragments
+          graphql << "\n edges { #{subgraphql} } "
+          fragments += subfragments
+        when :pageInfo
+          graphql << "\n pageInfo { #{value.keys.shuffle.join(', ')} } "
+        else
+          raise "Bad key!: #{key}"
+        end
+      end
+    when :field
+      structure.each do |this_type, fields|
+        graphql << "\n"
+
+        field_text = String.new
+        fields_array = fields.to_a
+
+        # This number is tricky. We want fields to be duplicated enough that our
+        # duplicate detection is tested, but if we're not careful to keep this
+        # number relatively low, query sizes can really explode, and cause specs
+        # to take a loooong time. This seems to be a decent compromise.
+        number_of_fields_to_duplicate = (rand(fields_array.length) * rand * rand).round
+
+        (fields_array + fields_array.sample(number_of_fields_to_duplicate)).each do |field, value|
+          if value == true
+            field_text << " #{field}, "
+          else
+            subgraphql, subfragments = value.graphql_and_fragments
+            fragments += subfragments
+            field_text << %{\n#{field} { #{subgraphql} } }
+          end
+        end
+
+        if rand < 0.2
+          # Shove it in a fragment!
+          fragment_name = random_fragment_name
+          t = this_type == :default ? @source : this_type
+          fragments << %{\n fragment #{fragment_name} on #{t.graphql_object} { #{field_text} } }
+          graphql << %{ ...#{fragment_name} }
+        else
+          if this_type == :default
+            graphql << field_text
+          else
+            graphql << %{\n... on #{this_type.graphql_object} { #{field_text} } }
+          end
+        end
+      end
+    else
+      raise "Bad entry_point: #{@entry_point}"
     end
 
     [graphql, fragments]
@@ -122,20 +164,20 @@ class GraphQLFuzzer
   end
 
   def schema
-    @type.schema
+    @source.schema
   end
 
-  def build_fuzzed_structure
+  def fuzzed_structure_for_field
     structure = {}
     types_hash = {}
 
     all_types =
-      if @type < Prelay::Type
-        [@type] + @type.interfaces.keys
-      elsif @type < Prelay::Interface
-        @type.types
+      if @source < Prelay::Type
+        [@source] + @source.interfaces.keys
+      elsif @source < Prelay::Interface
+        @source.types
       else
-        raise "Unsupported type: #{@type.inspect}"
+        raise "Unsupported type: #{@source.inspect}"
       end
 
     all_types.each do |t|
@@ -153,8 +195,8 @@ class GraphQLFuzzer
     end
 
     types_hash[:default] =
-      if @type < Prelay::Type
-        types_hash.delete(@type)
+      if @source < Prelay::Type
+        types_hash.delete(@source)
       else
         {id: true, __typename: true}
       end
@@ -171,7 +213,10 @@ class GraphQLFuzzer
           when Prelay::Type::Association
             case value.association_type
             when :one_to_one, :many_to_one
-              GraphQLFuzzer.new(type: value.target_type)
+              GraphQLFuzzer.new(source: value.target_type)
+            when :one_to_many
+              # TODO: How to handle 'first' and 'last' arguments?
+              GraphQLFuzzer.new(source: value, entry_point: :connection)
             else
               raise "Bad association type: #{value.inspect}"
             end
@@ -179,6 +224,36 @@ class GraphQLFuzzer
             raise "Bad value to fuzz: #{value.inspect}"
           end
       end
+    end
+
+    structure
+  end
+
+  def fuzzed_structure_for_connection
+    keys = [:edges, :hasNextPage, :hasPreviousPage]
+
+    keys.
+
+    structure = {edges: GraphQLFuzzer.new(source: @source, entry_point: :edge)}
+
+    rand(2).times do
+      page_info = structure[:pageInfo] ||= {}
+
+      case i = rand(2)
+      when 0 then page_info[:hasNextPage] ||= true
+      when 1 then page_info[:hasPreviousPage] ||= true
+      else raise "Bad value: #{i}"
+      end
+    end
+
+    structure
+  end
+
+  def fuzzed_structure_for_edge
+    structure = {node: GraphQLFuzzer.new(source: @source.target_type, entry_point: :field)}
+
+    if rand < 0.5
+      structure[:cursor] = true
     end
 
     structure

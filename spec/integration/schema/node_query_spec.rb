@@ -125,7 +125,7 @@ class NodeQuerySpec < PrelaySpec
 
   100.times do
     it "should support fragments, however they appear" do
-      fuzzer = GraphQLFuzzer.new(type: AlbumType)
+      fuzzer = GraphQLFuzzer.new(source: AlbumType)
       graphql, fragments = fuzzer.graphql_and_fragments
 
       execute_query <<-GRAPHQL
