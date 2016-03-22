@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class GraphQLFuzzer
+  include SpecHelperMethods
+
   RECURSIVE_MERGE_PROC = proc { |k,o,n|
     if o.is_a?(Hash) && n.is_a?(Hash)
       o.merge(n, &RECURSIVE_MERGE_PROC)
@@ -12,22 +14,22 @@ class GraphQLFuzzer
     end
   }
 
-  attr_reader :source
+  attr_reader :source, :entry_point
 
   def initialize(source:, entry_point: :field, current_depth: 0, maximum_depth: 3)
-    @source = source
-    @entry_point = entry_point
+    @source        = source
+    @entry_point   = entry_point
     @current_depth = current_depth
     @maximum_depth = maximum_depth
   end
 
   def structure
     @structure ||=
-      case @entry_point
+      case entry_point
       when :field      then fuzzed_structure_for_field
       when :connection then fuzzed_structure_for_connection
       when :edge       then fuzzed_structure_for_edge
-      else raise "Bad entry_point: #{@entry_point.inspect}"
+      else raise "Bad entry_point: #{entry_point.inspect}"
       end
   end
 
@@ -35,7 +37,7 @@ class GraphQLFuzzer
     fragments = []
     graphql = String.new
 
-    case @entry_point
+    case entry_point
     when :edge
       # TODO: Introduce random duplication.
 
@@ -110,7 +112,7 @@ class GraphQLFuzzer
         end
       end
     else
-      raise "Bad entry_point: #{@entry_point}"
+      raise "Bad entry_point: #{entry_point}"
     end
 
     [graphql, fragments]
@@ -119,7 +121,7 @@ class GraphQLFuzzer
   def expected_json(object:)
     fields = {}
 
-    case @entry_point
+    case entry_point
     when :field
       h = {}
       structure.each do |type, fieldset|
@@ -170,7 +172,7 @@ class GraphQLFuzzer
         end
       end
     else
-      raise "Bad entry_point: #{@entry_point}"
+      raise "Bad entry_point: #{entry_point}"
     end
 
     fields
@@ -184,22 +186,6 @@ class GraphQLFuzzer
     else
       raise "Unsupported! #{type.inspect}"
     end
-  end
-
-  def type_for(object)
-    schema.type_for_model!(object.class)
-  end
-
-  def type_name_for(object)
-    type_for(object).graphql_object.to_s
-  end
-
-  def id_for(object)
-    encode_prelay_id type: type_name_for(object), pk: object.pk
-  end
-
-  def encode_prelay_id(type:, pk:)
-    Base64.strict_encode64 "#{type}:#{pk}"
   end
 
   def random_fragment_name
@@ -311,16 +297,5 @@ class GraphQLFuzzer
     number = (rand(things.length) * limiting_factor).round
     number = 1 if number < 1
     things.sample(number).each(&block)
-  end
-
-  def to_cursor(*args)
-    args = args.map do |thing|
-      case thing
-      when Time then [thing.to_i, thing.usec]
-      else thing
-      end
-    end
-
-    Base64.strict_encode64(args.to_json)
   end
 end
