@@ -28,11 +28,15 @@ class GraphQLFuzzer
       graphql << "\n"
 
       field_text = String.new
-
       fields_array = fields.to_a
-      # TODO: Fix
-      #(fields_array + fields_array.sample(rand(fields.length))).each do |field, value|
-      fields_array.each do |field, value|
+
+      # This number is tricky. We want fields to be duplicated enough that our
+      # duplicate detection is tested, but if we're not careful to keep this
+      # number relatively low, query sizes can really explode, and cause specs
+      # to take a loooong time. This seems to be a decent compromise.
+      number_of_fields_to_duplicate = (rand(fields_array.length) * rand * rand).round
+
+      (fields_array + fields_array.sample(number_of_fields_to_duplicate)).each do |field, value|
         if value == true
           field_text << " #{field}, "
         else
