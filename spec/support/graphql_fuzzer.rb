@@ -39,9 +39,7 @@ class GraphQLFuzzer
 
     case entry_point
     when :edge
-      # TODO: Introduce random duplication.
-
-      structure.each do |key, value|
+      random_superset(structure.to_a) do |key, value|
         case key
         when :node
           subgraphql, subfragments = value.graphql_and_fragments
@@ -54,9 +52,7 @@ class GraphQLFuzzer
         end
       end
     when :connection
-      # TODO: Introduce random duplication.
-
-      structure.each do |key, value|
+      random_superset(structure.to_a) do |key, value|
         case key
         when :edges
           subgraphql, subfragments = value.graphql_and_fragments
@@ -73,15 +69,8 @@ class GraphQLFuzzer
         graphql << "\n"
 
         field_text = String.new
-        fields_array = fields.to_a
 
-        # This number is tricky. We want fields to be duplicated enough that our
-        # duplicate detection is tested, but if we're not careful to keep this
-        # number relatively low, query sizes can really explode, and cause specs
-        # to take a loooong time. This seems to be a decent compromise.
-        number_of_fields_to_duplicate = (rand(fields_array.length) * rand * rand).round
-
-        (fields_array + fields_array.sample(number_of_fields_to_duplicate)).each do |field, value|
+        random_superset(fields.to_a) do |field, value|
           if value == true
             field_text << " #{field}, "
           else
@@ -124,6 +113,7 @@ class GraphQLFuzzer
     case entry_point
     when :field
       h = {}
+
       structure.each do |type, fieldset|
         next unless type == :default || object_implements_type?(object, type)
         h = h.merge(fieldset, &RECURSIVE_MERGE_PROC)
@@ -229,9 +219,8 @@ class GraphQLFuzzer
         {id: true, __typename: true}
       end
 
-    (rand(types_hash.length) + 1).times do
-      this_type, fields = types_hash.to_a.sample
-      structure[this_type] ||= {}
+    random_subset(types_hash.to_a) do |this_type, fields|
+      structure[this_type] = {}
 
       random_subset(fields.to_a) do |field, value|
         structure[this_type][field] =
@@ -293,9 +282,18 @@ class GraphQLFuzzer
   end
 
   def random_subset(things, &block)
-    limiting_factor = 1.0 - (@current_depth.to_f / @maximum_depth)
     number = (rand(things.length) * limiting_factor).round
     number = 1 if number < 1
     things.sample(number).each(&block)
+  end
+
+  def random_superset(things, &block)
+    number = (rand(things.length) * rand * limiting_factor).round
+    number = 0 if number < 0
+    (things + things.sample(number)).shuffle.each(&block)
+  end
+
+  def limiting_factor
+    1.0 - (@current_depth.to_f / @maximum_depth)
   end
 end
