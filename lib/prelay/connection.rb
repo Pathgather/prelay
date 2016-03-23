@@ -39,7 +39,7 @@ module Prelay
 
       def resolve
         -> (obj, args, ctx) {
-          ast = GraphQLProcessor.new(ctx).ast
+          ast = GraphQLProcessor.new(ctx, schema: type.schema).ast
           RelayProcessor.new(ast, type: type, types_to_skip: types_to_skip, entry_point: :connection).
             to_resolver.resolve{|ds| ds.order(order)}
         }
