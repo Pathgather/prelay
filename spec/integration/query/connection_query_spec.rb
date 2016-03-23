@@ -61,7 +61,30 @@ class ConnectionQuerySpec < PrelaySpec
       }
   end
 
-  it "should support fuzzed queries"
+  20.times do
+    it "should support fuzzed queries" do
+      album_connection_fuzzer = GraphQLFuzzer.new(source: ArtistType.associations.fetch(:albums), entry_point: :connection)
+      graphql, fragments = album_connection_fuzzer.graphql_and_fragments
+
+      execute_query <<-GRAPHQL
+        query Query {
+          connections {
+            albums(first: 5) { #{graphql} }
+          }
+        }
+        #{fragments.join("\n")}
+      GRAPHQL
+
+      albums = Album.order(Sequel.desc(:created_at)).all
+
+      assert_result \
+        'data' => {
+          'connections' => {
+            'albums' => album_connection_fuzzer.expected_json(object: albums)
+          }
+        }
+    end
+  end
 
   it "should support different order clauses"
 
