@@ -30,7 +30,7 @@ class GraphQLFuzzer
     case entry_point
     when :edge
       random_superset(structure.to_a) do |key, value|
-        graphql <<
+        field_text =
           case key
           when :cursor then "\n cursor "
           when :node
@@ -40,19 +40,45 @@ class GraphQLFuzzer
           else
             raise "Bad key!: #{key}"
           end
+
+        graphql <<
+          if rand < 0.2
+            # Shove it in a fragment!
+            fragment_name = random_fragment_name
+            fragments << "\n fragment #{fragment_name} on #{@source.target_type.graphql_object}Edge { #{field_text} } "
+            " ...#{fragment_name} "
+          else
+            field_text
+          end
       end
     when :connection
       random_superset(structure.to_a) do |key, value|
-        graphql <<
+        field_text =
           case key
-          when :hasNextPage     then "\n pageInfo { hasNextPage } "
-          when :hasPreviousPage then "\n pageInfo { hasPreviousPage } "
+          when :hasNextPage, :hasPreviousPage
+            if rand < 0.2
+              fragment_name = random_fragment_name
+              fragments << "\n fragment #{fragment_name} on PageInfo { #{key} } "
+              " pageInfo { ...#{fragment_name} } "
+            else
+              "\n pageInfo { #{key} } "
+            end
           when :edges
             subgraphql, subfragments = value.graphql_and_fragments
             fragments += subfragments
             "\n edges { #{subgraphql} } "
           else
             raise "Bad key!: #{key}"
+          end
+
+        graphql <<
+          if rand < 0.2
+            # Shove it in a fragment!
+            fragment_name = random_fragment_name
+            fragments << "\n fragment #{fragment_name} on #{@source.target_type.graphql_object}Connection { #{field_text} } "
+            " ...#{fragment_name} "
+          else
+            field_text
           end
       end
     when :field
@@ -95,7 +121,7 @@ class GraphQLFuzzer
       raise "Bad entry_point: #{entry_point}"
     end
 
-    [graphql, fragments]
+    [graphql, fragments.shuffle]
   end
 
   def expected_json(object:)
