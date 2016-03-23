@@ -355,7 +355,7 @@ class FilterSpec < PrelaySpec
       }
     GRAPHQL
 
-    artists = genre.artists_dataset.order(:id).first(5)
+    artists = genre.artists_dataset.order(:created_at).first(5)
 
     assert_result \
       'data' => {
@@ -364,8 +364,8 @@ class FilterSpec < PrelaySpec
           'name' => genre.name,
           'artists' => {
             'edges' => artists.map { |artist|
-              albums = artist.albums_dataset.order(Sequel.desc(:created_at)).where{name > 'p'}.limit(5).all
-              compilations = artist.compilations_dataset.order(Sequel.desc(:created_at)).where{name > 'p'}.limit(5).all
+              albums = artist.albums_dataset.order(Sequel.desc(:created_at)).where{name > 'p'}.first(5)
+              compilations = artist.compilations_dataset.order(Sequel.desc(:created_at)).where{name > 'p'}.first(5)
               releases = (albums + compilations).sort_by(&:created_at).reverse.first(5)
 
               {
