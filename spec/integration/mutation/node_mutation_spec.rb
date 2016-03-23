@@ -52,5 +52,22 @@ class NodeMutationSpec < PrelaySpec
       }
   end
 
-  it "should support fuzzed queries provided alongside mutations"
+  20.times do
+    it "should support fuzzed queries provided alongside mutations" do
+      @input = {
+        id: id_for(album),
+        name: "New Album Name"
+      }
+
+      album_fuzzer = GraphQLFuzzer.new(source: AlbumType)
+      graphql, fragments = album_fuzzer.graphql_and_fragments
+
+      execute_mutation :update_album_name, graphql: "album { #{graphql} }", fragments: fragments
+
+      assert_equal "New Album Name", album.reload.name
+
+      assert_mutation_result \
+        'album' => album_fuzzer.expected_json(object: album)
+    end
+  end
 end

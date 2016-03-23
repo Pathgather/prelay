@@ -80,5 +80,38 @@ class EdgeMutationSpec < PrelaySpec
       }
   end
 
-  it "should support fuzzed queries for item edges"
+  20.times do
+    it "should support fuzzed queries for item edges" do
+      @input = {
+        artist_id: id_for(artist),
+        name: "New Album Name"
+      }
+
+      artist_fuzzer     = GraphQLFuzzer.new(source: ArtistType)
+      album_fuzzer      = GraphQLFuzzer.new(source: AlbumType)
+      album_edge_fuzzer = GraphQLFuzzer.new(source: ArtistType.associations.fetch(:albums), entry_point: :edge)
+
+      arq, arf = artist_fuzzer.graphql_and_fragments
+      alq, alf = album_fuzzer.graphql_and_fragments
+      aeq, aef = album_edge_fuzzer.graphql_and_fragments
+
+      g =
+        <<-GRAPHQL
+          artist     { #{arq} }
+          album      { #{alq} }
+          album_edge { #{aeq} }
+        GRAPHQL
+
+      execute_mutation :create_album, graphql: g, fragments: (arf + alf + aef).shuffle
+
+      albums = Album.where(name: "New Album Name").all
+      assert_equal 1, albums.length
+      album = albums.first
+
+      assert_mutation_result \
+        'artist'     => artist_fuzzer.expected_json(object: artist),
+        'album'      => album_fuzzer.expected_json(object: album),
+        'album_edge' => album_edge_fuzzer.expected_json(object: album)
+    end
+  end
 end

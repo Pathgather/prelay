@@ -30,7 +30,7 @@ module SpecHelperMethods
     self.track_sqls = false
   end
 
-  def execute_mutation(name, graphql: '')
+  def execute_mutation(name, graphql: '', fragments: [])
     assert_instance_of Hash, @input
 
     @mutation_name = name.to_s
@@ -46,6 +46,7 @@ module SpecHelperMethods
           #{graphql}
         }
       }
+      #{fragments.join("\n")}
     GRAPHQL
 
     assert_equal @client_mutation_id, @result['data'][@mutation_name]['clientMutationId']

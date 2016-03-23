@@ -273,7 +273,7 @@ class GraphQLFuzzer
 
     random_subset(EDGE_KEYS) do |key|
       case key
-      when :node then structure[:node] = new_fuzzer(:field, @source.target_type)
+      when :node   then structure[:node] = new_fuzzer(:field, @source.target_type)
       when :cursor then structure[:cursor] = true
       else raise "Bad key: #{key}"
       end
