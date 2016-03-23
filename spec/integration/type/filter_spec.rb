@@ -20,13 +20,13 @@ class FilterSpec < PrelaySpec
     query :Albums do
       include Prelay::Connection
       type AlbumType
-      order Sequel.desc(:created_at)
+      order :created_at
     end
 
     query :Releases do
       include Prelay::Connection
       type ReleaseInterface
-      order Sequel.desc(:created_at)
+      order :created_at
     end
   end
 
@@ -51,7 +51,7 @@ class FilterSpec < PrelaySpec
       }
     GRAPHQL
 
-    albums = Album.order(Sequel.desc(:created_at)).where(:high_quality).limit(5).all
+    albums = Album.order(:created_at).where(:high_quality).limit(5).all
 
     assert_result \
       'data' => {
@@ -75,7 +75,7 @@ class FilterSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE "high_quality" ORDER BY "created_at" DESC LIMIT 5),
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE "high_quality" ORDER BY "created_at" LIMIT 5),
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
     ]
   end
@@ -101,9 +101,9 @@ class FilterSpec < PrelaySpec
       }
     GRAPHQL
 
-    albums = Album.order(Sequel.desc(:created_at)).where{char_length(:name) > 3}.limit(5).all
-    compilations = Compilation.order(Sequel.desc(:created_at)).where{char_length(:name) > 3}.limit(5).all
-    releases = (albums + compilations).sort_by(&:created_at).reverse.first(5)
+    albums = Album.order(:created_at).where{char_length(:name) > 3}.limit(5).all
+    compilations = Compilation.order(:created_at).where{char_length(:name) > 3}.limit(5).all
+    releases = (albums + compilations).sort_by(&:created_at).first(5)
 
     assert_result \
       'data' => {
@@ -127,9 +127,9 @@ class FilterSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE (char_length("name") > 3) ORDER BY "created_at" DESC LIMIT 5),
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE (char_length("name") > 3) ORDER BY "created_at" LIMIT 5),
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
-      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE (char_length("name") > 3) ORDER BY "created_at" DESC LIMIT 5),
+      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE (char_length("name") > 3) ORDER BY "created_at" LIMIT 5),
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{compilations.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
     ]
   end
@@ -325,7 +325,7 @@ class FilterSpec < PrelaySpec
       }
     GRAPHQL
 
-    artists = genre.artists_dataset.order(:id).first(5)
+    artists = genre.artists_dataset.order(:created_at).first(5)
 
     assert_result \
       'data' => {
@@ -334,8 +334,8 @@ class FilterSpec < PrelaySpec
           'name' => genre.name,
           'artists' => {
             'edges' => artists.map { |artist|
-              albums = artist.albums_dataset.order(Sequel.desc(:created_at)).where{name > 'p'}.limit(5).all
-              compilations = artist.compilations_dataset.order(Sequel.desc(:created_at)).where{name > 'p'}.limit(5).all
+              albums = artist.albums_dataset.order(:created_at).where{name > 'p'}.first(5)
+              compilations = artist.compilations_dataset.order(:created_at).where{name > 'p'}.first(5)
               releases = (albums + compilations).sort_by(&:created_at).first(5)
 
               {

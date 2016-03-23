@@ -69,4 +69,6 @@ class CustomReturnTypeQuerySpec < PrelaySpec
         }
       }
   end
+
+  it "should support aliases on the various return types"
 end
