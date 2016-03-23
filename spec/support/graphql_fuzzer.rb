@@ -43,10 +43,7 @@ class GraphQLFuzzer
 
         graphql <<
           if rand < 0.2
-            # Shove it in a fragment!
-            fragment_name = random_fragment_name
-            fragments << "\n fragment #{fragment_name} on #{@source.target_type.graphql_object}Edge { #{field_text} } "
-            " ...#{fragment_name} "
+            new_fragment(field_text, type: "#{@source.target_type.graphql_object}Edge", fragments: fragments)
           else
             field_text
           end
@@ -57,9 +54,7 @@ class GraphQLFuzzer
           case key
           when :hasNextPage, :hasPreviousPage
             if rand < 0.2
-              fragment_name = random_fragment_name
-              fragments << "\n fragment #{fragment_name} on PageInfo { #{key} } "
-              " pageInfo { ...#{fragment_name} } "
+              "\n pageInfo { #{new_fragment(key, type: "PageInfo", fragments: fragments)} } "
             else
               "\n pageInfo { #{key} } "
             end
@@ -73,10 +68,7 @@ class GraphQLFuzzer
 
         graphql <<
           if rand < 0.2
-            # Shove it in a fragment!
-            fragment_name = random_fragment_name
-            fragments << "\n fragment #{fragment_name} on #{@source.target_type.graphql_object}Connection { #{field_text} } "
-            " ...#{fragment_name} "
+            new_fragment(field_text, type: "#{@source.target_type.graphql_object}Connection", fragments: fragments)
           else
             field_text
           end
@@ -104,16 +96,12 @@ class GraphQLFuzzer
 
         graphql <<
           if rand < 0.2
-            # Shove it in a fragment!
-            fragment_name = random_fragment_name
-            t = this_type == :default ? @source : this_type
-            fragments << "\n fragment #{fragment_name} on #{t.graphql_object} { #{field_text} } "
-            " ...#{fragment_name} "
+            new_fragment(field_text, type: (this_type == :default ? @source : this_type).graphql_object, fragments: fragments)
           else
             if this_type == :default
               field_text
             else
-              " ... on #{this_type.graphql_object} { #{field_text} } "
+              "\n ... on #{this_type.graphql_object} { #{field_text} } "
             end
           end
       end
@@ -122,6 +110,12 @@ class GraphQLFuzzer
     end
 
     [graphql, fragments.shuffle]
+  end
+
+  def new_fragment(field_text, type:, fragments:)
+    name = SecureRandom.base64.gsub(/[0-9+\/=]/, '')
+    fragments << "\n fragment #{name} on #{type} { #{field_text} } "
+    " ...#{name} "
   end
 
   def expected_json(object:)
@@ -191,10 +185,6 @@ class GraphQLFuzzer
     else
       raise "Unsupported! #{type.inspect}"
     end
-  end
-
-  def random_fragment_name
-    SecureRandom.base64.gsub(/[0-9+\/=]/, '')
   end
 
   def schema

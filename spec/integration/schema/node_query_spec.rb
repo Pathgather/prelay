@@ -123,7 +123,7 @@ class NodeQuerySpec < PrelaySpec
     assert_sqls []
   end
 
-  20.times do
+  200.times do
     it "should support fuzzed queries" do
       fuzzer = GraphQLFuzzer.new(source: AlbumType)
       graphql, fragments = fuzzer.graphql_and_fragments
