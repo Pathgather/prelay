@@ -36,12 +36,12 @@ module Prelay
         encode type: type.graphql_object, pk: record.pk
       end
 
-      def get(string)
-        parse(string).get
+      def get(string, schema: Prelay.primary_schema)
+        parse(string, schema: schema).get
       end
 
-      def get!(string)
-        parse(string).get!
+      def get!(string, schema: Prelay.primary_schema)
+        parse(string, schema: schema).get!
       end
     end
 

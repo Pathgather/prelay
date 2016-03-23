@@ -23,33 +23,33 @@ class IDSpec < PrelaySpec
   end
 
   it "should parse ids correctly" do
-    parsed = Prelay::ID.parse(id)
+    parsed = Prelay::ID.parse(id, schema: @schema)
 
     assert_equal "89565d7e-5fe8-4a66-be2c-3fcdaac3a721", parsed.pk
     assert_equal AlbumType, parsed.type
   end
 
   it "should support expected types when parsing ids" do
-    error = assert_raises(Prelay::Error) { Prelay::ID.parse(id, expected_type: ArtistType) }
+    error = assert_raises(Prelay::Error) { Prelay::ID.parse(id, expected_type: ArtistType, schema: @schema) }
 
     assert_equal error.message, "Expected object id for a Artist, got one for a Album"
   end
 
   it "should support returning the encoded id for a record" do
-    assert_equal id, Prelay::ID.for(album)
+    assert_equal id, Prelay::ID.for(album, schema: @schema)
   end
 
   it "should support fetching the referenced record directly" do
     a1 = Album.first
-    a2 = Prelay::ID.get(Prelay::ID.for(a1))
+    a2 = Prelay::ID.get(Prelay::ID.for(a1, schema: @schema), schema: @schema)
     assert_equal a1, a2
   end
 
   it ".get should not raise an error when getting a record that doesn't exist" do
-    assert_nil Prelay::ID.get(id)
+    assert_nil Prelay::ID.get(id, schema: @schema)
   end
 
   it ".get! should raise an error when getting a record that doesn't exist" do
-    assert_raises(Sequel::NoMatchingRow) { Prelay::ID.get!(id) }
+    assert_raises(Sequel::NoMatchingRow) { Prelay::ID.get!(id, schema: @schema) }
   end
 end

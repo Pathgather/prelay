@@ -17,7 +17,7 @@ class SequelPluginSpec < PrelaySpec
 
   describe "#prelay_id" do
     it "should return the object's encoded id" do
-      assert_equal id, album.prelay_id
+      assert_equal id, album.prelay_id(schema: @schema)
     end
 
     it "should raise a helpful error when the given model doesn't have an associated type" do
