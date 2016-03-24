@@ -31,7 +31,7 @@ module Prelay
       selection =
         Selection.new name:       field.name.to_sym,
                       aliaz:      field.alias&.to_sym,
-                      type:       nil,
+                      types:      nil,
                       arguments:  arguments_from_field(field),
                       selections: selections,
                       fragments:  fragments

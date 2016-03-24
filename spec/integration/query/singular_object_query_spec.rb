@@ -8,7 +8,7 @@ class SingularObjectQuerySpec < PrelaySpec
       type :Album
       resolve -> (obj, args, ctx) {
         ast = Prelay::GraphQLProcessor.new(ctx).ast
-        Prelay::RelayProcessor.new(ast, type: AlbumType, entry_point: :field).
+        Prelay::RelayProcessor.new(ast, target_types: [AlbumType], entry_point: :field).
           to_resolver.resolve_singular{|ds| ds.order{random{}}.limit(1)}
       }
     end

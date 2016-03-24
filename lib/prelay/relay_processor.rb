@@ -2,13 +2,14 @@
 
 module Prelay
   class RelayProcessor
-    attr_reader :ast
+    attr_reader :ast, :target_types
 
     # The calling code should know if the field being passed in is a Relay
     # connection or edge call, so it must provide an :entry_point argument to
     # tell us how to start parsing.
-    def initialize(input, type:, entry_point:)
-      @type = type
+    def initialize(input, target_types:, entry_point:)
+      @target_types = target_types.map { |type| types_for_type(type) }.flatten.uniq
+
       @ast =
         case entry_point
         when :field      then process_field(input)
@@ -47,11 +48,11 @@ module Prelay
         selection.metadata[:has_previous_page] = true if page_info.selections[:hasPreviousPage]
 
         target_types.each do |type|
-          (selection.selections[type] ||= {})[:id] ||= Selection.new(name: :id, type: type)
+          (selection.selections[type] ||= {})[:id] ||= Selection.new(name: :id, types: [type])
         end
       end
 
-      selection.type = @type
+      selection.types = target_types
       selection
     end
 
@@ -65,19 +66,18 @@ module Prelay
 
       if cursor
         target_types.each do |type|
-          (selection.selections[type] ||= {})[:cursor] ||= Selection.new(name: :cursor, type: type)
+          (selection.selections[type] ||= {})[:cursor] ||= Selection.new(name: :cursor, types: [type])
         end
       end
 
-      selection.type = @type
+      selection.types = target_types
       selection
     end
 
     def process_field(selection)
-      raise "Selection already typed! #{selection.inspect}" unless selection.type.nil?
+      raise "Selection already typed! #{selection.inspect}" unless selection.types.nil?
 
-      type = @type
-      selection.type = type
+      selection.types = target_types
       selections_by_type = {}
       target_types.each {|t| selections_by_type[t] = deep_copy(selection.selections)}
       selection.selections = selections_by_type
@@ -110,7 +110,7 @@ module Prelay
             process_field(s)
           elsif association = type.associations[s.name]
             entry_point = association.returns_array? ? :connection : :field
-            self.class.new(s, type: association.target_type, entry_point: entry_point)
+            self.class.new(s, target_types: association.target_types, entry_point: entry_point)
           else
             case s.name
             when :id
@@ -127,10 +127,6 @@ module Prelay
       end
 
       selection
-    end
-
-    def target_types
-      types_for_type(@type)
     end
 
     def types_for_type(type)

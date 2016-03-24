@@ -2,12 +2,12 @@
 
 module Prelay
   class Selection
-    attr_accessor :name, :type, :selections, :metadata, :aliaz
+    attr_accessor :name, :types, :selections, :metadata, :aliaz
     attr_reader :arguments, :fragments
 
-    def initialize(name:, type: nil, aliaz: nil, arguments: EMPTY_HASH, selections: EMPTY_HASH, fragments: EMPTY_HASH, metadata: {})
+    def initialize(name:, types: nil, aliaz: nil, arguments: EMPTY_HASH, selections: EMPTY_HASH, fragments: EMPTY_HASH, metadata: {})
       @name       = name
-      @type       = type
+      @types      = types
       @aliaz      = aliaz
       @arguments  = arguments
       @selections = selections
@@ -18,7 +18,7 @@ module Prelay
     def ==(other)
       self.class      == other.class &&
       self.name       == other.name &&
-      self.type       == other.type &&
+      self.types      == other.types &&
       self.arguments  == other.arguments &&
       self.selections == other.selections &&
       self.fragments  == other.fragments &&
@@ -34,11 +34,11 @@ module Prelay
 
       return other_selection if frozen?
 
-      raise "Don't know yet how to merge typed and non-typed selections" unless type == other_selection.type
+      raise "Don't know yet how to merge typed and non-typed selections" unless types == other_selection.types
 
       @fragments = fragments.merge(other_selection.fragments) { |k, o, n| o + n }
 
-      if type
+      if types
         @selections = selections.merge(other_selection.selections) do |t, o, n|
           o.merge!(n) do |k, o, n|
             o.merge!(n, fail_on_argument_difference: fail_on_argument_difference)

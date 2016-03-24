@@ -78,8 +78,6 @@ class InterfaceConnectionQuerySpec < PrelaySpec
     end
 
     it "should support returning a connection on an interface" do
-      skip
-
       execute_query <<-GRAPHQL
         query Query {
           connections {

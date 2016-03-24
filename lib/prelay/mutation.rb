@@ -113,7 +113,7 @@ module Prelay
                 if (id = ids.fetch(normalized){raise "Mutation #{to_s} returned a results hash without a '#{normalized}' key!"})
                   if result_field.association
                     entry_point = result_field.edge? ? :edge : :field
-                    resolver = RelayProcessor.new(selection, type: result_field.target_type, entry_point: entry_point).to_resolver
+                    resolver = RelayProcessor.new(selection, target_types: [result_field.target_type], entry_point: entry_point).to_resolver
                     record = resolver.resolve_singular{|ds| ds.where(id: id).order(Sequel.desc(:created_at))}
 
                     if result_field.edge?

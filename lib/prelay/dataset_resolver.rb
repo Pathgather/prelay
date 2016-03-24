@@ -168,9 +168,11 @@ module Prelay
         ds = scope.call(ds)
       end
 
-      ast.type.filters.each do |name, (type, block)|
-        if value = @arguments[name]
-          ds = block.call(ds, value)
+      ([type] + type.interfaces.keys.reverse).each do |filter_source|
+        filter_source.filters.each do |name, (type, block)|
+          if value = @arguments[name]
+            ds = block.call(ds, value)
+          end
         end
       end
 

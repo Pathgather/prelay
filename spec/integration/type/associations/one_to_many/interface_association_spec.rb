@@ -76,8 +76,6 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
   end
 
   it "should support fetching associated items through a one-to-many association to an interface when only a subset of types are necessary" do
-    skip
-
     assert_instance_of Prelay::Type::Association, ArtistType.associations.delete(:releases)
     ArtistType.one_to_many :releases, "Albums and Compilations released by the artist", order: :created_at, target: ReleaseInterface, foreign_key: :artist_id, target_types: [AlbumType]
 
@@ -133,7 +131,7 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
-      %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 200),
+      %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 200),
     ]
   end
 
