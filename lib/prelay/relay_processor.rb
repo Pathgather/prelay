@@ -3,20 +3,18 @@
 module Prelay
   class RelayProcessor
     attr_reader :ast
-    attr_accessor :current_type
 
     # The calling code should know if the field being passed in is a Relay
     # connection or edge call, so it must provide an :entry_point argument to
     # tell us how to start parsing.
     def initialize(input, type:, entry_point:)
+      @type = type
       @ast =
-        scope_type(type) do
-          case entry_point
-          when :field      then process_field(input)
-          when :connection then process_connection(input)
-          when :edge       then process_edge(input)
-          else raise "Unsupported entry_point: #{entry_point}"
-          end
+        case entry_point
+        when :field      then process_field(input)
+        when :connection then process_connection(input)
+        when :edge       then process_edge(input)
+        else raise "Unsupported entry_point: #{entry_point}"
         end
     end
 
@@ -53,7 +51,7 @@ module Prelay
         end
       end
 
-      selection.type = current_type
+      selection.type = @type
       selection
     end
 
@@ -71,14 +69,14 @@ module Prelay
         end
       end
 
-      selection.type = current_type
+      selection.type = @type
       selection
     end
 
     def process_field(selection)
       raise "Selection already typed! #{selection.inspect}" unless selection.type.nil?
 
-      type = current_type
+      type = @type
       selection.type = type
       selections_by_type = {}
       target_types.each {|t| selections_by_type[t] = deep_copy(selection.selections)}
@@ -111,13 +109,8 @@ module Prelay
             # We're cool.
             process_field(s)
           elsif association = type.associations[s.name]
-            scope_type(association.target_type) do
-              if association.returns_array?
-                process_connection(s)
-              else
-                process_field(s)
-              end
-            end
+            entry_point = association.returns_array? ? :connection : :field
+            self.class.new(s, type: association.target_type, entry_point: entry_point)
           else
             case s.name
             when :id
@@ -137,7 +130,7 @@ module Prelay
     end
 
     def target_types
-      types_for_type(current_type)
+      types_for_type(@type)
     end
 
     def types_for_type(type)
@@ -154,15 +147,6 @@ module Prelay
     # better handle on merging things.
     def deep_copy(thing)
       Marshal.load(Marshal.dump(thing))
-    end
-
-    # Super-simple scoping of the current type class as we walk the AST.
-    def scope_type(type)
-      previous_type = current_type
-      self.current_type = type
-      yield
-    ensure
-      self.current_type = previous_type
     end
   end
 end
