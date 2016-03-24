@@ -128,10 +128,12 @@ class NodeQuerySpec < PrelaySpec
       fuzzer = GraphQLFuzzer.new(source: AlbumType)
       graphql, fragments = fuzzer.graphql_and_fragments
 
-      execute_query <<-GRAPHQL
+      q = <<-GRAPHQL
         query Query { node(id: "#{id_for(album)}") { id, __typename, ... on Album { #{graphql} } } }
         #{fragments.join("\n")}
       GRAPHQL
+
+      execute_query(q)
 
       assert_result \
         'data' => {

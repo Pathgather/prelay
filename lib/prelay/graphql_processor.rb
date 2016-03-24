@@ -50,7 +50,7 @@ module Prelay
 
           new_attr = field_to_selection(thing)
 
-          if old_attr = selections[name] # TODO: Should this be key?
+          if old_attr = selections[key]
             # This field was already declared, so merge this selection with the
             # previous one. We don't yet support declaring the same field twice
             # with different arguments, so fail in that case.
@@ -71,6 +71,9 @@ module Prelay
             fragments.merge!(f) { |k,o,n| o + n }
             (fragments[type] ||= []) << s
           else
+            # Something like "ModelEdge", "ModelConnection", "PageInfo", or
+            # "Node". Whatever the contents, just throw them in with the main
+            # selections, though we could stand to be more rigorous here.
             parse_field_selections_and_fragments(fragment, selections: selections, fragments: fragments)
           end
         else
