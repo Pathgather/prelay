@@ -2,15 +2,13 @@
 
 module Prelay
   class RelayProcessor
-    attr_reader :ast, :types_to_skip
+    attr_reader :ast
     attr_accessor :current_type
 
     # The calling code should know if the field being passed in is a Relay
     # connection or edge call, so it must provide an :entry_point argument to
     # tell us how to start parsing.
-    def initialize(input, type:, types_to_skip: nil, entry_point:)
-      @types_to_skip = types_to_skip || EMPTY_ARRAY
-
+    def initialize(input, type:, entry_point:)
       @ast =
         scope_type(type) do
           case entry_point
@@ -139,7 +137,7 @@ module Prelay
     end
 
     def target_types
-      types_for_type(current_type) - types_to_skip
+      types_for_type(current_type)
     end
 
     def types_for_type(type)
