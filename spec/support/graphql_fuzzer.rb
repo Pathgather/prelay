@@ -165,8 +165,6 @@ class GraphQLFuzzer
     fields
   end
 
-  private
-
   def structure
     @structure ||=
       case entry_point
@@ -176,6 +174,8 @@ class GraphQLFuzzer
       else raise "Bad entry_point: #{entry_point.inspect}"
       end
   end
+
+  private
 
   def object_implements_type?(object, type)
     if type < Prelay::Type
@@ -287,13 +287,13 @@ class GraphQLFuzzer
   end
 
   def random_subset(things, &block)
-    number = (rand(things.length) * limiting_factor).round
+    number = ((rand(things.length) + 1) * limiting_factor).round
     number = 1 if number < 1
     things.sample(number).each(&block)
   end
 
   def random_superset(things, &block)
-    number = (rand(things.length) * rand * limiting_factor).round
+    number = ((rand(things.length) + 1) * rand * limiting_factor).round
     number = 0 if number < 0
     (things + things.sample(number)).shuffle.each(&block)
   end
