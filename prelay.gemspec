@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'graphql-relay',          '~> 0.7.0'
+  spec.add_dependency 'graphql-relay',          '~> 0.8.1'
   spec.add_dependency 'sequel',                 '~> 4.29'
   spec.add_dependency 'sequel-seek-pagination', '~> 0.2.1'
 
@@ -31,5 +31,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'pg',             '~> 0.18.4'
   spec.add_development_dependency 'pry'
   spec.add_development_dependency 'm'
-  spec.add_development_dependency 'graphql-libgraphqlparser', '~> 0.1.4'
+  spec.add_development_dependency 'graphql-libgraphqlparser', '~> 0.2.3'
 end
