@@ -100,6 +100,8 @@ module Prelay
 
         case @association_type
         when :many_to_one
+          return [@foreign_key] if @foreign_key
+
           if a
             [a.fetch(:key)]
           else
