@@ -12,10 +12,21 @@ module Prelay
     end
 
     def execute
-      mutate(@args)
+      before_mutate
+      result = mutate(@args)
+      after_mutate
+      result
     end
 
     private
+
+    def before_mutate
+      # To be overridden in subclasses as necessary.
+    end
+
+    def after_mutate
+      # To be overridden in subclasses as necessary.
+    end
 
     # TODO: Remove or test. GraphQLError is app-specific, at the very least.
     def attempt_save(object)
