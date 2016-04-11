@@ -13,7 +13,7 @@ require 'prelay/result_array'
 module Prelay
   class DatasetResolver
     ZERO_OR_ONE = 0..1
-    EMPTY_RESULT_ARRAY = ResultArray.new(EMPTY_ARRAY).freeze
+    EMPTY_RESULT_ARRAY = ResultArray.new(EMPTY_ARRAY).tap{|a| a.count = 0}.freeze
 
     attr_reader :ast
 
@@ -115,13 +115,14 @@ module Prelay
     end
 
     def resolve_via_association(association, ids)
-      return EMPTY_RESULT_ARRAY if ids.none?
+      return [EMPTY_RESULT_ARRAY, {}] if ids.none?
 
       block = association.sequel_association&.dig(:block)
       order = association.derived_order
       records = []
       remote_column = association.remote_columns.first # TODO: Multiple columns?
       overall_order = nil
+      counts = {}
 
       @types.each_key do |type|
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
@@ -141,6 +142,10 @@ module Prelay
         ds = block.call(ds) if block
         ds = ds.where(qualified_remote_column => ids)
 
+        if @ast.count_requested
+          counts = counts.merge(ds.unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count)))
+        end
+
         if ids.length > 1 && limit = ds.opts.delete(:limit)
           # Steal Sequel's technique for limiting eager-loaded associations with
           # a window function.
@@ -156,7 +161,7 @@ module Prelay
 
       sort_records_by_order(records, overall_order) if @types.length > 1
 
-      ResultArray.new(records)
+      [ResultArray.new(records), counts]
     end
 
     protected
@@ -282,11 +287,18 @@ module Prelay
 
         ids = results.map{|r| r.record.send(local_column)}.uniq
 
-        sub_records = dataset_resolver.resolve_via_association(association, ids)
+        sub_records, counts = dataset_resolver.resolve_via_association(association, ids)
         sub_records_hash = {}
 
         if association.returns_array?
-          sub_records.each { |r| (sub_records_hash[r.record.send(remote_column)] ||= ResultArray.new([])) << r }
+          sub_records.each do |r|
+            results_array = sub_records_hash[r.record.send(remote_column)] ||= ResultArray.new([])
+            results_array << r
+          end
+
+          counts.each do |id, count|
+            sub_records_hash[id].count = count
+          end
 
           results.each do |r|
             associated_records = sub_records_hash[r.record.send(local_column)] || ResultArray.new([])

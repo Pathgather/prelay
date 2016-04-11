@@ -92,47 +92,57 @@ module Prelay
         @graphql_object ||= begin
           type = self
 
-          ::GraphQL::ObjectType.define do
-            name(type.name.split('::').last.chomp('Type'))
-            description(type.description)
+          object =
+            ::GraphQL::ObjectType.define do
+              name(type.name.split('::').last.chomp('Type'))
+              description(type.description)
 
-            interfaces([type.schema.node_identification.interface] + type.interfaces.keys.map(&:graphql_object))
-            global_id_field :id
+              interfaces([type.schema.node_identification.interface] + type.interfaces.keys.map(&:graphql_object))
+              global_id_field :id
 
-            type.attributes.each_value do |attribute|
-              field attribute.name do
-                description(attribute.description)
-                type(attribute.graphql_type)
+              type.attributes.each_value do |attribute|
+                field attribute.name do
+                  description(attribute.description)
+                  type(attribute.graphql_type)
+                end
+              end
+
+              type.associations.each_value do |association|
+                if association.returns_array?
+                  connection association.name do
+                    type -> { association.graphql_type.connection_type }
+                    description(association.description)
+
+                    association.target_type.filters.each do |name, (type, _)|
+                      argument name, Query::Argument.new(nil, name, type).graphql_type
+                    end
+
+                    resolve -> (obj, args, ctx) {
+                      node = ctx.ast_node
+                      key = (node.alias || node.name).to_sym
+                      obj.associations.fetch(key) { raise "Association #{key} not loaded for #{obj.inspect}" }
+                    }
+                  end
+                else
+                  field association.name do
+                    description(association.description)
+                    type -> {
+                      t = association.graphql_type
+                      association.nullable ? t : t.to_non_null_type
+                    }
+                  end
+                end
               end
             end
 
-            type.associations.each_value do |association|
-              if association.returns_array?
-                connection association.name do
-                  type -> { association.graphql_type.connection_type }
-                  description(association.description)
-
-                  association.target_type.filters.each do |name, (type, _)|
-                    argument name, Query::Argument.new(nil, name, type).graphql_type
-                  end
-
-                  resolve -> (obj, args, ctx) {
-                    node = ctx.ast_node
-                    key = (node.alias || node.name).to_sym
-                    obj.associations.fetch(key) { raise "Association #{key} not loaded for #{obj.inspect}" }
-                  }
-                end
-              else
-                field association.name do
-                  description(association.description)
-                  type -> {
-                    t = association.graphql_type
-                    association.nullable ? t : t.to_non_null_type
-                  }
-                end
-              end
+          object.define_connection do
+            field :count do
+              type GraphQL::INT_TYPE
+              resolve -> (obj, args, ctx) { obj.count }
             end
           end
+
+          object
         end
       end
 

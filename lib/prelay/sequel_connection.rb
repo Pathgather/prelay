@@ -18,6 +18,10 @@ module Prelay
       Base64.strict_encode64(cursor.to_json)
     end
 
+    def count
+      object.count
+    end
+
     def sliced_nodes
       # This is where 'before' and 'after' options would be applied, but we did
       # that at the eager-loading level so there's nothing more to do here.

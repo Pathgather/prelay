@@ -4,6 +4,7 @@ module Prelay
   class Selection
     attr_accessor :name, :types, :selections, :metadata, :aliaz
     attr_reader :arguments, :fragments
+    attr_accessor :count_requested
 
     def initialize(name:, types: nil, aliaz: nil, arguments: EMPTY_HASH, selections: EMPTY_HASH, fragments: EMPTY_HASH, metadata: {})
       @name       = name

@@ -37,6 +37,7 @@ module Prelay
       end
 
       page_info = selection.selections.delete(:pageInfo)
+      count     = selection.selections.delete(:count)
 
       if edges = selection.selections.delete(:edges)
         process_edge(edges)
@@ -50,6 +51,10 @@ module Prelay
         target_types.each do |type|
           (selection.selections[type] ||= {})[:id] ||= Selection.new(name: :id, types: [type])
         end
+      end
+
+      if count
+        selection.count_requested = true
       end
 
       selection.types = target_types
