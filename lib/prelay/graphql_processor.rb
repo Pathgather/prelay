@@ -49,14 +49,16 @@ module Prelay
 
           new_attr = field_to_selection(thing)
 
-          if old_attr = selections[key]
-            # This field was already declared, so merge this selection with the
-            # previous one. We don't yet support declaring the same field twice
-            # with different arguments, so fail in that case.
-            old_attr.merge!(new_attr, fail_on_argument_difference: true) if old_attr != new_attr
-          else
-            selections[key] = new_attr
-          end
+          selections[key] =
+            if (old_attr = selections[key]) && old_attr != new_attr
+              # This field was already declared, so merge this selection with the
+              # previous one. We don't yet support declaring the same field twice
+              # with different arguments, so fail in that case.
+              old_attr.merge(new_attr, fail_on_argument_difference: true)
+            else
+              new_attr
+            end
+
         when GraphQL::Language::Nodes::InlineFragment
           type = @schema.type_for_name!(thing.type)
           s, f = parse_field_selections_and_fragments(thing)

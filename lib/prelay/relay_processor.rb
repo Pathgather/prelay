@@ -99,7 +99,7 @@ module Prelay
                 # This field was already declared, so merge this selection with the
                 # previous one. We don't yet support declaring the same field twice
                 # with different arguments, so fail in that case.
-                hash[key] = deep_copy(old_attr).merge!(deep_copy(new_attr), fail_on_argument_difference: true) if old_attr != new_attr
+                hash[key] = deep_copy(old_attr).merge(deep_copy(new_attr), fail_on_argument_difference: true) if old_attr != new_attr
               else
                 hash[key] = deep_copy(new_attr)
               end
