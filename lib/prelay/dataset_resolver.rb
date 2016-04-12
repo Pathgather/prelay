@@ -80,8 +80,9 @@ module Prelay
     def resolve
       records = []
       overall_order = nil
+      count = 0
 
-      @types.each_key do |type|
+      @types.each do |type, type_data|
         ds = type.model.dataset
         ds = yield(ds)
 
@@ -94,6 +95,8 @@ module Prelay
         overall_order ||= derived_order
         raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
 
+        count += ds.unordered.unlimited.count if type_data[:count_requested]
+
         records += results_for_dataset(ds, type: type)
       end
 
@@ -101,7 +104,9 @@ module Prelay
       # union is sorted as well.
       sort_records_by_order(records, overall_order) if @types.length > 1
 
-      ResultArray.new(records)
+      r = ResultArray.new(records)
+      r.count = count
+      r
     end
 
     def resolve_singular
