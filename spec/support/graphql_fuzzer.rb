@@ -52,6 +52,8 @@ class GraphQLFuzzer
       random_superset(structure.to_a) do |key, value|
         field_text =
           case key
+          when :count
+            "\n count "
           when :hasNextPage, :hasPreviousPage
             if rand < 0.2
               "\n pageInfo { #{new_fragment(key, type: "PageInfo", fragments: fragments)} } "
@@ -144,6 +146,7 @@ class GraphQLFuzzer
     when :connection
       structure.each do |key, value|
         case key
+        when :count           then fields['count'] = object.length
         when :hasNextPage     then (fields['pageInfo'] ||= {})['hasNextPage'] = object.length > 5
         when :hasPreviousPage then (fields['pageInfo'] ||= {})['hasPreviousPage'] = false
         when :edges           then fields['edges'] = object.first(5).map { |o| value.expected_json(object: o) }
@@ -250,7 +253,7 @@ class GraphQLFuzzer
     structure
   end
 
-  CONNECTION_KEYS = [:edges, :hasNextPage, :hasPreviousPage].freeze
+  CONNECTION_KEYS = [:count, :edges, :hasNextPage, :hasPreviousPage].freeze
 
   def fuzzed_structure_for_connection
     structure = {}
@@ -258,7 +261,7 @@ class GraphQLFuzzer
     random_subset(CONNECTION_KEYS) do |key|
       case key
       when :edges then structure[:edges] = new_fuzzer(:edge, @source)
-      when :hasNextPage, :hasPreviousPage then structure[key] = true
+      when :count, :hasNextPage, :hasPreviousPage then structure[key] = true
       else raise "Bad key: #{key}"
       end
     end
