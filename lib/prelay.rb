@@ -51,6 +51,7 @@ require 'prelay/schema'
 require 'prelay/graphql_processor'
 require 'prelay/graphql_selection'
 require 'prelay/relay_processor'
+require 'prelay/relay_selection'
 
 require 'prelay/dataset_resolver'
 require 'prelay/sequel_connection'
