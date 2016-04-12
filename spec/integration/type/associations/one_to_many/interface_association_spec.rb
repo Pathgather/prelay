@@ -142,5 +142,75 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
     ]
   end
 
-  it "should limit items appropriately"
+  it "should limit items appropriately" do
+    artist = Artist.first!
+
+    id = id_for(artist)
+
+    execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id,
+          ... on Artist {
+            first_name,
+            releases(first: 5) {
+              edges {
+                node {
+                  __typename,
+                  id,
+                  upvotes,
+                  ... on Album {
+                    name
+                  },
+                  ... on Compilation {
+                    high_quality
+                  },
+                }
+              }
+            }
+          }
+        }
+      }
+    GRAPHQL
+
+    assert_result \
+      'data' => {
+        'node' => {
+          'id' => id,
+          'first_name' => artist.first_name,
+          'releases' => {
+            'edges' => artist.releases.sort_by(&:created_at).first(5).map { |r|
+              {
+                'node' => (
+                  case r
+                  when Album
+                    {
+                      '__typename' => "Album",
+                      'id' => id_for(r),
+                      'upvotes' => r.upvotes,
+                      'name' => r.name,
+                    }
+                  when Compilation
+                    {
+                      '__typename' => "Compilation",
+                      'id' => id_for(r),
+                      'upvotes' => r.upvotes,
+                      'high_quality' => r.high_quality,
+                    }
+                  else
+                    raise "Bad!"
+                  end
+                )
+              }
+            }
+          }
+        }
+      }
+
+    assert_sqls [
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
+      %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 5),
+      %(SELECT "compilations"."id", "compilations"."upvotes", "compilations"."high_quality", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE ("compilations"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 5),
+    ]
+  end
 end

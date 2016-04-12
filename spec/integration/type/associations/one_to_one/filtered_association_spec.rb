@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-class FilteredOneToOneAssociationSpec < PrelaySpec
+class OneToOneFilteredAssociationSpec < PrelaySpec
   let(:album) { Album.first! }
   let(:first_track) { Track.first(number: 1, album: album) }
 

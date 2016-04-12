@@ -2,6 +2,6 @@
 
 require 'spec_helper'
 
-class SequencedMutationSpec < PrelaySpec
+class AssociationTraversingMutationSpec < PrelaySpec
   it "should support results that traverse deeply through associations"
 end

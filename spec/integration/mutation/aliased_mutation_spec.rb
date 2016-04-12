@@ -2,6 +2,6 @@
 
 require 'spec_helper'
 
-class SequencedMutationSpec < PrelaySpec
+class AliasedMutationSpec < PrelaySpec
   it "should support returning mutation results under aliases"
 end

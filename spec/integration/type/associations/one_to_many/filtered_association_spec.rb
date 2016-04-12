@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-class FilteredOneToManyAssociationSpec < PrelaySpec
+class OneToManyFilteredAssociationSpec < PrelaySpec
   let(:album) { Album.first! }
 
   it "should support fetching associated items through a filtered one-to-many association" do
