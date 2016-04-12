@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Prelay
-  class Selection
+  class GraphQLSelection
     attr_accessor :name, :types, :selections, :metadata, :aliaz
     attr_reader :arguments, :fragments
 

@@ -26,13 +26,14 @@ module Prelay
     def field_to_selection(field)
       selections, fragments = parse_field_selections_and_fragments(field)
 
-      selection =
-        Selection.new name:       field.name.to_sym,
-                      aliaz:      field.alias&.to_sym,
-                      types:      nil,
-                      arguments:  arguments_from_field(field),
-                      selections: selections,
-                      fragments:  fragments
+      GraphQLSelection.new(
+        name:       field.name.to_sym,
+        aliaz:      field.alias&.to_sym,
+        types:      nil,
+        arguments:  arguments_from_field(field),
+        selections: selections,
+        fragments:  fragments,
+      )
     end
 
     def arguments_from_field(field)

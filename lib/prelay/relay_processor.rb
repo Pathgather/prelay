@@ -49,7 +49,7 @@ module Prelay
         selection.metadata[:has_previous_page] = true if page_info.selections[:hasPreviousPage]
 
         target_types.each do |type|
-          (selection.selections[type] ||= {})[:id] ||= Selection.new(name: :id, types: [type])
+          (selection.selections[type] ||= {})[:id] ||= GraphQLSelection.new(name: :id, types: [type])
         end
       end
 
@@ -71,7 +71,7 @@ module Prelay
 
       if cursor
         target_types.each do |type|
-          (selection.selections[type] ||= {})[:cursor] ||= Selection.new(name: :cursor, types: [type])
+          (selection.selections[type] ||= {})[:cursor] ||= GraphQLSelection.new(name: :cursor, types: [type])
         end
       end
 
