@@ -14,18 +14,5 @@ module Prelay
       @fragments  = fragments
       @metadata   = metadata
     end
-
-    # def initialize(graphql, type:)
-    #   @graphql = graphql
-    #   @type    = type
-
-    #   s = graphql.selections
-
-    #   (graphql.fragments[type] || EMPTY_ARRAY).each do |fragment_selections|
-    #     s = s.merge(fragment_selections)
-    #   end
-
-    #   @selections = s
-    # end
   end
 end
