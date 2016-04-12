@@ -54,7 +54,7 @@ module Prelay
               # This field was already declared, so merge this selection with the
               # previous one. We don't yet support declaring the same field twice
               # with different arguments, so fail in that case.
-              old_attr.merge(new_attr, fail_on_argument_difference: true)
+              old_attr.merge(new_attr)
             else
               new_attr
             end
