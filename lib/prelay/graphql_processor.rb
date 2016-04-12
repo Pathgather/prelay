@@ -4,8 +4,6 @@ module Prelay
   class GraphQLProcessor
     attr_reader :ast
 
-    # TODO: Remove this default for schema, since it shouldn't be an external
-    # API for long.
     def initialize(input, fragments: nil, schema: Prelay.primary_schema)
       case input
       when GraphQL::Query::Context

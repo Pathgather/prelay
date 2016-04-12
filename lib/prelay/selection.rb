@@ -4,7 +4,6 @@ module Prelay
   class Selection
     attr_accessor :name, :types, :selections, :metadata, :aliaz
     attr_reader :arguments, :fragments
-    attr_accessor :count_requested
 
     def initialize(name:, types: nil, aliaz: nil, arguments: EMPTY_HASH, selections: EMPTY_HASH, fragments: EMPTY_HASH, metadata: {})
       @name       = name
@@ -29,26 +28,15 @@ module Prelay
     # Merges together two selections. Is recursive, so also merges
     # subselections, and their subselections, and...
     def merge!(other_selection, fail_on_argument_difference:)
-      if fail_on_argument_difference && (arguments != other_selection.arguments)
-        raise Error, "Query invokes the same field twice with different arguments"
-      end
-
-      return other_selection if frozen?
-
-      raise "Don't know yet how to merge typed and non-typed selections" unless types == other_selection.types
+      raise Error, "Query invokes the same field twice with different arguments" if fail_on_argument_difference && (arguments != other_selection.arguments)
+      raise Error, "Can't merge selections on different fields" if name != other_selection.name
+      raise Error, "Don't know yet how to merge typed selections" if types || other_selection.types
+      raise Error, "Don't know yet how to merge selections with metadata" if metadata.any? || other_selection.metadata.any?
 
       @fragments = fragments.merge(other_selection.fragments) { |k, o, n| o + n }
 
-      if types
-        @selections = selections.merge(other_selection.selections) do |t, o, n|
-          o.merge!(n) do |k, o, n|
-            o.merge!(n, fail_on_argument_difference: fail_on_argument_difference)
-          end
-        end
-      else
-        @selections = selections.merge(other_selection.selections) do |k, o, n|
-          o.merge!(n, fail_on_argument_difference: fail_on_argument_difference)
-        end
+      @selections = selections.merge(other_selection.selections) do |k, o, n|
+        o.merge!(n, fail_on_argument_difference: fail_on_argument_difference)
       end
 
       self

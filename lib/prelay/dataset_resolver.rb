@@ -23,7 +23,7 @@ module Prelay
       @arguments = ast.arguments
       @metadata  = ast.metadata
 
-      if ast.count_requested
+      if @metadata[:count_requested]
         ast.types.each do |type|
           type_data = @types[type] ||= {}
           type_data[:count_requested] = true

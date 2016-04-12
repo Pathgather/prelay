@@ -15,7 +15,7 @@ module Prelay
         when :field      then process_field(input)
         when :connection then process_connection(input)
         when :edge       then process_edge(input)
-        else raise "Unsupported entry_point: #{entry_point}"
+        else raise Error, "Unsupported entry_point: #{entry_point}"
         end
     end
 
@@ -54,7 +54,7 @@ module Prelay
       end
 
       if count
-        selection.count_requested = true
+        selection.metadata[:count_requested] = true
       end
 
       selection.types = target_types
@@ -80,7 +80,7 @@ module Prelay
     end
 
     def process_field(selection)
-      raise "Selection already typed! #{selection.inspect}" unless selection.types.nil?
+      raise Error, "Selection already typed! #{selection.inspect}" unless selection.types.nil?
 
       selection.types = target_types
       selections_by_type = {}
@@ -140,7 +140,7 @@ module Prelay
       elsif type < Interface
         type.types
       else
-        raise "Unexpected type: #{type}"
+        raise Error, "Unexpected type: #{type}"
       end
     end
 
