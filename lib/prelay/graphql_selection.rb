@@ -2,12 +2,11 @@
 
 module Prelay
   class GraphQLSelection
-    attr_accessor :name, :types, :selections, :metadata, :aliaz
+    attr_accessor :name, :selections, :metadata, :aliaz
     attr_reader :arguments, :fragments
 
-    def initialize(name:, types: nil, aliaz: nil, arguments: EMPTY_HASH, selections: EMPTY_HASH, fragments: EMPTY_HASH, metadata: {})
+    def initialize(name:, aliaz: nil, arguments: EMPTY_HASH, selections: EMPTY_HASH, fragments: EMPTY_HASH, metadata: {})
       @name       = name
-      @types      = types
       @aliaz      = aliaz
       @arguments  = arguments
       @selections = selections
@@ -18,7 +17,6 @@ module Prelay
     def ==(other)
       self.class      == other.class &&
       self.name       == other.name &&
-      self.types      == other.types &&
       self.arguments  == other.arguments &&
       self.selections == other.selections &&
       self.fragments  == other.fragments &&
@@ -30,12 +28,10 @@ module Prelay
     def merge(other_selection)
       raise Error, "Query invokes the same field twice with different arguments" if arguments != other_selection.arguments
       raise Error, "Can't merge selections on different fields" if name != other_selection.name
-      raise Error, "Don't know yet how to merge typed selections" if types || other_selection.types
       raise Error, "Don't know yet how to merge selections with metadata" if metadata.any? || other_selection.metadata.any?
 
       self.class.new(
         name: name,
-        types: nil,
         aliaz: aliaz,
         arguments: arguments.merge(other_selection.arguments),
         selections: selections.merge(other_selection.selections) { |k, o, n| o.merge(n) },
