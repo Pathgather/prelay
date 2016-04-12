@@ -15,6 +15,7 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
           ... on Artist {
             first_name,
             releases(first: 200) {
+              count
               edges {
                 node {
                   __typename,
@@ -40,6 +41,7 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
           'id' => id,
           'first_name' => artist.first_name,
           'releases' => {
+            'count' => artist.releases.count,
             'edges' => artist.releases.map { |r|
               {
                 'node' => (
@@ -70,7 +72,9 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
+      %(SELECT "artist_id", count(*) AS "count" FROM (SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}'))) AS "t1" GROUP BY "artist_id"),
       %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 200),
+      %(SELECT "artist_id", count(*) AS "count" FROM (SELECT "compilations"."id", "compilations"."upvotes", "compilations"."high_quality", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE ("compilations"."artist_id" IN ('#{artist.id}'))) AS "t1" GROUP BY "artist_id"),
       %(SELECT "compilations"."id", "compilations"."upvotes", "compilations"."high_quality", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE ("compilations"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 200),
     ]
   end
@@ -90,6 +94,7 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
           ... on Artist {
             first_name,
             releases(first: 200) {
+              count
               edges {
                 node {
                   __typename,
@@ -115,6 +120,7 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
           'id' => id,
           'first_name' => artist.first_name,
           'releases' => {
+            'count' => artist.albums.count,
             'edges' => artist.albums.map { |a|
               {
                 'node' => {
@@ -131,6 +137,7 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
+      %(SELECT "artist_id", count(*) AS "count" FROM (SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}'))) AS "t1" GROUP BY "artist_id"),
       %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 200),
     ]
   end

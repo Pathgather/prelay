@@ -150,7 +150,8 @@ module Prelay
         ds = ds.where(qualified_remote_column => ids)
 
         if type_data[:count_requested]
-          counts = counts.merge(ds.unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count)))
+          more_counts = ds.unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
+          counts = counts.merge(more_counts) { |k,o,n| o + n }
         end
 
         if ids.length > 1 && limit = ds.opts.delete(:limit)

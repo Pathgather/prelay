@@ -60,50 +60,60 @@ module Prelay
         @graphql_object ||= begin
           interface = self
 
-          ::GraphQL::InterfaceType.define do
-            name(interface.name.split('::').last.chomp('Interface'))
-            description(interface.description)
+          object =
+            ::GraphQL::InterfaceType.define do
+              name(interface.name.split('::').last.chomp('Interface'))
+              description(interface.description)
 
-            id_field = GraphQL::Relay::GlobalIdField.new(nil)
-            id_field.resolve = -> (obj, args, ctx) {
-              # It's necessary to include an id field on the interface, so that
-              # queries can request it, but the actual calculation of the id
-              # will fall to the Node interface, so this should never be called.
-              raise "Shouldn't get here! If we do we want to test it better!"
-            }
-            field :id, field: id_field
+              id_field = GraphQL::Relay::GlobalIdField.new(nil)
+              id_field.resolve = -> (obj, args, ctx) {
+                # It's necessary to include an id field on the interface, so that
+                # queries can request it, but the actual calculation of the id
+                # will fall to the Node interface, so this should never be called.
+                raise "Shouldn't get here! If we do we want to test it better!"
+              }
+              field :id, field: id_field
 
-            resolve_type -> (object) { interface.schema.type_for_model!(object.record.class).graphql_object }
+              resolve_type -> (object) { interface.schema.type_for_model!(object.record.class).graphql_object }
 
-            interface.attributes.each_value do |attribute|
-              field attribute.name do
-                description(attribute.description)
-                type(attribute.graphql_type)
+              interface.attributes.each_value do |attribute|
+                field attribute.name do
+                  description(attribute.description)
+                  type(attribute.graphql_type)
+                end
+              end
+
+              interface.associations.each_value do |association|
+                if association.returns_array?
+                  connection association.name do
+                    type -> { association.graphql_type.connection_type }
+                    description(association.description)
+                    resolve -> (obj, args, ctx) {
+                      node = ctx.ast_node
+                      key = (node.alias || node.name).to_sym
+                      obj.associations.fetch(key) { raise "Association #{key} not loaded for #{obj.inspect}" }
+                    }
+                  end
+                else
+                  field association.name do
+                    description(association.description)
+                    type -> {
+                      t = association.graphql_type
+                      association.nullable ? t : t.to_non_null_type
+                    }
+                  end
+                end
               end
             end
 
-            interface.associations.each_value do |association|
-              if association.returns_array?
-                connection association.name do
-                  type -> { association.graphql_type.connection_type }
-                  description(association.description)
-                  resolve -> (obj, args, ctx) {
-                    node = ctx.ast_node
-                    key = (node.alias || node.name).to_sym
-                    obj.associations.fetch(key) { raise "Association #{key} not loaded for #{obj.inspect}" }
-                  }
-                end
-              else
-                field association.name do
-                  description(association.description)
-                  type -> {
-                    t = association.graphql_type
-                    association.nullable ? t : t.to_non_null_type
-                  }
-                end
-              end
+          object.define_connection do
+            field :count do
+              type GraphQL::INT_TYPE
+              resolve -> (obj, args, ctx) { obj.count }
             end
           end
+
+          object
         end
       end
     end
