@@ -2,6 +2,10 @@
 
 module Prelay
   class ResultArray < DelegateClass(Array)
-    attr_accessor :count
+    attr_writer :count
+
+    def count
+      @count || 0
+    end
   end
 end

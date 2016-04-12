@@ -13,7 +13,7 @@ require 'prelay/result_array'
 module Prelay
   class DatasetResolver
     ZERO_OR_ONE = 0..1
-    EMPTY_RESULT_ARRAY = ResultArray.new(EMPTY_ARRAY).tap{|a| a.count = 0}.freeze
+    EMPTY_RESULT_ARRAY = ResultArray.new(EMPTY_ARRAY).freeze
 
     attr_reader :ast
 
@@ -22,6 +22,13 @@ module Prelay
       @types     = {}
       @arguments = ast.arguments
       @metadata  = ast.metadata
+
+      if ast.count_requested
+        ast.types.each do |type|
+          type_data = @types[type] ||= {}
+          type_data[:count_requested] = true
+        end
+      end
 
       ast.selections.each do |type, selections|
         type_data    = @types[type] ||= {}
@@ -124,7 +131,7 @@ module Prelay
       overall_order = nil
       counts = {}
 
-      @types.each_key do |type|
+      @types.each do |type, type_data|
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
 
         ds = type.model.dataset
@@ -142,7 +149,7 @@ module Prelay
         ds = block.call(ds) if block
         ds = ds.where(qualified_remote_column => ids)
 
-        if @ast.count_requested
+        if type_data[:count_requested]
           counts = counts.merge(ds.unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count)))
         end
 
@@ -181,7 +188,7 @@ module Prelay
         end
       end
 
-      columns = @types[type][:columns] + supplemental_columns
+      columns = (@types[type][:columns] || EMPTY_ARRAY) + supplemental_columns
       columns.uniq!
 
       if columns.delete(:cursor)
@@ -197,9 +204,11 @@ module Prelay
         columns << Sequel.as(exp, :cursor)
       end
 
-      selections = ds.opts[:select] || EMPTY_ARRAY
+      selections = (ds.opts[:select] || EMPTY_ARRAY) + columns.map{|c| qualify_column(table_name, c)}
 
-      ds = ds.select(*(selections + columns.map{|c| qualify_column(table_name, c)}))
+      if selections.count > 0
+        ds = ds.select(*selections)
+      end
 
       if limit = @arguments[:first] || @arguments[:last]
         ds = ds.reverse_order if @arguments[:last]
@@ -280,7 +289,7 @@ module Prelay
     def process_associations_for_results(results, type:)
       return if results.empty?
 
-      @types[type][:associations].each do |key, (association, dataset_resolver)|
+      (@types[type][:associations] || EMPTY_ARRAY).each do |key, (association, dataset_resolver)|
         # TODO: Figure out what it means to have multiple columns here.
         local_column  = association.local_columns.first
         remote_column = association.remote_columns.first

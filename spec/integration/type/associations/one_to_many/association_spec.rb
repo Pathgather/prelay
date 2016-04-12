@@ -3,7 +3,8 @@
 require 'spec_helper'
 
 class OneToManyAssociationSpec < PrelaySpec
-  let(:album) { Album.first! }
+  let(:album)  { Album.first! }
+  let(:artist) { album.artist }
 
   it "should support fetching associated items through a one-to-many association" do
     id = id_for(album)

@@ -15,6 +15,7 @@ class FilteredOneToManyAssociationSpec < PrelaySpec
           ... on Album {
             name,
             first_five_tracks(first: 50) {
+              count
               edges {
                 node {
                   id,
@@ -33,6 +34,7 @@ class FilteredOneToManyAssociationSpec < PrelaySpec
           'id' => id,
           'name' => album.name,
           'first_five_tracks' => {
+            'count' => 5,
             'edges' => album.tracks_dataset.where(number: 1..5).map { |track|
               {
                 'node' => {
@@ -47,7 +49,8 @@ class FilteredOneToManyAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."album_id" IN ('#{album.id}'))) ORDER BY "created_at" LIMIT 50)
+      %(SELECT "album_id", count(*) AS "count" FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."album_id" IN ('#{album.id}')))) AS "t1" GROUP BY "album_id"),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."album_id" IN ('#{album.id}'))) ORDER BY "created_at" LIMIT 50),
     ]
   end
 
@@ -63,6 +66,7 @@ class FilteredOneToManyAssociationSpec < PrelaySpec
           ... on Album {
             name,
             first_five_tracks(first: 50) {
+              count
               edges {
                 node {
                   id,
@@ -81,6 +85,7 @@ class FilteredOneToManyAssociationSpec < PrelaySpec
           'id' => id,
           'name' => album.name,
           'first_five_tracks' => {
+            'count' => 0,
             'edges' => []
           }
         }
@@ -88,7 +93,8 @@ class FilteredOneToManyAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."album_id" IN ('#{album.id}'))) ORDER BY "created_at" LIMIT 50)
+      %(SELECT "album_id", count(*) AS "count" FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."album_id" IN ('#{album.id}')))) AS "t1" GROUP BY "album_id"),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."album_id" IN ('#{album.id}'))) ORDER BY "created_at" LIMIT 50),
     ]
   end
 end
