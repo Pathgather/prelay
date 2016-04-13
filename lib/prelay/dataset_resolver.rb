@@ -155,7 +155,12 @@ module Prelay
         ds = ds.where(qualified_remote_column => ids)
 
         if type_data[:count_requested]
-          more_counts = ds.unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
+          count_ds = type.model.dataset.order(order)
+          count_ds = apply_query_to_dataset(count_ds, type: type, apply_pagination: false, supplemental_columns: supplemental_columns)
+          count_ds = block.call(count_ds) if block
+          count_ds = count_ds.where(qualified_remote_column => ids)
+
+          more_counts = count_ds.unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
           counts = counts.merge(more_counts) { |k,o,n| o + n }
         end
 
@@ -180,7 +185,7 @@ module Prelay
 
     protected
 
-    def apply_query_to_dataset(ds, type:, supplemental_columns: EMPTY_ARRAY)
+    def apply_query_to_dataset(ds, type:, apply_pagination: true, supplemental_columns: EMPTY_ARRAY)
       table_name = ds.model.table_name
 
       if scope = type.dataset_scope
@@ -217,7 +222,7 @@ module Prelay
         ds = ds.select(*selections)
       end
 
-      if limit = @arguments[:first] || @arguments[:last]
+      if apply_pagination && (limit = @arguments[:first] || @arguments[:last])
         ds = ds.reverse_order if @arguments[:last]
 
         # If has_next_page or has_previous_page was requested, bump the limit

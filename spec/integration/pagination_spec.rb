@@ -89,6 +89,7 @@ class PaginationSpec < PrelaySpec
                               ... on Artist {
                                 first_name,
                                 #{paginating_through_interface ? 'releases' : 'albums'}(#{graphql_args(args)}) {
+                                  count
                                   edges {
                                     #{'cursor,' if cursor_requested}
                                     node {
@@ -106,6 +107,7 @@ class PaginationSpec < PrelaySpec
                       execute_query(graphql)
 
                       expectation = {
+                        'count' => all_albums.length,
                         'edges' => expected_albums.map { |a|
                           h = {'node' => {'id' => id_for(a), 'name' => a.name}}
                           h['cursor'] = to_cursor(a.created_at) if cursor_requested
