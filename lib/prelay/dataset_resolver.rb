@@ -159,10 +159,11 @@ module Prelay
           counts = counts.merge(more_counts) { |k,o,n| o + n }
         end
 
-        if ids.length > 1 && limit = ds.opts.delete(:limit)
+        if ids.length > 1 && limit = ds.opts[:limit]
           # Steal Sequel's technique for limiting eager-loaded associations with
           # a window function.
           ds = ds.
+                unlimited.
                 unordered.
                 select_append(Sequel.function(:row_number).over(partition: qualified_remote_column, order: ds.opts[:order]).as(:prelay_row_number)).
                 from_self.
