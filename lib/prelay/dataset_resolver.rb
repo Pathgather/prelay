@@ -95,7 +95,13 @@ module Prelay
         overall_order ||= derived_order
         raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
 
-        count += ds.unordered.unlimited.count if type_data[:count_requested]
+        if type_data[:count_requested]
+          count_ds = type.model.dataset
+          count_ds = yield(count_ds)
+          count_ds = apply_query_to_dataset(count_ds, type: type, apply_pagination: false, supplemental_columns: supplemental_columns)
+
+          count += count_ds.unordered.unlimited.count if type_data[:count_requested]
+        end
 
         records += results_for_dataset(ds, type: type)
       end
