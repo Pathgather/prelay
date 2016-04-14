@@ -74,7 +74,10 @@ module Prelay
               }
               field :id, field: id_field
 
-              resolve_type -> (object) { interface.schema.type_for_model!(object.record.class).graphql_object }
+              resolve_type -> (object) {
+                object = interface.schema.type_for_model!(object.record.class).graphql_object
+                object if possible_types.include?(object)
+              }
 
               interface.attributes.each_value do |attribute|
                 field attribute.name do
