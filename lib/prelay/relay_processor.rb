@@ -58,7 +58,7 @@ module Prelay
         metadata[:count_requested] = true
       end
 
-      RelaySelection.new(
+      RelaySelection::ConnectionSelection.new(
         name: selection.name,
         types: target_types,
         aliaz: selection.aliaz,
@@ -83,7 +83,7 @@ module Prelay
         end
       end
 
-      RelaySelection.new(
+      RelaySelection::EdgeSelection.new(
         name: selection.name,
         types: target_types,
         aliaz: selection.aliaz,
@@ -133,7 +133,7 @@ module Prelay
         end
       end
 
-      RelaySelection.new(
+      RelaySelection::FieldSelection.new(
         name: selection.name,
         types: target_types,
         aliaz: selection.aliaz,
