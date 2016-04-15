@@ -26,20 +26,20 @@ module Prelay
     private
 
     def process_connection(selection)
-      # It's against the Relay spec for connections to be invoked without either
-      # a 'first' or 'last' argument, but since the gem doesn't stop it from
-      # happening, throw an error when/if that happens, just to be safe. If we
-      # want to support that at some point (allowing the client to load all
-      # records in a connection) we could, but that behavior should be thought
-      # through, and a limit should probably still be applied to prevent abuse.
-      unless selection.arguments[:first] || selection.arguments[:last]
-        raise Error, "Tried to access the connection '#{selection.name}' without a 'first' or 'last' argument."
-      end
-
       metadata = {}
 
       selections =
         if edges = selection.selections[:edges]
+          # It's against the Relay spec to request edges on connections
+          # without either a 'first' or 'last' argument, but since the gem
+          # doesn't stop it from happening, throw an error when/if that
+          # happens, just to be safe. If we want to support that at some point
+          # (allowing the client to load all records in a connection) we
+          # could, but that behavior should be thought through, and a limit
+          # should probably still be applied to prevent abuse.
+          unless selection.arguments[:first] || selection.arguments[:last]
+            raise Error, "Tried to access the connection '#{selection.name}' without a 'first' or 'last' argument."
+          end
           process_edge(edges).selections
         else
           {}
