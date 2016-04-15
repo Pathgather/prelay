@@ -43,7 +43,6 @@ module Prelay
           aliaz: selection.aliaz,
           arguments: selection.arguments,
           selections: selections,
-          fragments: selection.fragments,
           metadata: metadata,
         )
       end

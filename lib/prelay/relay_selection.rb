@@ -2,10 +2,9 @@
 
 module Prelay
   class RelaySelection
-    attr_reader :type, :selections, :graphql
-    attr_reader :arguments, :metadata, :name, :aliaz, :fragments
+    attr_reader :name, :type, :aliaz, :arguments, :selections, :metadata
 
-    def initialize(name:, type:, aliaz: nil, arguments: EMPTY_HASH, selections: EMPTY_HASH, fragments: EMPTY_HASH, metadata: {})
+    def initialize(name:, type:, aliaz: nil, arguments: EMPTY_HASH, selections: EMPTY_HASH, metadata: {})
       raise "RelaySelection initialized with a bad type: #{type.class}" unless type < Type
 
       @name       = name
@@ -13,7 +12,6 @@ module Prelay
       @aliaz      = aliaz
       @arguments  = arguments
       @selections = selections
-      @fragments  = fragments
       @metadata   = metadata
     end
   end
