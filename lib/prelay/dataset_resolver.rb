@@ -53,7 +53,7 @@ module Prelay
       sort_records_by_order(records, overall_order) if @types.length > 1
 
       r = ResultArray.new(records)
-      r.count = count
+      r.total_count = count
       r
     end
 
@@ -269,7 +269,7 @@ module Prelay
           end
 
           counts.each do |id, count|
-            sub_records_hash[id].count = count
+            sub_records_hash[id].total_count = count
           end
 
           results.each do |r|

@@ -112,7 +112,7 @@ module Prelay
           object.define_connection do
             field :count do
               type GraphQL::INT_TYPE
-              resolve -> (obj, args, ctx) { obj.count }
+              resolve -> (obj, args, ctx) { obj.total_count }
             end
           end
 

@@ -18,8 +18,8 @@ module Prelay
       Base64.strict_encode64(cursor.to_json)
     end
 
-    def count
-      object.count
+    def total_count
+      object.total_count
     end
 
     def sliced_nodes
