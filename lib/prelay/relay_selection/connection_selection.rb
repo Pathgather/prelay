@@ -4,7 +4,9 @@ module Prelay
   class RelaySelection
     class ConnectionSelection < self
 
-      def initialize(selection, target_types:)
+      def initialize(selection, type:)
+        raise Error, "Expected a GraphQLSelection, got a #{selection.class}" unless selection.is_a?(GraphQLSelection)
+
         metadata = {}
 
         selections =
@@ -19,7 +21,7 @@ module Prelay
             unless selection.arguments[:first] || selection.arguments[:last]
               raise Error, "Tried to access the connection '#{selection.name}' without a 'first' or 'last' argument."
             end
-            EdgeSelection.new(edges, target_types: target_types).selections
+            EdgeSelection.new(edges, type: type).selections
           else
             {}
           end
@@ -28,9 +30,7 @@ module Prelay
           metadata[:has_next_page]     = true if page_info.selections[:hasNextPage]
           metadata[:has_previous_page] = true if page_info.selections[:hasPreviousPage]
 
-          target_types.each do |type|
-            (selections[type] ||= {})[:id] ||= RelaySelection.new(name: :id, types: [type])
-          end
+          selections[:id] ||= RelaySelection.new(name: :id, type: type)
         end
 
         if selection.selections[:count]
@@ -39,7 +39,7 @@ module Prelay
 
         super(
           name: selection.name,
-          types: target_types,
+          type: type,
           aliaz: selection.aliaz,
           arguments: selection.arguments,
           selections: selections,

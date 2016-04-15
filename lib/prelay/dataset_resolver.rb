@@ -17,27 +17,29 @@ module Prelay
 
     attr_reader :ast
 
-    def initialize(ast:)
-      @ast       = ast
-      @types     = {}
-      @arguments = ast.arguments
-      @metadata  = ast.metadata
+    def initialize(selections_by_type:)
+      @selections_by_type = selections_by_type
+      @types = {}
 
-      if @metadata[:count_requested]
-        ast.types.each do |type|
-          type_data = @types[type] ||= {}
-          type_data[:count_requested] = true
-        end
-      end
-
-      ast.selections.each do |type, selections|
+      @selections_by_type.each do |type, ast|
         type_data    = @types[type] ||= {}
         columns      = type_data[:columns] ||= []
         associations = type_data[:associations] ||= {}
 
+        type_data[:ast] = ast
+
+        if ast.metadata[:count_requested]
+          type_data[:count_requested] = true
+        end
+
         fields = {}
-        selections.each do |key, selection|
-          name = selection.name
+        ast.selections.each do |key, selection|
+          name = case selection
+                 when RelaySelection then selection.name
+                 when RelayProcessor then selection.input.name
+                 else raise "Unsupported selection class: #{selection.class}"
+                 end
+
           fields[name] ||= []
           fields[name] << selection
         end
@@ -64,9 +66,9 @@ module Prelay
         type.associations.each do |name, association|
           if selections = fields.delete(name)
             selections.each do |selection|
-              key = selection.aliaz || selection.name
+              key = selection.input.aliaz || selection.input.name
               columns.push *association.local_columns
-              associations[key] = [association, self.class.new(ast: selection)]
+              associations[key] = [association, selection]
             end
           end
         end
@@ -192,6 +194,10 @@ module Prelay
     protected
 
     def apply_query_to_dataset(ds, type:, apply_pagination: true, supplemental_columns: EMPTY_ARRAY)
+      type_data = @types.fetch(type)
+      arguments = type_data.fetch(:ast).arguments
+      metadata  = type_data.fetch(:ast).metadata
+
       table_name = ds.model.table_name
 
       if scope = type.dataset_scope
@@ -200,13 +206,13 @@ module Prelay
 
       ([type] + type.interfaces.keys.reverse).each do |filter_source|
         filter_source.filters.each do |name, (type, block)|
-          if value = @arguments[name]
+          if value = arguments[name]
             ds = block.call(ds, value)
           end
         end
       end
 
-      columns = (@types[type][:columns] || EMPTY_ARRAY) + supplemental_columns
+      columns = (type_data[:columns] || EMPTY_ARRAY) + supplemental_columns
       columns.uniq!
 
       if columns.delete(:cursor)
@@ -228,15 +234,15 @@ module Prelay
         ds = ds.select(*selections)
       end
 
-      if apply_pagination && (limit = @arguments[:first] || @arguments[:last])
-        ds = ds.reverse_order if @arguments[:last]
+      if apply_pagination && (limit = arguments[:first] || arguments[:last])
+        ds = ds.reverse_order if arguments[:last]
 
         # If has_next_page or has_previous_page was requested, bump the limit
         # by one so we know whether there's another page coming up.
-        limit += 1 if @metadata[:has_next_page] || @metadata[:has_previous_page]
+        limit += 1 if metadata[:has_next_page] || metadata[:has_previous_page]
 
         ds =
-          if cursor = @arguments[:after] || @arguments[:before]
+          if cursor = arguments[:after] || arguments[:before]
             values = JSON.parse(Base64.decode64(cursor))
 
             expressions = ds.opts[:order].zip(values).map do |o, v|
@@ -307,14 +313,14 @@ module Prelay
     def process_associations_for_results(results, type:)
       return if results.empty?
 
-      (@types[type][:associations] || EMPTY_ARRAY).each do |key, (association, dataset_resolver)|
+      (@types[type][:associations] || EMPTY_ARRAY).each do |key, (association, relay_processor)|
         # TODO: Figure out what it means to have multiple columns here.
         local_column  = association.local_columns.first
         remote_column = association.remote_columns.first
 
         ids = results.map{|r| r.record.send(local_column)}.uniq
 
-        sub_records, counts = dataset_resolver.resolve_via_association(association, ids)
+        sub_records, counts = relay_processor.to_resolver.resolve_via_association(association, ids)
         sub_records_hash = {}
 
         if association.returns_array?

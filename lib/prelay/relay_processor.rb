@@ -2,14 +2,13 @@
 
 module Prelay
   class RelayProcessor
-    attr_reader :ast, :target_types
+    attr_reader :input
 
     # The calling code should know if the field being passed in is a Relay
     # connection or edge call, so it must provide an :entry_point argument to
     # tell us how to start parsing.
     def initialize(input, target_types:, entry_point:)
-      target_types = target_types.map(&:covered_types).flatten.uniq
-
+      @input = input
       klass = case entry_point
               when :field      then RelaySelection::FieldSelection
               when :connection then RelaySelection::ConnectionSelection
@@ -17,11 +16,15 @@ module Prelay
               else raise Error, "Unsupported entry_point: #{entry_point}"
               end
 
-      @ast = klass.new(input, target_types: target_types)
+      @selections_by_type = {}
+
+      target_types.map(&:covered_types).flatten.uniq.each do |target_type|
+        @selections_by_type[target_type] = klass.new(input, type: target_type)
+      end
     end
 
     def to_resolver
-      DatasetResolver.new(ast: @ast)
+      DatasetResolver.new(selections_by_type: @selections_by_type)
     end
   end
 end

@@ -3,23 +3,23 @@
 module Prelay
   class RelaySelection
     class EdgeSelection < self
-      def initialize(selection, target_types:)
+      def initialize(selection, type:)
+        raise Error, "Expected a GraphQLSelection, got a #{selection.class}" unless selection.is_a?(GraphQLSelection)
+
         selections =
           if node = selection.selections[:node]
-            FieldSelection.new(node, target_types: target_types).selections
+            FieldSelection.new(node, type: type).selections
           else
             {}
           end
 
         if selection.selections[:cursor]
-          target_types.each do |type|
-            (selections[type] ||= {})[:cursor] ||= RelaySelection.new(name: :cursor, types: [type])
-          end
+          selections[:cursor] ||= RelaySelection.new(name: :cursor, type: type)
         end
 
         super(
           name: selection.name,
-          types: target_types,
+          type: type,
           aliaz: selection.aliaz,
           arguments: selection.arguments,
           selections: selections,
