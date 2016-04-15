@@ -6,25 +6,32 @@ module Prelay
       def initialize(selection, type:)
         raise Error, "Expected a GraphQLSelection, got a #{selection.class}" unless selection.is_a?(GraphQLSelection)
 
-        selections =
+        @node =
           if node = selection.selections[:node]
-            FieldSelection.new(node, type: type).selections
-          else
-            {}
+            FieldSelection.new(node, type: type)
           end
 
-        if selection.selections[:cursor]
-          selections[:cursor] ||= RelaySelection.new(name: :cursor, type: type)
-        end
+        @cursor =
+          if selection.selections[:cursor]
+            RelaySelection.new(name: :cursor, type: type)
+          end
 
         super(
           name: selection.name,
           type: type,
           aliaz: selection.aliaz,
           arguments: selection.arguments,
-          selections: selections,
-          metadata: {},
         )
+      end
+
+      def columns
+        columns = @node ? @node.columns : EMPTY_ARRAY
+        columns += [:cursor] if @cursor
+        columns
+      end
+
+      def associations
+        @node ? @node.associations : {}
       end
     end
   end

@@ -15,68 +15,8 @@ module Prelay
     ZERO_OR_ONE = 0..1
     EMPTY_RESULT_ARRAY = ResultArray.new(EMPTY_ARRAY).freeze
 
-    attr_reader :ast
-
     def initialize(selections_by_type:)
-      @selections_by_type = selections_by_type
-      @types = {}
-
-      @selections_by_type.each do |type, ast|
-        type_data    = @types[type] ||= {}
-        columns      = type_data[:columns] ||= []
-        associations = type_data[:associations] ||= {}
-
-        type_data[:ast] = ast
-
-        if ast.metadata[:count_requested]
-          type_data[:count_requested] = true
-        end
-
-        fields = {}
-        ast.selections.each do |key, selection|
-          name = case selection
-                 when RelaySelection then selection.name
-                 when RelayProcessor then selection.input.name
-                 else raise "Unsupported selection class: #{selection.class}"
-                 end
-
-          fields[name] ||= []
-          fields[name] << selection
-        end
-
-        # id isn't a true attribute, but we'll need it to generate the record's
-        # relay id.
-        if fields.delete(:id)
-          columns << :id
-        end
-
-        if fields.delete(:cursor)
-          # Will need to special-case requests for the cursor.
-          columns << :cursor
-        end
-
-        type.attributes.each do |name, attribute|
-          # Will need to be a little smarter here if we want to support fields
-          # with arguments that need to be pushed down to the DB.
-          if fields.delete(name)
-            columns.push *attribute.dependent_columns
-          end
-        end
-
-        type.associations.each do |name, association|
-          if selections = fields.delete(name)
-            selections.each do |selection|
-              key = selection.input.aliaz || selection.input.name
-              columns.push *association.local_columns
-              associations[key] = [association, selection]
-            end
-          end
-        end
-
-        raise "Unrecognized fields for #{type}: #{fields.inspect}" if fields.any?
-
-        columns.uniq!
-      end
+      @types = selections_by_type
     end
 
     def resolve
@@ -84,7 +24,7 @@ module Prelay
       overall_order = nil
       count = 0
 
-      @types.each do |type, type_data|
+      @types.each do |type, ast|
         ds = type.model.dataset
         ds = yield(ds)
 
@@ -97,12 +37,12 @@ module Prelay
         overall_order ||= derived_order
         raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
 
-        if type_data[:count_requested]
+        if ast.count_requested?
           count_ds = type.model.dataset
           count_ds = yield(count_ds)
           count_ds = apply_query_to_dataset(count_ds, type: type, apply_pagination: false, supplemental_columns: supplemental_columns)
 
-          count += count_ds.unordered.unlimited.count if type_data[:count_requested]
+          count += count_ds.unordered.unlimited.count
         end
 
         records += results_for_dataset(ds, type: type)
@@ -144,7 +84,7 @@ module Prelay
       overall_order = nil
       counts = {}
 
-      @types.each do |type, type_data|
+      @types.each do |type, ast|
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
 
         ds = type.model.dataset
@@ -162,7 +102,7 @@ module Prelay
         ds = block.call(ds) if block
         ds = ds.where(qualified_remote_column => ids)
 
-        if type_data[:count_requested]
+        if ast.count_requested?
           count_ds = type.model.dataset.order(order)
           count_ds = apply_query_to_dataset(count_ds, type: type, apply_pagination: false, supplemental_columns: supplemental_columns)
           count_ds = block.call(count_ds) if block
@@ -194,9 +134,8 @@ module Prelay
     protected
 
     def apply_query_to_dataset(ds, type:, apply_pagination: true, supplemental_columns: EMPTY_ARRAY)
-      type_data = @types.fetch(type)
-      arguments = type_data.fetch(:ast).arguments
-      metadata  = type_data.fetch(:ast).metadata
+      ast       = @types.fetch(type)
+      arguments = ast.arguments
 
       table_name = ds.model.table_name
 
@@ -212,7 +151,7 @@ module Prelay
         end
       end
 
-      columns = (type_data[:columns] || EMPTY_ARRAY) + supplemental_columns
+      columns = ast.columns + supplemental_columns
       columns.uniq!
 
       if columns.delete(:cursor)
@@ -239,7 +178,7 @@ module Prelay
 
         # If has_next_page or has_previous_page was requested, bump the limit
         # by one so we know whether there's another page coming up.
-        limit += 1 if metadata[:has_next_page] || metadata[:has_previous_page]
+        limit += 1 if ast.pagination_info_requested?
 
         ds =
           if cursor = arguments[:after] || arguments[:before]
@@ -313,7 +252,7 @@ module Prelay
     def process_associations_for_results(results, type:)
       return if results.empty?
 
-      (@types[type][:associations] || EMPTY_ARRAY).each do |key, (association, relay_processor)|
+      @types.fetch(type).associations.each do |key, (association, relay_processor)|
         # TODO: Figure out what it means to have multiple columns here.
         local_column  = association.local_columns.first
         remote_column = association.remote_columns.first
