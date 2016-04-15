@@ -73,16 +73,10 @@ module Prelay
 
       def target_types
         @target_types ||= (
-          if target_type < Interface
-            if @specified_target_types
-              @specified_target_types.map { |l| Kernel.const_get(l.to_s) }
-            else
-              target_type.types
-            end
-          elsif target_type < Type
-            [target_type]
+          if @specified_target_types
+            @specified_target_types.map { |l| Kernel.const_get(l.to_s) }
           else
-            raise "Unsupported parent class for #{self.class}: #{target_type}"
+            target_type.covered_types
           end
         ).freeze
       end

@@ -181,13 +181,7 @@ class GraphQLFuzzer
   private
 
   def object_implements_type?(object, type)
-    if type < Prelay::Type
-      object.is_a?(type.model)
-    elsif type < Prelay::Interface
-      type.types.any?{|t| object.is_a?(t.model)}
-    else
-      raise "Unsupported! #{type.inspect}"
-    end
+    type.covered_types.any? { |t| object.is_a?(t.model) }
   end
 
   def schema
@@ -202,7 +196,7 @@ class GraphQLFuzzer
       if @source < Prelay::Type
         [@source] + @source.interfaces.keys
       elsif @source < Prelay::Interface
-        @source.types
+        @source.covered_types
       else
         raise "Unsupported type: #{@source.inspect}"
       end

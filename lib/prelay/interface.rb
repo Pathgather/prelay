@@ -42,8 +42,8 @@ module Prelay
         end
       end
 
-      def types
-        @types ||= []
+      def covered_types
+        @covered_types ||= []
       end
 
       def filter(name, type = :boolean, &block)

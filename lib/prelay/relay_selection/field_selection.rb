@@ -10,7 +10,7 @@ module Prelay
         # Now that we know the type, figure out if any of the fragments we set
         # aside earlier apply to this selection, and if so, resolve them.
         selection.fragments.each do |type, selection_sets|
-          types_for_type(type).each do |t|
+          type.covered_types.each do |t|
             next unless selections_by_type[t]
 
             selection_sets.each do |selection_set|

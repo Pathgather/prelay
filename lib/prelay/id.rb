@@ -8,16 +8,7 @@ module Prelay
         raise Error, "Not a valid object id: \"#{string}\"" unless parts.length == 2
 
         if expected_type
-          possible_types =
-            if expected_type < Type
-              [expected_type]
-            elsif expected_type < Interface
-              expected_type.types
-            else
-              raise "Bad expected_type: #{expected_type}"
-            end
-
-          expected_names = possible_types.map { |t| t.graphql_object.name }
+          expected_names = expected_type.covered_types.map { |t| t.graphql_object.name }
 
           unless expected_names.include?(type)
             raise Error, "Expected object id for a #{expected_type.graphql_object.name}, got one for a #{type}"

@@ -14,17 +14,5 @@ module Prelay
       @fragments  = fragments
       @metadata   = metadata
     end
-
-    private
-
-    def types_for_type(type)
-      if type < Type
-        [type]
-      elsif type < Interface
-        type.types
-      else
-        raise Error, "Unexpected type: #{type}"
-      end
-    end
   end
 end

@@ -19,6 +19,10 @@ module Prelay
     end
 
     class << self
+      def covered_types
+        @covered_types ||= [self].freeze
+      end
+
       def attributes
         @attributes ||= {}
       end
@@ -39,7 +43,7 @@ module Prelay
       end
 
       def interface(interface, foreign_key)
-        interface.types << self
+        interface.covered_types << self
         interfaces[interface] = foreign_key
       end
 
