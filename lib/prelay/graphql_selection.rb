@@ -23,16 +23,16 @@ module Prelay
 
     # Merges together two selections. Is recursive, so also merges
     # subselections, and their subselections, and...
-    def merge(other_selection)
-      raise Error, "Query invokes the same field twice with different arguments" if arguments != other_selection.arguments
-      raise Error, "Can't merge selections on different fields" if name != other_selection.name
+    def merge(other)
+      raise Error, "Can't merge selections on different fields" unless name == other.name
+      raise Error, "Query invokes the same field twice with different arguments" unless arguments == other.arguments
 
       self.class.new(
         name: name,
         aliaz: aliaz,
-        arguments: arguments.merge(other_selection.arguments),
-        selections: selections.merge(other_selection.selections) { |k, o, n| o.merge(n) },
-        fragments: fragments.merge(other_selection.fragments) { |k, o, n| o + n },
+        arguments: arguments,
+        fragments: fragments.merge(other.fragments) { |k, o, n| o + n },
+        selections: selections.merge(other.selections) { |k, o, n| o.merge(n) },
       )
     end
   end
