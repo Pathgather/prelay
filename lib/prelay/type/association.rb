@@ -20,7 +20,7 @@ module Prelay
           @specified_target_types = target_types
         elsif parent < Type
           @sequel_association = parent.model.association_reflections.fetch(@sequel_association_name) do
-            raise "Could not find an association '#{name}' on the Sequel model #{parent.model}"
+            raise "Could not find an association '#{name}' on the Sequel model #{parent.model} while configuring association #{name} on #{@parent}"
           end
 
           unless @sequel_association[:type] == association_type
@@ -62,10 +62,18 @@ module Prelay
             if t.is_a?(Class) && (t < Type || t < Interface)
               t
             else
-              Kernel.const_get(@specified_target.to_s)
+              begin
+                Kernel.const_get(@specified_target.to_s)
+              rescue
+                raise Error, "could not load constant #{@specified_target.inspect} while configuring association #{@name} on #{@parent}"
+              end
             end
           elsif parent < Type
-            target_class = sequel_association.associated_class
+            begin
+              target_class = sequel_association.associated_class
+            rescue NameError
+              raise Error, "could not load constant #{sequel_association[:class_name]} while configuring association #{@name} on #{@parent}"
+            end
             parent.schema.type_for_model!(target_class)
           end
         )
