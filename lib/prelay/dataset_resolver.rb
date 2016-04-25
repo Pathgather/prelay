@@ -237,10 +237,9 @@ module Prelay
         # TODO: Figure out when/how this happens and stop it.
         raise "Table qualification mismatch: #{column.table.inspect}, #{table_name.inspect}" unless column.table == table_name
         column
-      when Sequel::SQL::Function
-        column
       else
-        raise "Unexpected thing to qualify: #{column.class}"
+        # Could be any arbitrary expression, like a function call or an SQL subquery.
+        column
       end
     end
 
