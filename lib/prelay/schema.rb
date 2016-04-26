@@ -77,9 +77,12 @@ module Prelay
 
     def graphql_schema(prefix: "Client")
       @graphql_schema ||= begin
+        # Validate that types implement their interfaces properly.
+        types.each &:check_interfaces
+
         # Make sure that type and interface objects are defined before we
         # build the actual GraphQL schema.
-        (@objects[Type] + @objects[Interface]).each &:graphql_object
+        types_and_interfaces.each &:graphql_object
 
         schema = self
         queries = @objects[Query]

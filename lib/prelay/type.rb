@@ -174,6 +174,50 @@ module Prelay
           @name ||= super().split('::').last.chomp('Type')
         end
       end
+
+      def check_interfaces
+        interfaces.each_key do |interface|
+          msg = "#{name} claims to implement #{interface.name} but "
+
+          interface.attributes.each do |name, i_attr|
+            unless t_attr = attributes[name]
+              raise Error, msg + "doesn't have a #{name} attribute"
+            end
+
+            unless i_attr.datatype == t_attr.datatype
+              raise Error, msg + "#{name} has the wrong datatype"
+            end
+
+            unless i_attr.nullable == t_attr.nullable
+              raise Error, msg + "#{name} has the wrong nullability"
+            end
+          end
+
+          interface.associations.each do |name, i_assoc|
+            unless t_assoc = associations[name]
+              raise Error, msg + "doesn't have a #{name} association"
+            end
+
+            unless t_assoc.target_type == i_assoc.target_type
+              raise Error, msg + "its #{name} association has a different target_type"
+            end
+
+            unless t_assoc.graphql_type == i_assoc.graphql_type
+              raise Error, msg + "its #{name} association has a different underlying GraphQL type"
+            end
+
+            unless t_assoc.association_type == i_assoc.association_type
+              raise Error, msg + "its #{name} association has a different type (#{t_assoc.association_type} instead of #{i_assoc.association_type})"
+            end
+
+            t_assoc.target_types.each do |target_type|
+              unless i_assoc.target_types.include?(target_type)
+                raise Error, msg + "its #{name} association includes a target_type that isn't covered"
+              end
+            end
+          end
+        end
+      end
     end
   end
 end

@@ -3,7 +3,7 @@
 module Prelay
   class Type
     class Attribute
-      attr_reader :parent, :name, :dependent_columns, :description, :graphql_type
+      attr_reader :parent, :name, :dependent_columns, :description, :graphql_type, :datatype, :nullable
 
       def initialize(parent, name, datatype, description = nil, nullable: false, dependent_columns: nil)
         @parent            = parent
@@ -11,6 +11,7 @@ module Prelay
         @description       = description
         @datatype          = datatype
         @dependent_columns = (dependent_columns || [name]).freeze
+        @nullable          = nullable
 
         base_type =
           case @datatype

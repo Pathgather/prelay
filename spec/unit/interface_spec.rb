@@ -97,4 +97,108 @@ class InterfaceSpec < PrelaySpec
       assert_equal "The publisher responsible for releasing the release.", field.description
     end
   end
+
+  describe "when implemented by a type that doesn't actually fulfill all the criteria of the interface" do
+    describe "attributes" do
+      it "when the type is missing an attribute should raise an error" do
+        s = Prelay::Schema.new(temporary: true)
+        i = Class.new(Prelay::Interface(schema: s)) do
+          name "UnimplementedInterface"
+          string :column_1, "Column #1", nullable: false
+          string :column_2, "Column #2", nullable: false
+        end
+
+        t = Class.new(Prelay::Type(schema: s)) do
+          name "BadType"
+          string :column_1, "My Column #1", nullable: false
+          interface i, :unimplemented_interface_id
+        end
+
+        error = assert_raises(Prelay::Error) { s.graphql_schema }
+        assert_equal "BadType claims to implement UnimplementedInterface but doesn't have a column_2 attribute", error.message
+      end
+
+      it "when the type's attribute is the wrong datatype should raise an error" do
+        s = Prelay::Schema.new(temporary: true)
+        i = Class.new(Prelay::Interface(schema: s)) do
+          name "UnimplementedInterface"
+          string :column_1, "Column #1", nullable: false
+        end
+
+        t = Class.new(Prelay::Type(schema: s)) do
+          name "BadType"
+          integer :column_1, "My Column #1", nullable: false
+          interface i, :unimplemented_interface_id
+        end
+
+        error = assert_raises(Prelay::Error) { s.graphql_schema }
+        assert_equal "BadType claims to implement UnimplementedInterface but column_1 has the wrong datatype", error.message
+      end
+
+      it "when the type's attribute has different nullability should raise an error" do
+        s = Prelay::Schema.new(temporary: true)
+        i = Class.new(Prelay::Interface(schema: s)) do
+          name "UnimplementedInterface"
+          string :column_1, "Column #1", nullable: false
+        end
+
+        t = Class.new(Prelay::Type(schema: s)) do
+          name "BadType"
+          string :column_1, "My Column #1", nullable: true
+          interface i, :unimplemented_interface_id
+        end
+
+        error = assert_raises(Prelay::Error) { s.graphql_schema }
+        assert_equal "BadType claims to implement UnimplementedInterface but column_1 has the wrong nullability", error.message
+      end
+    end
+
+    describe "associations" do
+      it "when the type is missing an association should raise an error" do
+        s = Prelay::Schema.new(temporary: true)
+
+        a = Class.new(Prelay::Type(schema: s)) do
+          name "AssociatedType"
+        end
+
+        i = Class.new(Prelay::Interface(schema: s)) do
+          name "UnimplementedInterface"
+
+          one_to_many :things, target: a
+        end
+
+        t = Class.new(Prelay::Type(schema: s)) do
+          name "BadType"
+          interface i, :unimplemented_interface_id
+        end
+
+        error = assert_raises(Prelay::Error) { s.graphql_schema }
+        assert_equal "BadType claims to implement UnimplementedInterface but doesn't have a things association", error.message
+      end
+
+      it "when the type is missing an association should raise an error" do
+        s = Prelay::Schema.new(temporary: true)
+
+        a = Class.new(Prelay::Type(schema: s)) do
+          name "AssociatedType"
+        end
+
+        i = Class.new(Prelay::Interface(schema: s)) do
+          name "UnimplementedInterface"
+
+          one_to_many :things, target: a
+        end
+
+        t = Class.new(Prelay::Type(schema: s)) do
+          name "BadType"
+          interface i, :unimplemented_interface_id
+
+          many_to_one :things, target: a, nullable: false
+        end
+
+        error = assert_raises(Prelay::Error) { s.graphql_schema }
+        assert_equal "BadType claims to implement UnimplementedInterface but its things association has a different type (many_to_one instead of one_to_many)", error.message
+      end
+    end
+  end
 end
