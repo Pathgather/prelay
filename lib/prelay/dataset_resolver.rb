@@ -29,7 +29,7 @@ module Prelay
         ds = yield(ds)
 
         supplemental_columns = []
-        supplemental_columns << :cursor if @types.length > 1
+        supplemental_columns << :cursor if need_ordering_in_ruby?
 
         ds = apply_query_to_dataset(ds, type: type, supplemental_columns: supplemental_columns)
 
@@ -48,7 +48,7 @@ module Prelay
 
       # Each individual result set is sorted, now we need to make sure the
       # union is sorted as well.
-      sort_records_by_order(records, overall_order) if @types.length > 1
+      sort_records_by_order(records, overall_order) if need_ordering_in_ruby?
 
       r = ResultArray.new(records)
       r.total_count = count
@@ -89,7 +89,7 @@ module Prelay
         ds = ds.order(order)
 
         supplemental_columns = [remote_column]
-        supplemental_columns << :cursor if @types.length > 1
+        supplemental_columns << :cursor if need_ordering_in_ruby?
 
         ds = apply_query_to_dataset(ds, type: type, supplemental_columns: supplemental_columns)
 
@@ -121,7 +121,7 @@ module Prelay
         records += results_for_dataset(ds, type: type)
       end
 
-      sort_records_by_order(records, overall_order) if @types.length > 1
+      sort_records_by_order(records, overall_order) if need_ordering_in_ruby?
 
       [ResultArray.new(records), counts]
     end
@@ -152,13 +152,7 @@ module Prelay
       if columns.delete(:cursor)
         order = ds.opts[:order]
         raise "Can't handle ordering by anything other than a single column!" unless order&.length == 1
-
-        exp =
-          case o = order.first
-          when Sequel::SQL::OrderedExpression then o.expression
-          else o
-          end
-
+        exp = unwrap_order_expression(order.first)
         columns << Sequel.as(exp, :cursor)
       end
 
@@ -210,6 +204,15 @@ module Prelay
     end
 
     private
+
+    # If we're loading more than one type, and therefore executing more than
+    # one query, we'll need to sort the combined results in Ruby. In other
+    # words, to get the ten earliest posts + comments, we need to retrieve the
+    # ten earliest posts, the ten earliest comments, concatenate them
+    # together, sort them by their created_at, and take the first ten.
+    def need_ordering_in_ruby?
+      @types.length > 1
+    end
 
     def sort_records_by_order(records, order)
       records.sort_by!{|r| r.record.values.fetch(:cursor)}
