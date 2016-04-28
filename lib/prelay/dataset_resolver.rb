@@ -25,6 +25,9 @@ module Prelay
       count = 0
 
       @types.each do |type, ast|
+        raise "Unexpected ast!: #{ast.class}" unless ast.is_a?(RelaySelection::ConnectionSelection)
+        raise "Unexpected type!" unless type == ast.type
+
         ds = type.model.dataset
         ds = yield(ds)
 
@@ -59,7 +62,10 @@ module Prelay
       # TODO: Can just stop iterating through types when we get a match.
       records = []
 
-      @types.each_key do |type|
+      @types.each do |type, ast|
+        raise "Unexpected ast!: #{ast.class}" unless [RelaySelection::FieldSelection, RelaySelection::EdgeSelection].include?(ast.class)
+        raise "Unexpected type!" unless type == ast.type
+
         ds = type.model.dataset
         ds = yield(ds)
         ds = apply_query_to_dataset(ds, type: type)
@@ -83,6 +89,9 @@ module Prelay
       counts = {}
 
       @types.each do |type, ast|
+        raise "Unexpected selection!" unless [RelaySelection::ConnectionSelection, RelaySelection::FieldSelection].include?(ast.class)
+        raise "Unexpected type!" unless type == ast.type
+
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
 
         ds = type.model.dataset
