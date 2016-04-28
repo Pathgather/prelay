@@ -78,6 +78,8 @@ module Prelay
       records.first
     end
 
+    protected
+
     def resolve_via_association(association, ids)
       return [EMPTY_RESULT_ARRAY, {}] if ids.none?
 
@@ -135,7 +137,7 @@ module Prelay
       [ResultArray.new(records), counts]
     end
 
-    protected
+    private
 
     def apply_query_to_dataset(ds, type:, supplemental_columns: EMPTY_ARRAY)
       ast       = @types.fetch(type)
@@ -211,8 +213,6 @@ module Prelay
 
       ds
     end
-
-    private
 
     # If we're loading more than one type, and therefore executing more than
     # one query, we'll need to sort the combined results in Ruby. In other
