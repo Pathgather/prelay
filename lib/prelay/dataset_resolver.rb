@@ -33,17 +33,15 @@ module Prelay
 
         ds = apply_query_to_dataset(ds, type: type, supplemental_columns: supplemental_columns)
 
+        if ast.count_requested?
+          count += ds.unordered.unlimited.count
+        end
+
+        ds = apply_pagination_to_dataset(ds, type: type)
+
         derived_order = ds.opts[:order]
         overall_order ||= derived_order
         raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
-
-        if ast.count_requested?
-          count_ds = type.model.dataset
-          count_ds = yield(count_ds)
-          count_ds = apply_query_to_dataset(count_ds, type: type, apply_pagination: false, supplemental_columns: supplemental_columns)
-
-          count += count_ds.unordered.unlimited.count
-        end
 
         records += results_for_dataset(ds, type: type)
       end
@@ -95,22 +93,19 @@ module Prelay
 
         ds = apply_query_to_dataset(ds, type: type, supplemental_columns: supplemental_columns)
 
-        derived_order = ds.opts[:order]
-        overall_order ||= derived_order
-        raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
-
         ds = block.call(ds) if block
         ds = ds.where(qualified_remote_column => ids)
 
         if ast.count_requested?
-          count_ds = type.model.dataset.order(order)
-          count_ds = apply_query_to_dataset(count_ds, type: type, apply_pagination: false, supplemental_columns: supplemental_columns)
-          count_ds = block.call(count_ds) if block
-          count_ds = count_ds.where(qualified_remote_column => ids)
-
-          more_counts = count_ds.unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
+          more_counts = ds.unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
           counts = counts.merge(more_counts) { |k,o,n| o + n }
         end
+
+        ds = apply_pagination_to_dataset(ds, type: type)
+
+        derived_order = ds.opts[:order]
+        overall_order ||= derived_order
+        raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
 
         if ids.length > 1 && limit = ds.opts[:limit]
           # Steal Sequel's technique for limiting eager-loaded associations with
@@ -133,7 +128,7 @@ module Prelay
 
     protected
 
-    def apply_query_to_dataset(ds, type:, apply_pagination: true, supplemental_columns: EMPTY_ARRAY)
+    def apply_query_to_dataset(ds, type:, supplemental_columns: EMPTY_ARRAY)
       ast       = @types.fetch(type)
       arguments = ast.arguments
 
@@ -173,7 +168,14 @@ module Prelay
         ds = ds.select(*selections)
       end
 
-      if apply_pagination && (limit = arguments[:first] || arguments[:last])
+      ds
+    end
+
+    def apply_pagination_to_dataset(ds, type:)
+      ast       = @types.fetch(type)
+      arguments = ast.arguments
+
+      if limit = arguments[:first] || arguments[:last]
         ds = ds.reverse_order if arguments[:last]
 
         # If has_next_page or has_previous_page was requested, bump the limit
