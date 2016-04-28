@@ -19,7 +19,7 @@ module Prelay
       @types = selections_by_type
     end
 
-    def resolve
+    def resolve(order: nil)
       records = []
       overall_order = nil
       count = 0
@@ -28,19 +28,17 @@ module Prelay
         raise "Unexpected ast!: #{ast.class}" unless ast.is_a?(RelaySelection::ConnectionSelection)
         raise "Unexpected type!" unless type == ast.type
 
-        ds = type.model.dataset
-        ds = yield(ds)
-
         supplemental_columns = []
         supplemental_columns << :cursor if need_ordering_in_ruby?
 
-        ds = apply_query_to_dataset(ds, type: type, supplemental_columns: supplemental_columns)
+        ds = ast.derived_dataset(order: order, supplemental_columns: supplemental_columns)
+        ds = yield(ds) if block_given?
 
         if ast.count_requested?
           count += ds.unordered.unlimited.count
         end
 
-        ds = apply_pagination_to_dataset(ds, type: type)
+        ds = ast.apply_pagination_to_dataset(ds)
 
         derived_order = ds.opts[:order]
         overall_order ||= derived_order
@@ -58,7 +56,7 @@ module Prelay
       r
     end
 
-    def resolve_singular
+    def resolve_singular(order: nil)
       # TODO: Can just stop iterating through types when we get a match.
       records = []
 
@@ -66,9 +64,8 @@ module Prelay
         raise "Unexpected ast!: #{ast.class}" unless [RelaySelection::FieldSelection, RelaySelection::EdgeSelection].include?(ast.class)
         raise "Unexpected type!" unless type == ast.type
 
-        ds = type.model.dataset
-        ds = yield(ds)
-        ds = apply_query_to_dataset(ds, type: type)
+        ds = ast.derived_dataset(order: order)
+        ds = yield(ds) if block_given?
 
         records += results_for_dataset(ds, type: type)
       end
@@ -96,13 +93,10 @@ module Prelay
 
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
 
-        ds = type.model.dataset
-        ds = ds.order(order)
-
         supplemental_columns = [remote_column]
         supplemental_columns << :cursor if need_ordering_in_ruby?
 
-        ds = apply_query_to_dataset(ds, type: type, supplemental_columns: supplemental_columns)
+        ds = ast.derived_dataset(order: order, supplemental_columns: supplemental_columns)
 
         ds = block.call(ds) if block
         ds = ds.where(qualified_remote_column => ids)
@@ -112,7 +106,7 @@ module Prelay
           counts = counts.merge(more_counts) { |k,o,n| o + n }
         end
 
-        ds = apply_pagination_to_dataset(ds, type: type)
+        ds = ast.apply_pagination_to_dataset(ds)
 
         derived_order = ds.opts[:order]
         overall_order ||= derived_order
@@ -139,81 +133,6 @@ module Prelay
 
     private
 
-    def apply_query_to_dataset(ds, type:, supplemental_columns: EMPTY_ARRAY)
-      ast       = @types.fetch(type)
-      arguments = ast.arguments
-
-      table_name = ds.model.table_name
-
-      if scope = type.dataset_scope
-        ds = scope.call(ds)
-      end
-
-      ([type] + type.interfaces.keys.reverse).each do |filter_source|
-        filter_source.filters.each do |name, (type, block)|
-          if value = arguments[name]
-            ds = block.call(ds, value)
-          end
-        end
-      end
-
-      columns = ast.columns + supplemental_columns
-      columns.uniq!
-
-      if columns.delete(:cursor)
-        order = ds.opts[:order]
-        raise "Can't handle ordering by anything other than a single column!" unless order&.length == 1
-        exp = unwrap_order_expression(order.first)
-        columns << Sequel.as(exp, :cursor)
-      end
-
-      selections = (ds.opts[:select] || EMPTY_ARRAY) + columns.map{|c| qualify_column(table_name, c)}
-
-      if selections.count > 0
-        ds = ds.select(*selections)
-      end
-
-      ds
-    end
-
-    def apply_pagination_to_dataset(ds, type:)
-      ast       = @types.fetch(type)
-      arguments = ast.arguments
-
-      if limit = arguments[:first] || arguments[:last]
-        ds = ds.reverse_order if arguments[:last]
-
-        # If has_next_page or has_previous_page was requested, bump the limit
-        # by one so we know whether there's another page coming up.
-        limit += 1 if ast.pagination_info_requested?
-
-        ds =
-          if cursor = arguments[:after] || arguments[:before]
-            values = JSON.parse(Base64.decode64(cursor))
-
-            expressions = ds.opts[:order].zip(values).map do |o, v|
-              e = unwrap_order_expression(o)
-
-              if e.is_a?(Sequel::SQL::Function) && e.name == :ts_rank_cd
-                # Minor hack for full-text search, which returns reals when
-                # Sequel assumes floats are double precision.
-                Sequel.cast(v, :real)
-              elsif e == :created_at
-                Time.at(*v) # value should be an array of two integers, seconds and microseconds.
-              else
-                v
-              end
-            end
-
-            ds.seek_paginate(limit, after: expressions)
-          else
-            ds.seek_paginate(limit)
-          end
-      end
-
-      ds
-    end
-
     # If we're loading more than one type, and therefore executing more than
     # one query, we'll need to sort the combined results in Ruby. In other
     # words, to get the ten earliest posts + comments, we need to retrieve the
@@ -230,31 +149,6 @@ module Prelay
       records.reverse! if o.is_a?(Sequel::SQL::OrderedExpression) && o.descending
 
       records
-    end
-
-    def unwrap_order_expression(oe)
-      case oe
-      when Sequel::SQL::OrderedExpression
-        oe.expression
-      else
-        oe
-      end
-    end
-
-    def qualify_column(table_name, column)
-      case column
-      when Symbol
-        Sequel.qualify(table_name, column)
-      when Sequel::SQL::AliasedExpression
-        Sequel.as(qualify_column(table_name, column.expression), column.aliaz)
-      when Sequel::SQL::QualifiedIdentifier
-        # TODO: Figure out when/how this happens and stop it.
-        raise "Table qualification mismatch: #{column.table.inspect}, #{table_name.inspect}" unless column.table == table_name
-        column
-      else
-        # Could be any arbitrary expression, like a function call or an SQL subquery.
-        column
-      end
     end
 
     def results_for_dataset(ds, type:)

@@ -125,7 +125,7 @@ module Prelay
                   if result_field.association
                     entry_point = result_field.edge? ? :edge : :field
                     resolver = RelayProcessor.new(selection, target_types: [result_field.target_type], entry_point: entry_point).to_resolver
-                    record = resolver.resolve_singular{|ds| ds.where(id: id).order(Sequel.desc(:created_at))}
+                    record = resolver.resolve_singular(order: Sequel.desc(:created_at)){|ds| ds.where(id: id)}
 
                     if result_field.edge?
                       GraphQL::Relay::Edge.new(record, SequelConnection.new(nil, nil))
