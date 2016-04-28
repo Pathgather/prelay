@@ -94,11 +94,6 @@ module Prelay
           @columns << :id
         end
 
-        if fields.delete(:cursor)
-          # Will need to special-case requests for the cursor.
-          @columns << :cursor
-        end
-
         @type.attributes.each do |name, attribute|
           # Will need to be a little smarter here if we want to support fields
           # with arguments that need to be pushed down to the DB.
