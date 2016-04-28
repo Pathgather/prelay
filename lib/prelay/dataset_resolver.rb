@@ -78,14 +78,13 @@ module Prelay
     protected
 
     def resolve_via_association(association, ids)
-      return [EMPTY_RESULT_ARRAY, {}] if ids.none?
+      return {} if ids.none?
 
       block = association.sequel_association&.dig(:block)
       order = association.derived_order
-      records = []
+      records = {}
       remote_column = association.remote_columns.first # TODO: Multiple columns?
       overall_order = nil
-      counts = {}
 
       @types.each do |type, ast|
         raise "Unexpected selection!" unless [RelaySelection::ConnectionSelection, RelaySelection::FieldSelection].include?(ast.class)
@@ -101,10 +100,12 @@ module Prelay
         ds = block.call(ds) if block
         ds = ds.where(qualified_remote_column => ids)
 
-        if ast.count_requested?
-          more_counts = ds.unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
-          counts = counts.merge(more_counts) { |k,o,n| o + n }
-        end
+        counts =
+          if ast.count_requested?
+            ds.unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
+          else
+            {}
+          end
 
         ds = ast.apply_pagination_to_dataset(ds)
 
@@ -123,12 +124,30 @@ module Prelay
                 where { |r| r.<=(:prelay_row_number, limit) }
         end
 
-        records += results_for_dataset(ds, type: type)
+        results = results_for_dataset(ds, type: type)
+
+        if association.returns_array?
+          results.each do |result|
+            fk = result.record.send(remote_column)
+            (records[fk] ||= ResultArray.new([])) << result
+          end
+
+          counts.each do |fk, count|
+            records[fk].total_count += count
+          end
+
+          records.each do |fk, subrecords|
+            sort_records_by_order(subrecords, overall_order) if need_ordering_in_ruby?
+          end
+        else
+          results.each do |result|
+            fk = result.record.send(remote_column)
+            records[fk] = result
+          end
+        end
       end
 
-      sort_records_by_order(records, overall_order) if need_ordering_in_ruby?
-
-      [ResultArray.new(records), counts]
+      records
     end
 
     private
@@ -160,32 +179,16 @@ module Prelay
       return if results.empty?
 
       @types.fetch(type).associations.each do |key, (association, relay_processor)|
-        # TODO: Figure out what it means to have multiple columns here.
-        local_column  = association.local_columns.first
-        remote_column = association.remote_columns.first
-
+        local_column = association.local_columns.first
         ids = results.map{|r| r.record.send(local_column)}.uniq
-
-        sub_records, counts = relay_processor.to_resolver.resolve_via_association(association, ids)
-        sub_records_hash = {}
+        sub_records_hash = relay_processor.to_resolver.resolve_via_association(association, ids)
 
         if association.returns_array?
-          sub_records.each do |r|
-            results_array = sub_records_hash[r.record.send(remote_column)] ||= ResultArray.new([])
-            results_array << r
-          end
-
-          counts.each do |id, count|
-            sub_records_hash[id].total_count = count
-          end
-
           results.each do |r|
             associated_records = sub_records_hash[r.record.send(local_column)] || ResultArray.new([])
             r.associations[key] = associated_records
           end
         else
-          sub_records.each{|r| sub_records_hash[r.record.send(remote_column)] = r}
-
           results.each do |r|
             associated_record = sub_records_hash[r.record.send(local_column)]
             r.associations[key] = associated_record
