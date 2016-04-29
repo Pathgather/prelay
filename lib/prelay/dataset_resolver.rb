@@ -25,9 +25,6 @@ module Prelay
       count = 0
 
       @types.each do |type, ast|
-        raise "Unexpected ast!: #{ast.class}" unless ast.is_a?(RelaySelection::ConnectionSelection)
-        raise "Unexpected type!" unless type == ast.type
-
         supplemental_columns = []
         supplemental_columns << :cursor if need_ordering_in_ruby?
 
@@ -61,9 +58,6 @@ module Prelay
       records = []
 
       @types.each do |type, ast|
-        raise "Unexpected ast!: #{ast.class}" unless [RelaySelection::FieldSelection, RelaySelection::EdgeSelection].include?(ast.class)
-        raise "Unexpected type!" unless type == ast.type
-
         ds = ast.derived_dataset(order: order)
         ds = yield(ds) if block_given?
 
@@ -87,9 +81,6 @@ module Prelay
       overall_order = nil
 
       @types.each do |type, ast|
-        raise "Unexpected selection!" unless [RelaySelection::ConnectionSelection, RelaySelection::FieldSelection].include?(ast.class)
-        raise "Unexpected type!" unless type == ast.type
-
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
 
         supplemental_columns = [remote_column]
