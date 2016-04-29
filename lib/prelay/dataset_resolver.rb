@@ -166,10 +166,8 @@ module Prelay
     end
 
     def results_for_dataset(ds, type:)
-      ast = @asts[type]
-
       objects =
-        if sort_data = ast.sort_data
+        if sort_data = @asts[type].sort_data
           sort_columns = sort_data.map(&:first)
           ds.all.map { |r| type.new(r, r.values.values_at(*sort_columns)) }
         else
