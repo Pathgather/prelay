@@ -42,7 +42,7 @@ module Prelay
 
       ds = ds.reverse_order if arguments[:last]
 
-      if column_set.delete(:cursor) || need_cursor
+      if cursor_requested? || need_cursor
         requested_expressions_with_aliases = {}
         column_set.each do |expression|
           exp, aliaz = unpack_expression_and_alias(expression)

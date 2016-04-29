@@ -11,10 +11,7 @@ module Prelay
             FieldSelection.new(node, type: type)
           end
 
-        @cursor =
-          if selection.selections[:cursor]
-            RelaySelection.new(name: :cursor, type: type)
-          end
+        @cursor = !!selection.selections[:cursor]
 
         super(
           name: selection.name,
@@ -25,9 +22,11 @@ module Prelay
       end
 
       def columns
-        columns = @node ? @node.columns : EMPTY_ARRAY
-        columns += [:cursor] if @cursor
-        columns
+        @node ? @node.columns : EMPTY_ARRAY
+      end
+
+      def cursor_requested?
+        @cursor
       end
 
       def associations

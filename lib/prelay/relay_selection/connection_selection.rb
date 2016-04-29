@@ -42,6 +42,10 @@ module Prelay
         !!@count
       end
 
+      def cursor_requested?
+        @edges.cursor_requested? if @edges
+      end
+
       def columns
         columns = @edges ? @edges.columns : EMPTY_ARRAY
         columns += [:id] if pagination_info_requested?

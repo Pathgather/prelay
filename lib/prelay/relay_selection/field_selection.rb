@@ -69,6 +69,10 @@ module Prelay
         false
       end
 
+      def cursor_requested?
+        false
+      end
+
       private
 
       def determine_columns_and_associations
