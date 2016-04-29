@@ -51,8 +51,8 @@ module Prelay
 
         @sort_data = []
 
-        ds.opts[:order].each do |oe|
-          @sort_data << handle_order_statement(selections: column_set, expressions_and_aliases: requested_expressions_with_aliases, order_expression: oe)
+        ds.opts[:order].each_with_index do |oe, index|
+          @sort_data << handle_order_statement(selections: column_set, expressions_and_aliases: requested_expressions_with_aliases, order_expression: oe, index: index)
         end
       end
 
@@ -100,7 +100,7 @@ module Prelay
 
     private
 
-    def handle_order_statement(selections:, expressions_and_aliases:, order_expression:)
+    def handle_order_statement(selections:, expressions_and_aliases:, order_expression:, index:)
       exp = unwrap_order_expression(order_expression)
       dir, nulls = extract_order_direction(order_expression)
 
@@ -119,7 +119,7 @@ module Prelay
 
       # Otherwise, we'll need to add it to the selections ourselves, with a
       # unique alias.
-      aliaz = :"cursor_#{selections.length}"
+      aliaz = :"cursor_#{index}"
       selections << Sequel.as(exp, aliaz)
       return [aliaz, dir, nulls]
     end
