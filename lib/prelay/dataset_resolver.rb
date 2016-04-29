@@ -81,11 +81,10 @@ module Prelay
 
       @paginated_datasets.each do |type, ds|
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
-        ds = ds.where(qualified_remote_column => ids)
 
         counts =
           if @asts[type].count_requested?
-            @datasets[type].where(qualified_remote_column => ids).unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
+            @datasets[type].unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
           else
             {}
           end
@@ -178,16 +177,23 @@ module Prelay
         order = association.derived_order
         block = association.sequel_association&.dig(:block)
 
-        sub_records_hash = relay_processor.to_resolver(order: order, supplemental_columns: [remote_column], &block).resolve_via_association(association, ids)
+        resolver = relay_processor.to_resolver(order: order, supplemental_columns: [remote_column]) do |ds|
+          qualified_remote_column = Sequel.qualify(ds.model.table_name, remote_column)
+          ds = ds.where(qualified_remote_column => ids)
+          ds = block.call(ds) if block
+          ds
+        end
+
+        records_hash = resolver.resolve_via_association(association, ids)
 
         if association.returns_array?
           results.each do |r|
-            associated_records = sub_records_hash[r.record.send(local_column)] || ResultArray.new([])
+            associated_records = records_hash[r.record.send(local_column)] || ResultArray.new([])
             r.associations[key] = associated_records
           end
         else
           results.each do |r|
-            associated_record = sub_records_hash[r.record.send(local_column)]
+            associated_record = records_hash[r.record.send(local_column)]
             r.associations[key] = associated_record
           end
         end

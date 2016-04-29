@@ -38,7 +38,7 @@ class OneToOneFilteredAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" = 1) AND ("tracks"."album_id" IN ('#{album.id}'))) ORDER BY "tracks"."id")
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("tracks"."album_id" IN ('#{album.id}')) AND ("number" = 1)) ORDER BY "tracks"."id")
     ]
   end
 
@@ -73,7 +73,7 @@ class OneToOneFilteredAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("number" = 1) AND ("tracks"."album_id" IN ('#{album.id}'))) ORDER BY "tracks"."id")
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE (("tracks"."album_id" IN ('#{album.id}')) AND ("number" = 1)) ORDER BY "tracks"."id")
     ]
   end
 end
