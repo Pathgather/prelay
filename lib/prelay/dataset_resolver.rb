@@ -12,7 +12,6 @@ require 'prelay/result_array'
 
 module Prelay
   class DatasetResolver
-    ZERO_OR_ONE = 0..1
     EMPTY_RESULT_ARRAY = ResultArray.new(EMPTY_ARRAY).freeze
 
     def initialize(selections_by_type:, order: nil, supplemental_columns: [], &block)
@@ -25,9 +24,7 @@ module Prelay
         ds = yield ds if block_given?
 
         @datasets[type] = ds
-
-        ds = ast.apply_pagination_to_dataset(ds)
-        @paginated_datasets[type] = ds
+        @paginated_datasets[type] = ast.apply_pagination_to_dataset(ds)
       end
     end
 
@@ -60,7 +57,7 @@ module Prelay
         records += results_for_dataset(ds, type: type)
       end
 
-      raise "Too many records!" unless ZERO_OR_ONE === records.length
+      raise Error, "#resolve_singular returned more than one record!" if records.length > 1
 
       records.first
     end
@@ -132,7 +129,7 @@ module Prelay
           @paginated_datasets.each_value do |ds|
             derived_order = ds.opts[:order]
             overall_order ||= derived_order
-            raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
+            raise Error, "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
           end
 
           overall_order
@@ -150,7 +147,7 @@ module Prelay
 
     def sort_records(records)
       sort_datas = @asts.values.map(&:sort_data)
-      raise "Weird sort condition" unless sort_datas.uniq.length == 1
+      raise Error, "Weird sort condition" unless sort_datas.uniq.length == 1
       sort_data = sort_datas.first.map{|s| s[1..2]}
 
       records.sort! { |r1, r2| sort_compare(r1, r2, sort_data) }
@@ -175,8 +172,8 @@ module Prelay
       ast = @asts[type]
 
       objects =
-        if ast.sort_data
-          sort_columns = ast.sort_data.map(&:first)
+        if sort_data = ast.sort_data
+          sort_columns = sort_data.map(&:first)
 
           ds.all.map do |r|
             t = type.new(r)
@@ -194,8 +191,9 @@ module Prelay
       return if results.empty?
 
       @asts.fetch(type).associations.each do |key, (association, relay_processor)|
-        local_column = association.local_columns.first
+        local_column  = association.local_columns.first
         remote_column = association.remote_columns.first
+
         ids = results.map{|r| r.record.send(local_column)}.uniq
 
         order = association.derived_order
@@ -212,13 +210,11 @@ module Prelay
 
         if association.returns_array?
           results.each do |r|
-            associated_records = records_hash[r.record.send(local_column)] || ResultArray.new([])
-            r.associations[key] = associated_records
+            r.associations[key] = records_hash[r.record.send(local_column)] || ResultArray.new([])
           end
         else
           results.each do |r|
-            associated_record = records_hash[r.record.send(local_column)]
-            r.associations[key] = associated_record
+            r.associations[key] = records_hash[r.record.send(local_column)]
           end
         end
       end
