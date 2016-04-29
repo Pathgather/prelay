@@ -20,9 +20,7 @@ module Prelay
       @datasets = {}
       @paginated_datasets = {}
 
-      if need_ordering_in_ruby? && !supplemental_columns.include?(:cursor)
-        supplemental_columns << :cursor
-      end
+      supplemental_columns << :cursor if need_ordering_in_ruby?
 
       selections_by_type.each do |type, ast|
         ds = ast.derived_dataset(order: order, supplemental_columns: supplemental_columns)
@@ -59,7 +57,6 @@ module Prelay
     end
 
     def resolve_singular
-      # TODO: Can just stop iterating through types when we get a match.
       records = []
 
       @datasets.each do |type, ds|
