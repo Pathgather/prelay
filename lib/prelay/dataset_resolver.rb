@@ -41,19 +41,18 @@ module Prelay
         records += results_for_dataset(ds, type: type)
       end
 
-      @asts.each do |type, ast|
-        if ast.count_requested?
-          count += @datasets[type].unordered.unlimited.count
+      # If one AST requests the count, they all will.
+      if @asts.values.first.count_requested?
+        @datasets.each_value do |ds|
+          count += ds.unordered.unlimited.count
         end
       end
 
       # Each individual result set is sorted, now we need to make sure the
       # union is sorted as well.
-      sort_records_by_order(records, overall_order) if need_ordering_in_ruby?
+      sort_records(records) if need_ordering_in_ruby?
 
-      r = ResultArray.new(records)
-      r.total_count = count
-      r
+      ResultArray.new(records).tap { |r| r.total_count = count }
     end
 
     def resolve_singular
@@ -110,7 +109,7 @@ module Prelay
           end
 
           records.each do |fk, subrecords|
-            sort_records_by_order(subrecords, overall_order) if need_ordering_in_ruby?
+            sort_records(subrecords) if need_ordering_in_ruby?
           end
         else
           results.each do |result|
@@ -149,12 +148,12 @@ module Prelay
       @asts.length > 1
     end
 
-    def sort_records_by_order(records, order)
-      records.sort_by!{|r| r.record.values.fetch(:cursor)}
-
+    def sort_records(records)
+      order = overall_order
       o = order.is_a?(Array) ? order.first : order
-      records.reverse! if o.is_a?(Sequel::SQL::OrderedExpression) && o.descending
 
+      records.sort_by!{|r| r.record.values.fetch(:cursor)}
+      records.reverse! if o.is_a?(Sequel::SQL::OrderedExpression) && o.descending
       records
     end
 
