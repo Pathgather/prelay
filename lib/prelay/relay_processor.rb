@@ -23,8 +23,8 @@ module Prelay
       end
     end
 
-    def to_resolver
-      DatasetResolver.new(selections_by_type: @selections_by_type)
+    def to_resolver(order: nil)
+      DatasetResolver.new(selections_by_type: @selections_by_type, order: order)
     end
   end
 end

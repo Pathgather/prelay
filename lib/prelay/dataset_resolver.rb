@@ -15,11 +15,12 @@ module Prelay
     ZERO_OR_ONE = 0..1
     EMPTY_RESULT_ARRAY = ResultArray.new(EMPTY_ARRAY).freeze
 
-    def initialize(selections_by_type:)
+    def initialize(selections_by_type:, order: nil)
       @types = selections_by_type
+      @order = order
     end
 
-    def resolve(order: nil)
+    def resolve
       records = []
       overall_order = nil
       count = 0
@@ -28,7 +29,7 @@ module Prelay
         supplemental_columns = []
         supplemental_columns << :cursor if need_ordering_in_ruby?
 
-        ds = ast.derived_dataset(order: order, supplemental_columns: supplemental_columns)
+        ds = ast.derived_dataset(order: @order, supplemental_columns: supplemental_columns)
         ds = yield(ds) if block_given?
 
         if ast.count_requested?
@@ -53,12 +54,12 @@ module Prelay
       r
     end
 
-    def resolve_singular(order: nil)
+    def resolve_singular
       # TODO: Can just stop iterating through types when we get a match.
       records = []
 
       @types.each do |type, ast|
-        ds = ast.derived_dataset(order: order)
+        ds = ast.derived_dataset(order: @order)
         ds = yield(ds) if block_given?
 
         records += results_for_dataset(ds, type: type)
