@@ -15,35 +15,38 @@ module Prelay
     ZERO_OR_ONE = 0..1
     EMPTY_RESULT_ARRAY = ResultArray.new(EMPTY_ARRAY).freeze
 
-    def initialize(selections_by_type:, order: nil, &block)
-      @types = selections_by_type
-      @order = order
-      @block = block
+    def initialize(selections_by_type:, order: nil, supplemental_columns: [], &block)
+      @asts = selections_by_type
+      @datasets = {}
+      @paginated_datasets = {}
+
+      if need_ordering_in_ruby? && !supplemental_columns.include?(:cursor)
+        supplemental_columns << :cursor
+      end
+
+      selections_by_type.each do |type, ast|
+        ds = ast.derived_dataset(order: order, supplemental_columns: supplemental_columns)
+        ds = yield ds if block_given?
+
+        @datasets[type] = ds
+
+        ds = ast.apply_pagination_to_dataset(ds)
+        @paginated_datasets[type] = ds
+      end
     end
 
     def resolve
       records = []
-      overall_order = nil
       count = 0
 
-      @types.each do |type, ast|
-        supplemental_columns = []
-        supplemental_columns << :cursor if need_ordering_in_ruby?
-
-        ds = ast.derived_dataset(order: @order, supplemental_columns: supplemental_columns)
-        ds = @block.call(ds) if @block
-
-        if ast.count_requested?
-          count += ds.unordered.unlimited.count
-        end
-
-        ds = ast.apply_pagination_to_dataset(ds)
-
-        derived_order = ds.opts[:order]
-        overall_order ||= derived_order
-        raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
-
+      @paginated_datasets.each do |type, ds|
         records += results_for_dataset(ds, type: type)
+      end
+
+      @asts.each do |type, ast|
+        if ast.count_requested?
+          count += @datasets[type].unordered.unlimited.count
+        end
       end
 
       # Each individual result set is sorted, now we need to make sure the
@@ -59,10 +62,7 @@ module Prelay
       # TODO: Can just stop iterating through types when we get a match.
       records = []
 
-      @types.each do |type, ast|
-        ds = ast.derived_dataset(order: @order)
-        ds = @block.call(ds) if @block
-
+      @datasets.each do |type, ds|
         records += results_for_dataset(ds, type: type)
       end
 
@@ -78,31 +78,17 @@ module Prelay
 
       records = {}
       remote_column = association.remote_columns.first # TODO: Multiple columns?
-      overall_order = nil
 
-      @types.each do |type, ast|
+      @paginated_datasets.each do |type, ds|
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
-
-        supplemental_columns = [remote_column]
-        supplemental_columns << :cursor if need_ordering_in_ruby?
-
-        ds = ast.derived_dataset(order: @order, supplemental_columns: supplemental_columns)
-
-        ds = @block.call(ds) if @block
         ds = ds.where(qualified_remote_column => ids)
 
         counts =
-          if ast.count_requested?
-            ds.unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
+          if @asts[type].count_requested?
+            @datasets[type].where(qualified_remote_column => ids).unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
           else
             {}
           end
-
-        ds = ast.apply_pagination_to_dataset(ds)
-
-        derived_order = ds.opts[:order]
-        overall_order ||= derived_order
-        raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
 
         if ids.length > 1 && limit = ds.opts[:limit]
           # Steal Sequel's technique for limiting eager-loaded associations with
@@ -143,13 +129,28 @@ module Prelay
 
     private
 
+    def overall_order
+      @overall_order ||=
+        begin
+          overall_order = nil
+
+          @paginated_datasets.each_value do |ds|
+            derived_order = ds.opts[:order]
+            overall_order ||= derived_order
+            raise "Trying to merge results from datasets in different orders!" unless overall_order == derived_order
+          end
+
+          overall_order
+        end
+    end
+
     # If we're loading more than one type, and therefore executing more than
     # one query, we'll need to sort the combined results in Ruby. In other
     # words, to get the ten earliest posts + comments, we need to retrieve the
     # ten earliest posts, the ten earliest comments, concatenate them
     # together, sort them by their created_at, and take the first ten.
     def need_ordering_in_ruby?
-      @types.length > 1
+      @asts.length > 1
     end
 
     def sort_records_by_order(records, order)
@@ -169,14 +170,15 @@ module Prelay
     def process_associations_for_results(results, type:)
       return if results.empty?
 
-      @types.fetch(type).associations.each do |key, (association, relay_processor)|
+      @asts.fetch(type).associations.each do |key, (association, relay_processor)|
         local_column = association.local_columns.first
+        remote_column = association.remote_columns.first
         ids = results.map{|r| r.record.send(local_column)}.uniq
 
         order = association.derived_order
         block = association.sequel_association&.dig(:block)
 
-        sub_records_hash = relay_processor.to_resolver(order: order, &block).resolve_via_association(association, ids)
+        sub_records_hash = relay_processor.to_resolver(order: order, supplemental_columns: [remote_column], &block).resolve_via_association(association, ids)
 
         if association.returns_array?
           results.each do |r|
