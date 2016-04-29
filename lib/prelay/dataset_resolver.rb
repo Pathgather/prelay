@@ -15,9 +15,10 @@ module Prelay
     ZERO_OR_ONE = 0..1
     EMPTY_RESULT_ARRAY = ResultArray.new(EMPTY_ARRAY).freeze
 
-    def initialize(selections_by_type:, order: nil)
+    def initialize(selections_by_type:, order: nil, &block)
       @types = selections_by_type
       @order = order
+      @block = block
     end
 
     def resolve
@@ -30,7 +31,7 @@ module Prelay
         supplemental_columns << :cursor if need_ordering_in_ruby?
 
         ds = ast.derived_dataset(order: @order, supplemental_columns: supplemental_columns)
-        ds = yield(ds) if block_given?
+        ds = @block.call(ds) if @block
 
         if ast.count_requested?
           count += ds.unordered.unlimited.count
@@ -60,7 +61,7 @@ module Prelay
 
       @types.each do |type, ast|
         ds = ast.derived_dataset(order: @order)
-        ds = yield(ds) if block_given?
+        ds = @block.call(ds) if @block
 
         records += results_for_dataset(ds, type: type)
       end
@@ -75,8 +76,6 @@ module Prelay
     def resolve_via_association(association, ids)
       return {} if ids.none?
 
-      block = association.sequel_association&.dig(:block)
-      order = association.derived_order
       records = {}
       remote_column = association.remote_columns.first # TODO: Multiple columns?
       overall_order = nil
@@ -87,9 +86,9 @@ module Prelay
         supplemental_columns = [remote_column]
         supplemental_columns << :cursor if need_ordering_in_ruby?
 
-        ds = ast.derived_dataset(order: order, supplemental_columns: supplemental_columns)
+        ds = ast.derived_dataset(order: @order, supplemental_columns: supplemental_columns)
 
-        ds = block.call(ds) if block
+        ds = @block.call(ds) if @block
         ds = ds.where(qualified_remote_column => ids)
 
         counts =
@@ -173,7 +172,11 @@ module Prelay
       @types.fetch(type).associations.each do |key, (association, relay_processor)|
         local_column = association.local_columns.first
         ids = results.map{|r| r.record.send(local_column)}.uniq
-        sub_records_hash = relay_processor.to_resolver.resolve_via_association(association, ids)
+
+        order = association.derived_order
+        block = association.sequel_association&.dig(:block)
+
+        sub_records_hash = relay_processor.to_resolver(order: order, &block).resolve_via_association(association, ids)
 
         if association.returns_array?
           results.each do |r|

@@ -99,7 +99,7 @@ module Prelay
                 id = ID.parse(args['id'], schema: schema)
                 ast = GraphQLProcessor.new(ctx, schema: schema).ast
                 RelayProcessor.new(ast, target_types: [id.type], entry_point: :field).
-                  to_resolver.resolve_singular{|ds| ds.where(id.type.model.qualified_primary_key_hash(id.pk))}
+                  to_resolver{|ds| ds.where(id.type.model.qualified_primary_key_hash(id.pk))}.resolve_singular
               }
             }
 
@@ -111,7 +111,7 @@ module Prelay
                   id = ID.parse(id, schema: schema)
                   ast = GraphQLProcessor.new(ctx, schema: schema).ast
                   RelayProcessor.new(ast, target_types: [id.type], entry_point: :field).
-                    to_resolver.resolve_singular{|ds| ds.where(id.type.model.qualified_primary_key_hash(id.pk))}
+                    to_resolver{|ds| ds.where(id.type.model.qualified_primary_key_hash(id.pk))}.resolve_singular
                 end
               }
             }

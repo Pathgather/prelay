@@ -26,7 +26,7 @@ class CustomReturnTypeQuerySpec < PrelaySpec
       resolve -> (obj, args, ctx) {
         ast = Prelay::GraphQLProcessor.new(ctx, schema: self.schema).ast.selections[:artist]
         artist = Prelay::RelayProcessor.new(ast, target_types: [ArtistType], entry_point: :field).
-          to_resolver(order: :id).resolve_singular{|ds| ds.limit(1)}
+          to_resolver(order: :id){|ds| ds.limit(1)}.resolve_singular
 
         OpenStruct.new(
           field1: "blah", field2: 2, artist: artist
