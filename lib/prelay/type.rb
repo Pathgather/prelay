@@ -7,11 +7,11 @@ module Prelay
   class Type
     extend Subclassable
 
-    attr_reader :record, :associations
-    attr_accessor :cursor
+    attr_reader :record, :associations, :cursor
 
-    def initialize(record)
+    def initialize(record, cursor = nil)
       @record = record
+      @cursor = cursor
       @associations = {}
     end
 

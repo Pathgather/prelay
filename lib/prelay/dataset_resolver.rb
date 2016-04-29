@@ -173,11 +173,7 @@ module Prelay
         if sort_data = ast.sort_data
           sort_columns = sort_data.map(&:first)
 
-          ds.all.map do |r|
-            t = type.new(r)
-            t.cursor = r.values.values_at(*sort_columns)
-            t
-          end
+          ds.all.map { |r| type.new(r, r.values.values_at(*sort_columns)) }
         else
           ds.all.map { |r| type.new(r) }
         end
