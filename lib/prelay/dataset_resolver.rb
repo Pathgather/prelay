@@ -57,7 +57,7 @@ module Prelay
         records += results_for_dataset(ds, type: type)
       end
 
-      raise Error, "#resolve_singular returned more than one record!" if records.length > 1
+      raise Error, "#resolve_singular returned more than one record! (returned #{records.length})" if records.length > 1
 
       records.first
     end
@@ -147,7 +147,7 @@ module Prelay
 
     def sort_records(records)
       sort_datas = @asts.values.map(&:sort_data)
-      raise Error, "Weird sort condition" unless sort_datas.uniq.length == 1
+      raise Error, "Weird sort condition: #{sort_datas.inspect}" unless sort_datas.uniq.length == 1
       sort_data = sort_datas.first.map{|s| s[1..2]}
 
       records.sort! { |r1, r2| sort_compare(r1, r2, sort_data) }
