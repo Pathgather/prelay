@@ -162,8 +162,7 @@ module Prelay
         return c unless c.zero?
       end
 
-      # TODO: Raise (or just warn) when a stable sort can't be achieved?
-      0
+      raise Error, "Couldn't determine a stable sort for records #{r1.inspect} and #{r2.inspect}! Be sure to sort on a unique set of columns!"
     end
 
     def results_for_dataset(ds, type:)
@@ -172,7 +171,6 @@ module Prelay
       objects =
         if sort_data = ast.sort_data
           sort_columns = sort_data.map(&:first)
-
           ds.all.map { |r| type.new(r, r.values.values_at(*sort_columns)) }
         else
           ds.all.map { |r| type.new(r) }
