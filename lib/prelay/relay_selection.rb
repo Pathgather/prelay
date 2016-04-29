@@ -37,10 +37,10 @@ module Prelay
         end
       end
 
+      ds = ds.reverse_order if arguments[:last]
+
       column_set = columns + supplemental_columns
       column_set.uniq!
-
-      ds = ds.reverse_order if arguments[:last]
 
       if cursor_requested? || need_cursor
         requested_expressions_with_aliases = {}

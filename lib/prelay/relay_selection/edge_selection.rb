@@ -30,7 +30,7 @@ module Prelay
       end
 
       def associations
-        @node ? @node.associations : {}
+        @node ? @node.associations : EMPTY_HASH
       end
     end
   end

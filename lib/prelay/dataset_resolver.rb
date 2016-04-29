@@ -65,7 +65,7 @@ module Prelay
     protected
 
     def resolve_via_association(association, ids)
-      return {} if ids.none?
+      return EMPTY_HASH if ids.empty?
 
       records = {}
       remote_column = association.remote_columns.first # TODO: Multiple columns?
@@ -77,7 +77,7 @@ module Prelay
           if @asts[type].count_requested?
             @datasets[type].unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
           else
-            {}
+            EMPTY_HASH
           end
 
         if ids.length > 1 && limit = ds.opts[:limit]
@@ -194,7 +194,7 @@ module Prelay
         local_column  = association.local_columns.first
         remote_column = association.remote_columns.first
 
-        ids = results.map{|r| r.record.send(local_column)}.uniq
+        ids = results.map{|r| r.record.send(local_column)}.compact.uniq
 
         order = association.derived_order
         block = association.sequel_association&.dig(:block)
@@ -210,7 +210,7 @@ module Prelay
 
         if association.returns_array?
           results.each do |r|
-            r.associations[key] = records_hash[r.record.send(local_column)] || ResultArray.new([])
+            r.associations[key] = records_hash[r.record.send(local_column)] || EMPTY_RESULT_ARRAY
           end
         else
           results.each do |r|

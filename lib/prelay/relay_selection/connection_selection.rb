@@ -53,7 +53,7 @@ module Prelay
       end
 
       def associations
-        @edges ? @edges.associations : {}
+        @edges ? @edges.associations : EMPTY_HASH
       end
     end
   end
