@@ -75,7 +75,7 @@ class FilterSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE "high_quality" ORDER BY "created_at" LIMIT 5),
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" FROM "albums" WHERE "high_quality" ORDER BY "created_at" LIMIT 5),
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
     ]
   end
@@ -127,9 +127,9 @@ class FilterSpec < PrelaySpec
       }
 
     assert_sqls [
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE (char_length("name") > 3) ORDER BY "created_at" LIMIT 5),
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" FROM "albums" WHERE (char_length("name") > 3) ORDER BY "created_at" LIMIT 5),
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
-      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE (char_length("name") > 3) ORDER BY "created_at" LIMIT 5),
+      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" FROM "compilations" WHERE (char_length("name") > 3) ORDER BY "created_at" LIMIT 5),
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{compilations.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
     ]
   end
@@ -226,8 +226,8 @@ class FilterSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
-      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor" FROM "albums" WHERE ((char_length("name") > 3) AND ("albums"."artist_id" IN ('#{artist.id}'))) ORDER BY "created_at" LIMIT 5),
-      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor" FROM "compilations" WHERE ((char_length("name") > 3) AND ("compilations"."artist_id" IN ('#{artist.id}'))) ORDER BY "created_at" LIMIT 5)
+      %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" FROM "albums" WHERE ((char_length("name") > 3) AND ("albums"."artist_id" IN ('#{artist.id}'))) ORDER BY "created_at" LIMIT 5),
+      %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" FROM "compilations" WHERE ((char_length("name") > 3) AND ("compilations"."artist_id" IN ('#{artist.id}'))) ORDER BY "created_at" LIMIT 5)
     ]
   end
 
@@ -361,8 +361,8 @@ class FilterSpec < PrelaySpec
     assert_sqls [
       %(SELECT "genres"."id", "genres"."name" FROM "genres" WHERE ("genres"."id" = '#{genre.id}')),
       %(SELECT "artists"."first_name", "artists"."id", "artists"."genre_id" FROM "artists" WHERE ("artists"."genre_id" IN ('#{genre.id}')) ORDER BY "created_at" LIMIT 5),
-      %(SELECT * FROM (SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" AS "cursor", row_number() OVER (PARTITION BY "albums"."artist_id" ORDER BY "created_at") AS "prelay_row_number" FROM "albums" WHERE (("name" > 'p') AND ("albums"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
-      %(SELECT * FROM (SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" AS "cursor", row_number() OVER (PARTITION BY "compilations"."artist_id" ORDER BY "created_at") AS "prelay_row_number" FROM "compilations" WHERE (("name" > 'p') AND ("compilations"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
+      %(SELECT * FROM (SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at", row_number() OVER (PARTITION BY "albums"."artist_id" ORDER BY "created_at") AS "prelay_row_number" FROM "albums" WHERE (("name" > 'p') AND ("albums"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
+      %(SELECT * FROM (SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at", row_number() OVER (PARTITION BY "compilations"."artist_id" ORDER BY "created_at") AS "prelay_row_number" FROM "compilations" WHERE (("name" > 'p') AND ("compilations"."artist_id" IN (#{artists.map{|a| "'#{a.id}'"}.join(', ')})))) AS "t1" WHERE ("prelay_row_number" <= 5)),
     ]
   end
 end

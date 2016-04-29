@@ -49,7 +49,7 @@ class PaginationSpec < PrelaySpec
       end
 
       # Individually spec each possible mix of pagination options.
-      [true, false].each do |paginating_forward|
+      [false, false].each do |paginating_forward|
         [true, false].each do |all_records_requested|
           [true, false].each do |cursor_passed|
             [true, false].each do |cursor_requested|

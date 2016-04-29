@@ -59,7 +59,7 @@ class EdgeMutationSpec < PrelaySpec
       %(RELEASE SAVEPOINT autopoint_1),
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("id" = '#{artist.id}') ORDER BY "created_at" DESC),
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("id" = '#{album.id}') ORDER BY "created_at" DESC),
-      %(SELECT "albums"."id", "albums"."name", "albums"."created_at" AS "cursor" FROM "albums" WHERE ("id" = '#{album.id}') ORDER BY "created_at" DESC),
+      %(SELECT "albums"."id", "albums"."name", "albums"."created_at" FROM "albums" WHERE ("id" = '#{album.id}') ORDER BY "created_at" DESC),
     ]
 
     assert_mutation_result \

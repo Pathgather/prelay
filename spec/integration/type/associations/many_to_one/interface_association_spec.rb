@@ -39,8 +39,8 @@ class ManyToOneInterfaceAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE ("tracks"."id" = '#{track.id}')),
-      %(SELECT "albums"."id", "albums"."name", "albums"."id" AS "cursor" FROM "albums" WHERE ("albums"."id" IN ('#{track.release_id}')) ORDER BY "id"),
-      %(SELECT "compilations"."id", "compilations"."name", "compilations"."id" AS "cursor" FROM "compilations" WHERE ("compilations"."id" IN ('#{track.release_id}')) ORDER BY "id"),
+      %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" IN ('#{track.release_id}')) ORDER BY "id"),
+      %(SELECT "compilations"."id", "compilations"."name" FROM "compilations" WHERE ("compilations"."id" IN ('#{track.release_id}')) ORDER BY "id"),
     ]
   end
 end

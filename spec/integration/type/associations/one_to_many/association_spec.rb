@@ -50,7 +50,7 @@ class OneToManyAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", "tracks"."created_at" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "created_at" LIMIT 50)
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", "tracks"."created_at" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "created_at" LIMIT 50)
     ]
   end
 
@@ -92,7 +92,7 @@ class OneToManyAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", "tracks"."created_at" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "created_at" LIMIT 50)
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", "tracks"."created_at" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "created_at" LIMIT 50)
     ]
   end
 
@@ -132,7 +132,7 @@ class OneToManyAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "tracks"."album_id", "tracks"."created_at" AS "cursor" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "created_at" LIMIT 50)
+      %(SELECT "tracks"."album_id", "tracks"."created_at" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album.id}')) ORDER BY "created_at" LIMIT 50)
     ]
   end
 

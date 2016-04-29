@@ -8,6 +8,7 @@ module Prelay
     extend Subclassable
 
     attr_reader :record, :associations
+    attr_accessor :cursor
 
     def initialize(record)
       @record = record

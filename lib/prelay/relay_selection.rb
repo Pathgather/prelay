@@ -2,7 +2,7 @@
 
 module Prelay
   class RelaySelection
-    attr_reader :name, :type, :aliaz, :arguments
+    attr_reader :name, :type, :aliaz, :arguments, :sort_data
 
     def initialize(name:, type:, aliaz: nil, arguments: EMPTY_HASH)
       raise "RelaySelection initialized with a bad type: #{type.class}" unless type < Type
@@ -21,7 +21,7 @@ module Prelay
       raise NotImplementedError
     end
 
-    def derived_dataset(order: nil, supplemental_columns: EMPTY_ARRAY)
+    def derived_dataset(order: nil, supplemental_columns: EMPTY_ARRAY, need_cursor:)
       ds = type.model.dataset
       ds = ds.order(order) if order
 
@@ -40,11 +40,20 @@ module Prelay
       column_set = columns + supplemental_columns
       column_set.uniq!
 
-      if column_set.delete(:cursor)
-        order = ds.opts[:order]
-        raise "Can't handle ordering by anything other than a single column!" unless order&.length == 1
-        exp = unwrap_order_expression(order.first)
-        column_set << Sequel.as(exp, :cursor)
+      ds = ds.reverse_order if arguments[:last]
+
+      if column_set.delete(:cursor) || need_cursor
+        requested_expressions_with_aliases = {}
+        column_set.each do |expression|
+          exp, aliaz = unpack_expression_and_alias(expression)
+          requested_expressions_with_aliases[exp] = aliaz
+        end
+
+        @sort_data = []
+
+        ds.opts[:order].each do |oe|
+          @sort_data << handle_order_statement(selections: column_set, expressions_and_aliases: requested_expressions_with_aliases, order_expression: oe)
+        end
       end
 
       selections = (ds.opts[:select] || EMPTY_ARRAY) + column_set.map{|c| qualify_column(ds.model.table_name, c)}
@@ -58,8 +67,6 @@ module Prelay
 
     def apply_pagination_to_dataset(ds)
       if limit = arguments[:first] || arguments[:last]
-        ds = ds.reverse_order if arguments[:last]
-
         # If has_next_page or has_previous_page was requested, bump the limit
         # by one so we know whether there's another page coming up.
         limit += 1 if pagination_info_requested?
@@ -93,6 +100,43 @@ module Prelay
 
     private
 
+    def handle_order_statement(selections:, expressions_and_aliases:, order_expression:)
+      exp = unwrap_order_expression(order_expression)
+      dir, nulls = extract_order_direction(order_expression)
+
+      # If the thing being sorted by is already in the things being selected, use it.
+      if aliaz = expressions_and_aliases[exp]
+        return [aliaz, dir, nulls]
+      end
+
+      # If the thing already has an innate name, like it's just a column, use that.
+      subexpression, aliaz = unpack_expression_and_alias(exp)
+
+      if aliaz
+        selections << subexpression unless selections.include?(subexpression)
+        return [aliaz, dir, nulls]
+      end
+
+      # Otherwise, we'll need to add it to the selections ourselves, with a
+      # unique alias.
+      aliaz = :"cursor_#{selections.length}"
+      selections << Sequel.as(exp, aliaz)
+      return [aliaz, dir, nulls]
+    end
+
+    def unpack_expression_and_alias(exp)
+      case exp
+      when Symbol
+        [exp, exp]
+      when Sequel::SQL::AliasedExpression
+        [exp.expression, exp.aliaz]
+      when Sequel::SQL::QualifiedIdentifier
+        raise Error, "Not sure what to do here :("
+      else
+        [exp, nil]
+      end
+    end
+
     def qualify_column(table_name, column)
       case column
       when Symbol
@@ -115,6 +159,25 @@ module Prelay
         oe.expression
       else
         oe
+      end
+    end
+
+    def extract_order_direction(oe)
+      case oe
+      when Sequel::SQL::OrderedExpression
+        d = oe.descending ? :desc : :asc
+        n = oe.nulls || default_nulls_direction(d)
+        [d, n]
+      else
+        [:asc, :last]
+      end
+    end
+
+    def default_nulls_direction(d)
+      case d
+      when :asc  then :last
+      when :desc then :first
+      else raise "Bad direction: #{d.inspect}"
       end
     end
   end

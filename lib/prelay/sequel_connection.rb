@@ -3,10 +3,7 @@
 module Prelay
   class SequelConnection < GraphQL::Relay::BaseConnection
     def cursor_from_node(node)
-      cursor = node.record.values.fetch(:cursor) { raise "Uh-oh! Cursor not loaded for #{node.inspect}" }
-
-      # Array(Time.now) behaves weirdly.
-      cursor = [cursor] unless cursor.is_a?(Array)
+      cursor = node.cursor || raise("Uh-oh! Cursor not loaded for #{node.inspect}")
 
       cursor.map! do |value|
         case value

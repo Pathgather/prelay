@@ -20,10 +20,8 @@ module Prelay
       @datasets = {}
       @paginated_datasets = {}
 
-      supplemental_columns << :cursor if need_ordering_in_ruby?
-
       selections_by_type.each do |type, ast|
-        ds = ast.derived_dataset(order: order, supplemental_columns: supplemental_columns)
+        ds = ast.derived_dataset(order: order, supplemental_columns: supplemental_columns, need_cursor: need_ordering_in_ruby?)
         ds = yield ds if block_given?
 
         @datasets[type] = ds
@@ -107,15 +105,17 @@ module Prelay
           counts.each do |fk, count|
             records[fk].total_count += count
           end
-
-          records.each do |fk, subrecords|
-            sort_records(subrecords) if need_ordering_in_ruby?
-          end
         else
           results.each do |result|
             fk = result.record.send(remote_column)
             records[fk] = result
           end
+        end
+      end
+
+      if association.returns_array?
+        records.each do |fk, subrecords|
+          sort_records(subrecords) if need_ordering_in_ruby?
         end
       end
 
@@ -149,16 +149,44 @@ module Prelay
     end
 
     def sort_records(records)
-      order = overall_order
-      o = order.is_a?(Array) ? order.first : order
+      sort_datas = @asts.values.map(&:sort_data)
+      raise "Weird sort condition" unless sort_datas.uniq.length == 1
+      sort_data = sort_datas.first.map{|s| s[1..2]}
 
-      records.sort_by!{|r| r.record.values.fetch(:cursor)}
-      records.reverse! if o.is_a?(Sequel::SQL::OrderedExpression) && o.descending
-      records
+      records.sort! { |r1, r2| sort_compare(r1, r2, sort_data) }
+    end
+
+    def sort_compare(r1, r2, sort_data)
+      sort_data.each_with_index do |(dir, nulls), index|
+        v1 = r1.cursor[index]
+        v2 = r2.cursor[index]
+
+        # Don't handle nulls, yet.
+        c = v1 <=> v2
+        c = -c if dir == :desc
+        return c unless c.zero?
+      end
+
+      # TODO: Raise (or just warn) when a stable sort can't be achieved?
+      0
     end
 
     def results_for_dataset(ds, type:)
-      objects = ds.all.map{|r| type.new(r)}
+      ast = @asts[type]
+
+      objects =
+        if ast.sort_data
+          sort_columns = ast.sort_data.map(&:first)
+
+          ds.all.map do |r|
+            t = type.new(r)
+            t.cursor = r.values.values_at(*sort_columns)
+            t
+          end
+        else
+          ds.all.map { |r| type.new(r) }
+        end
+
       ResultArray.new(objects).tap { |results| process_associations_for_results(results, type: type) }
     end
 
