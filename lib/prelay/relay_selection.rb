@@ -1,5 +1,12 @@
 # frozen_string_literal: true
 
+# The RelaySelection encapsulates the combination of a GraphQL query with an
+# application-defined type (not an interface - a query for a specific field on
+# an interface will result in multiple RelaySelections, one for each type the
+# interface covers). Since it knows both the type being required and the data
+# being requested, it's responsible for constructing the Sequel dataset
+# necessary for retrieving the relevant data from the database.
+
 module Prelay
   class RelaySelection
     attr_reader :name, :type, :aliaz, :arguments, :sort_data

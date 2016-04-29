@@ -1,24 +1,32 @@
 # frozen_string_literal: true
 
+# The class responsible for taking the GraphQL AST from the gem and
+# recursively transforming it into our own nested set of GraphQLSelection
+# objects. Makes sure the rest of our code doesn't have to worry about things
+# like named fragments or changes in the GraphQL gem itself.
+
 module Prelay
   class GraphQLProcessor
     attr_reader :ast
 
-    def initialize(input, fragments: nil, schema: Prelay.primary_schema)
-      case input
-      when GraphQL::Query::Context
-        root_field = input.ast_node
-        raise "Unsupported ast_node for input: #{root_field.class}" unless GraphQL::Language::Nodes::Field === root_field
-        fragments = input.query.fragments
-      when GraphQL::Language::Nodes::Field
-        root_field = input
-      else
-        raise "Unsupported input: #{input.class}"
+    class << self
+      def process(input, schema: Prelay.primary_schema)
+        unless input.is_a? ::GraphQL::Query::Context
+          raise Error, "Unsupported input for #{self}.process(): #{input.class}"
+        end
+
+        new(input.ast_node, fragments: input.query.fragments, schema: schema).ast
+      end
+    end
+
+    def initialize(field, fragments:, schema:)
+      unless field.is_a? ::GraphQL::Language::Nodes::Field
+        raise Error, "Unsupported input for #{self}#initialize(): #{field.class}"
       end
 
       @fragments = fragments
       @schema = schema
-      @ast = field_to_selection(root_field)
+      @ast = field_to_selection(field)
     end
 
     private
@@ -29,14 +37,10 @@ module Prelay
       GraphQLSelection.new(
         name:       field.name.to_sym,
         aliaz:      field.alias&.to_sym,
-        arguments:  arguments_from_field(field),
+        arguments:  field.arguments.each_with_object({}){|a, hash| hash[a.name.to_sym] = a.value},
         selections: selections,
         fragments:  fragments,
       )
-    end
-
-    def arguments_from_field(field)
-      field.arguments.each_with_object({}){|a, hash| hash[a.name.to_sym] = a.value}
     end
 
     def parse_field_selections_and_fragments(field, selections: {}, fragments: {}, type: nil)
@@ -77,7 +81,7 @@ module Prelay
             parse_field_selections_and_fragments(fragment, selections: selections, fragments: fragments)
           end
         else
-          raise "Unsupported input: #{selection.class}"
+          raise Error, "Unsupported input: #{selection.class}"
         end
       end
 

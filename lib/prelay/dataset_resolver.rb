@@ -1,14 +1,12 @@
 # frozen_string_literal: true
 
-# The purpose of the DatasetResolver class is to take a GraphQL AST describing
-# the attributes and associations that are desired in a query, and then
-# construct a set of DB queries to fulfill the request correctly and
-# efficiently. The "correctly" part requires applying the appropriate filters
-# to the query, while "efficiently" requires some thought about retrieving
-# only the columns we need from the DB and manually eager-loading the
-# appropriate associations.
+# The DatasetResolver class takes one or more RelaySelection ASTs, gathers
+# their associated datasets and aggregates query results (mainly records, but
+# this might also be other aggregate data like counts). It also handles eager-
+# loading result sets through associations as necessary.
 
-require 'prelay/result_array'
+# The case where there are multiple ASTs reflects queries that touch multiple
+# types (queries on interfaces, for example).
 
 module Prelay
   class DatasetResolver

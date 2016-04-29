@@ -56,9 +56,9 @@ require 'prelay/relay_selection/connection_selection'
 require 'prelay/relay_selection/edge_selection'
 require 'prelay/relay_selection/field_selection'
 
+require 'prelay/result_array'
 require 'prelay/dataset_resolver'
 require 'prelay/sequel_connection'
-require 'prelay/result_array'
 
 require 'prelay/connection'
 require 'prelay/id'

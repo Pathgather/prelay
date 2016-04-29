@@ -7,7 +7,7 @@ class SingularObjectQuerySpec < PrelaySpec
     query :RandomAlbum do
       type :Album
       resolve -> (obj, args, ctx) {
-        ast = Prelay::GraphQLProcessor.new(ctx).ast
+        ast = Prelay::GraphQLProcessor.process(ctx)
         Prelay::RelayProcessor.new(ast, target_types: [AlbumType], entry_point: :field).
           to_resolver(order: Sequel.function(:random)){|ds| ds.limit(1)}.resolve_singular
       }

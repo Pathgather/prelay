@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+# The RelayProcessor class is responsible for taking a structure of
+# GraphQLSelections and applying the schema of application types to them,
+# converting them into RelaySelection objects that are more specialized.
+
 module Prelay
   class RelayProcessor
     attr_reader :input
