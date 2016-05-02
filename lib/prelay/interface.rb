@@ -25,8 +25,8 @@ module Prelay
       end
 
       [:one_to_one, :one_to_many, :many_to_one].each do |association_type|
-        define_method(association_type) do |*args|
-          associations[args.first] = Type::Association.new(self, association_type, *args)
+        define_method(association_type) do |*args, &block|
+          associations[args.first] = Type::Association.new(self, association_type, *args, &block)
         end
       end
 

@@ -186,7 +186,7 @@ module Prelay
 
         ids = results.map{|r| r.record.send(local_column)}.compact.uniq
         order = association.derived_order
-        block = association.sequel_association&.dig(:block)
+        block = association.block
 
         resolver = relay_processor.to_resolver(order: order, supplemental_columns: [remote_column]) do |ds|
           qualified_remote_column = Sequel.qualify(ds.model.table_name, remote_column)
