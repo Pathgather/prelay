@@ -17,15 +17,6 @@ module Prelay
         if target
           @specified_target       = target
           @specified_target_types = target_types
-
-          if @specified_target_types
-            covered_types = target.covered_types
-            @specified_target_types.each do |target_type|
-              unless covered_types.include?(target_type)
-                raise Error, "Association #{name} on #{parent.name} declares #{target_type.name} as a target type, but it doesn't implement #{target.name}"
-              end
-            end
-          end
         elsif parent < Type
           @sequel_association = parent.model.association_reflections.fetch(@sequel_association_name) do
             raise "Could not find an association '#{name}' on the Sequel model #{parent.model} while configuring association #{name} on #{@parent}"
@@ -115,7 +106,15 @@ module Prelay
       def target_types
         @target_types ||= (
           if @specified_target_types
-            @specified_target_types.map { |l| Kernel.const_get(l.to_s) }
+            @specified_target_types.map do |t|
+              if t.is_a?(Class) && t < Type
+                t
+              elsif t.is_a?(Symbol) || t.is_a?(String)
+                Kernel.const_get(t.to_s)
+              else
+                raise Error, "unsupported target type: #{t.inspect}"
+              end
+            end
           else
             target_type.covered_types
           end

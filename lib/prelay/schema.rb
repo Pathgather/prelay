@@ -80,6 +80,19 @@ module Prelay
         # Validate that types implement their interfaces properly.
         types.each &:check_interfaces
 
+        types_and_interfaces.each do |t_or_i|
+          t_or_i.associations.each do |name, association|
+            if target_types = association.target_types
+              covered_types = association.target_type.covered_types
+              target_types.each do |target_type|
+                unless covered_types.include?(target_type)
+                  raise Error, "Association #{name} on #{t_or_i.name} declares #{target_type.name} as a target type, but it doesn't implement #{association.target_type.name}"
+                end
+              end
+            end
+          end
+        end
+
         # Make sure that type and interface objects are defined before we
         # build the actual GraphQL schema.
         types_and_interfaces.each &:graphql_object

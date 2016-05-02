@@ -135,12 +135,14 @@ class TypeSpec < PrelaySpec
           name "BadType"
         end
 
-        error = assert_raises Prelay::Error do
-          Class.new(Prelay::Type(schema: s)) do
-            name "TestType"
+        Class.new(Prelay::Type(schema: s)) do
+          name "TestType"
 
-            one_to_many :blahs, target: i, target_types: [a, t]
-          end
+          one_to_many :blahs, target: i, target_types: [a, t], remote_column: :blah_id
+        end
+
+        error = assert_raises Prelay::Error do
+          s.graphql_schema
         end
 
         assert_equal "Association blahs on TestType declares BadType as a target type, but it doesn't implement AssociatedInterface", error.message
