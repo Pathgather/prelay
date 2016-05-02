@@ -128,7 +128,7 @@ class TypeSpec < PrelaySpec
         a = Class.new(Prelay::Type(schema: s)) do
           name "AssociatedType"
 
-          interface i, :associated_interface_id
+          interface i
         end
 
         t = Class.new(Prelay::Type(schema: s)) do

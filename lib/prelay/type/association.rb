@@ -3,9 +3,9 @@
 module Prelay
   class Type
     class Association
-      attr_reader :parent, :name, :sequel_association, :sequel_association_name, :description, :nullable, :order, :association_type
+      attr_reader :parent, :name, :sequel_association, :sequel_association_name, :description, :nullable, :order, :association_type, :local_column, :remote_column
 
-      def initialize(parent, association_type, name, description = nil, target: nil, sequel_association_name: nil, target_types: nil, nullable: nil, order: nil, foreign_key: nil)
+      def initialize(parent, association_type, name, description = nil, target: nil, sequel_association_name: nil, target_types: nil, nullable: nil, order: nil, local_column: nil, remote_column: nil)
         @parent                  = parent
         @name                    = name
         @description             = description
@@ -13,7 +13,6 @@ module Prelay
         @association_type        = association_type
         @order                   = order
         @sequel_association_name = sequel_association_name || name
-        @foreign_key             = foreign_key
 
         if target
           @specified_target       = target
@@ -42,8 +41,33 @@ module Prelay
         case association_type
         when :one_to_many              then raise "Specified a #{association_type} association (#{parent}##{name}) with a :nullable option, which is not allowed" unless nullable.nil?
         when :many_to_one, :one_to_one then raise "Specified a #{association_type} association (#{parent}##{name}) without a :nullable option, which is required" if nullable.nil?
-        else raise "Unsupported association type: #{association_type}"
+        else raise Error, "Unsupported association type: #{association_type}"
         end
+
+        @local_column  = local_column
+        @remote_column = remote_column
+
+        if a = sequel_association
+          case @association_type
+          when :many_to_one
+            @local_column  ||= a.fetch(:key)
+            @remote_column ||= a.primary_key
+          when :one_to_many, :one_to_one
+            @local_column  ||= a.primary_key
+            @remote_column ||= a.fetch(:key)
+          else
+            raise Error, "Unsupported association type: #{association_type}"
+          end
+        end
+
+        case @association_type
+        when :many_to_one              then @remote_column ||= :id
+        when :one_to_many, :one_to_one then @local_column  ||= :id
+        else raise Error, "Unsupported association type: #{association_type}"
+        end
+
+        raise Error, "Can't determine local_column for association #{name} on #{parent.name}"  unless @local_column
+        raise Error, "Can't determine remote_column for association #{name} on #{parent.name}" unless @remote_column
       end
 
       def model
@@ -104,53 +128,6 @@ module Prelay
 
       def graphql_type
         target_type.graphql_object
-      end
-
-      def local_columns
-        a = sequel_association
-
-        case @association_type
-        when :many_to_one
-          return [@foreign_key] if @foreign_key
-
-          if a
-            [a.fetch(:key)]
-          else
-            # TODO: Fix.
-            target_types.map{|t| t.interfaces.fetch(target_type)}.uniq
-          end
-        when :one_to_many, :one_to_one
-          if a
-            [a.primary_key]
-          else
-            [:id]
-          end
-        else
-          raise "Unsupported type: #{type}"
-        end
-      end
-
-      def remote_columns
-        a = sequel_association
-
-        case @association_type
-        when :many_to_one
-          if a
-            [a.primary_key]
-          else
-            # TODO: Fix.
-            [:id]
-          end
-        when :one_to_many, :one_to_one
-          if a
-            [a.fetch(:key)]
-          else
-            return [@foreign_key] if @foreign_key
-            raise "Can't determine foreign key for association: #{inspect}"
-          end
-        else
-          raise "Unsupported type: #{type}"
-        end
       end
     end
   end

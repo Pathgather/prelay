@@ -23,8 +23,8 @@ module SchemaMocking
       boolean :high_quality, "Whether the release is good or not."
       float   :popularity,   "The normalized popularity of the release, on a scale from 0 to 1."
 
-      many_to_one :artist,    "The artist who released the release.", target: artist_type, nullable: false
-      one_to_many :tracks,    "The tracks on this release.", target: track_type, order: :created_at
+      many_to_one :artist,    "The artist who released the release.", target: artist_type, nullable: false, local_column: :artist_id, remote_column: :id
+      one_to_many :tracks,    "The tracks on this release.", target: track_type, order: :created_at, local_column: :id, remote_column: :release_id
     end
 
     genre_type.class_eval do
@@ -53,13 +53,13 @@ module SchemaMocking
 
       many_to_one :genre,  "The genre of music the artist predominantly worked in", nullable: true
       one_to_many :albums, "Albums released by the artist", order: :created_at
-      one_to_many :releases, "Albums and Compilations released by the artist", order: :created_at, target: release_interface, foreign_key: :artist_id
+      one_to_many :releases, "Albums and Compilations released by the artist", order: :created_at, target: release_interface, remote_column: :artist_id
     end
 
     album_type.class_eval do
       name "Album"
       model ::Album
-      interface release_interface, :release_id
+      interface release_interface
 
       description "An album released by a musician"
 
@@ -79,7 +79,7 @@ module SchemaMocking
     compilation_type.class_eval do
       name "Compilation"
       model ::Compilation
-      interface release_interface, :release_id
+      interface release_interface
 
       description "A release of an artist's best songs"
 
@@ -103,7 +103,7 @@ module SchemaMocking
       boolean :high_quality, "Whether the track is good or not."
       float   :popularity,   "The normalized popularity of the track, on a scale from 0 to 1."
 
-      many_to_one :release, "The release the track belongs to.", target: release_interface, nullable: false
+      many_to_one :release, "The release the track belongs to.", target: release_interface, nullable: false, local_column: :release_id
     end
 
     publisher_type.class_eval do

@@ -36,7 +36,7 @@ module Prelay
         ds = scope.call(ds)
       end
 
-      ([type] + type.interfaces.keys.reverse).each do |filter_source|
+      ([type] + type.interfaces.reverse).each do |filter_source|
         filter_source.filters.each do |name, (type, block)|
           if value = arguments[name]
             ds = block.call(ds, value)

@@ -66,7 +66,7 @@ module Prelay
       return EMPTY_HASH if ids.empty?
 
       records = {}
-      remote_column = association.remote_columns.first # TODO: Multiple columns?
+      remote_column = association.remote_column
 
       @paginated_datasets.each do |type, ds|
         qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
@@ -181,8 +181,8 @@ module Prelay
       return if results.empty?
 
       @asts.fetch(type).associations.each do |key, (association, relay_processor)|
-        local_column  = association.local_columns.first
-        remote_column = association.remote_columns.first
+        local_column  = association.local_column
+        remote_column = association.remote_column
 
         ids = results.map{|r| r.record.send(local_column)}.compact.uniq
 

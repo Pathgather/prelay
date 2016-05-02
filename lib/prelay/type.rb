@@ -43,13 +43,13 @@ module Prelay
         define_method(datatype){|name, *args| attribute(name, datatype, *args)}
       end
 
-      def interface(interface, foreign_key)
+      def interface(interface)
         interface.covered_types << self
-        interfaces[interface] = foreign_key
+        interfaces << interface
       end
 
       def interfaces
-        @interfaces ||= {}
+        @interfaces ||= []
       end
 
       def filter(name, type = :boolean, &block)
@@ -102,7 +102,7 @@ module Prelay
               name(type.name.split('::').last.chomp('Type'))
               description(type.description)
 
-              interfaces([type.schema.node_identification.interface] + type.interfaces.keys.map(&:graphql_object))
+              interfaces([type.schema.node_identification.interface] + type.interfaces.map(&:graphql_object))
               global_id_field :id
 
               type.attributes.each_value do |attribute|
@@ -177,7 +177,7 @@ module Prelay
       end
 
       def check_interfaces
-        interfaces.each_key do |interface|
+        interfaces.each do |interface|
           msg = "#{name} claims to implement #{interface.name} but "
 
           interface.attributes.each do |name, i_attr|

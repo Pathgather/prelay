@@ -110,7 +110,7 @@ module Prelay
           if selections = fields.delete(name)
             selections.each do |selection|
               key = selection.input.aliaz || selection.input.name
-              @columns.push *association.local_columns
+              @columns << association.local_column
               associations[key] = [association, selection]
             end
           end

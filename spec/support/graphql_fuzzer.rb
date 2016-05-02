@@ -194,7 +194,7 @@ class GraphQLFuzzer
 
     all_types =
       if @source < Prelay::Type
-        [@source] + @source.interfaces.keys
+        [@source] + @source.interfaces
       elsif @source < Prelay::Interface
         @source.covered_types
       else

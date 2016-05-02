@@ -81,7 +81,7 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
 
   it "should support fetching associated items through a one-to-many association to an interface when only a subset of types are necessary" do
     assert_instance_of Prelay::Type::Association, ArtistType.associations.delete(:releases)
-    ArtistType.one_to_many :releases, "Albums and Compilations released by the artist", order: :created_at, target: ReleaseInterface, foreign_key: :artist_id, target_types: [AlbumType]
+    ArtistType.one_to_many :releases, "Albums and Compilations released by the artist", order: :created_at, target: ReleaseInterface, remote_column: :artist_id, target_types: [AlbumType]
 
     artist = Artist.first!
 

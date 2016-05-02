@@ -48,7 +48,7 @@ class InterfaceSpec < PrelaySpec
   describe "when introspected" do
     mock_schema do
       ReleaseInterface.class_eval do
-        one_to_one :publisher, "The publisher responsible for releasing the release.", target: PublisherType, nullable: true
+        one_to_one :publisher, "The publisher responsible for releasing the release.", target: PublisherType, nullable: true, remote_column: :publisher_id
       end
     end
 
@@ -111,7 +111,7 @@ class InterfaceSpec < PrelaySpec
         t = Class.new(Prelay::Type(schema: s)) do
           name "BadType"
           string :column_1, "My Column #1", nullable: false
-          interface i, :unimplemented_interface_id
+          interface i
         end
 
         error = assert_raises(Prelay::Error) { s.graphql_schema }
@@ -128,7 +128,7 @@ class InterfaceSpec < PrelaySpec
         t = Class.new(Prelay::Type(schema: s)) do
           name "BadType"
           integer :column_1, "My Column #1", nullable: false
-          interface i, :unimplemented_interface_id
+          interface i
         end
 
         error = assert_raises(Prelay::Error) { s.graphql_schema }
@@ -145,7 +145,7 @@ class InterfaceSpec < PrelaySpec
         t = Class.new(Prelay::Type(schema: s)) do
           name "BadType"
           string :column_1, "My Column #1", nullable: true
-          interface i, :unimplemented_interface_id
+          interface i
         end
 
         error = assert_raises(Prelay::Error) { s.graphql_schema }
@@ -164,12 +164,12 @@ class InterfaceSpec < PrelaySpec
         i = Class.new(Prelay::Interface(schema: s)) do
           name "UnimplementedInterface"
 
-          one_to_many :things, target: a
+          one_to_many :things, target: a, remote_column: :thing_id
         end
 
         t = Class.new(Prelay::Type(schema: s)) do
           name "BadType"
-          interface i, :unimplemented_interface_id
+          interface i
         end
 
         error = assert_raises(Prelay::Error) { s.graphql_schema }
@@ -186,14 +186,14 @@ class InterfaceSpec < PrelaySpec
         i = Class.new(Prelay::Interface(schema: s)) do
           name "UnimplementedInterface"
 
-          one_to_many :things, target: a
+          one_to_many :things, target: a, remote_column: :thing_id
         end
 
         t = Class.new(Prelay::Type(schema: s)) do
           name "BadType"
-          interface i, :unimplemented_interface_id
+          interface i
 
-          many_to_one :things, target: a, nullable: false
+          many_to_one :things, target: a, nullable: false, local_column: :thing_id
         end
 
         error = assert_raises(Prelay::Error) { s.graphql_schema }
