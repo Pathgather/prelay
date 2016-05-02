@@ -18,16 +18,25 @@ module Prelay
         if target
           @specified_target       = target
           @specified_target_types = target_types
+
+          if @specified_target_types
+            covered_types = target.covered_types
+            @specified_target_types.each do |target_type|
+              unless covered_types.include?(target_type)
+                raise Error, "Association #{name} on #{parent.name} declares #{target_type.name} as a target type, but it doesn't implement #{target.name}"
+              end
+            end
+          end
         elsif parent < Type
           @sequel_association = parent.model.association_reflections.fetch(@sequel_association_name) do
             raise "Could not find an association '#{name}' on the Sequel model #{parent.model} while configuring association #{name} on #{@parent}"
           end
 
           unless @sequel_association[:type] == association_type
-            raise "Association #{name} on #{parent} declared as #{association_type}, but the underlying Sequel association is #{@sequel_association[:type]}"
+            raise "Association #{name} on #{parent.name} declared as #{association_type}, but the underlying Sequel association is #{@sequel_association[:type]}"
           end
         else
-          raise "Can't configure association #{name} on #{parent}"
+          raise "Can't configure association #{name} on #{parent.name}"
         end
 
         case association_type

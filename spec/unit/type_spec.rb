@@ -118,6 +118,34 @@ class TypeSpec < PrelaySpec
 
       it "should error if an appropriate target is not given"
 
+      it "should error if one of the target types does not implement the given interface" do
+        s = Prelay::Schema.new(temporary: true)
+
+        i = Class.new(Prelay::Interface(schema: s)) do
+          name "AssociatedInterface"
+        end
+
+        a = Class.new(Prelay::Type(schema: s)) do
+          name "AssociatedType"
+
+          interface i, :associated_interface_id
+        end
+
+        t = Class.new(Prelay::Type(schema: s)) do
+          name "BadType"
+        end
+
+        error = assert_raises Prelay::Error do
+          Class.new(Prelay::Type(schema: s)) do
+            name "TestType"
+
+            one_to_many :blahs, target: i, target_types: [a, t]
+          end
+        end
+
+        assert_equal "Association blahs on TestType declares BadType as a target type, but it doesn't implement AssociatedInterface", error.message
+      end
+
       it "should require a specific foreign key"
     end
   end
