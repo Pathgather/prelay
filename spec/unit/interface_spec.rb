@@ -106,7 +106,7 @@ class InterfaceSpec < PrelaySpec
         string :column_1, "Column #1", nullable: false
         string :column_2, "Column #2", nullable: false
 
-        one_to_many :associated_things, target: a, local_column: :test_local_column, remote_column: :test_remote_column
+        one_to_many :associated_things, target: a, order: :blah, local_column: :test_local_column, remote_column: :test_remote_column
       end
 
       t = Class.new(Prelay::Type(schema: s)) do
@@ -185,7 +185,7 @@ class InterfaceSpec < PrelaySpec
         i = Class.new(Prelay::Interface(schema: s)) do
           name "UnimplementedInterface"
 
-          one_to_many :things, target: a, remote_column: :thing_id
+          one_to_many :things, target: a, order: :blah, remote_column: :thing_id
         end
 
         t = Class.new(Prelay::Type(schema: s)) do
@@ -209,7 +209,7 @@ class InterfaceSpec < PrelaySpec
         i = Class.new(Prelay::Interface(schema: s)) do
           name "UnimplementedInterface"
 
-          one_to_many :things, target: a, remote_column: :thing_id
+          one_to_many :things, target: a, order: :blah, remote_column: :thing_id
         end
 
         t = Class.new(Prelay::Type(schema: s)) do

@@ -138,7 +138,7 @@ class TypeSpec < PrelaySpec
         Class.new(Prelay::Type(schema: s)) do
           name "TestType"
 
-          one_to_many :blahs, target: i, target_types: [a, t], remote_column: :blah_id
+          one_to_many :blahs, target: i, target_types: [a, t], order: :blah, remote_column: :blah_id
         end
 
         error = assert_raises Prelay::Error do

@@ -29,12 +29,6 @@ module Prelay
           raise "Can't configure association #{name} on #{parent.name}"
         end
 
-        case association_type
-        when :one_to_many              then raise "Specified a #{association_type} association (#{parent}##{name}) with a :nullable option, which is not allowed" unless nullable.nil?
-        when :many_to_one, :one_to_one then raise "Specified a #{association_type} association (#{parent}##{name}) without a :nullable option, which is required" if nullable.nil?
-        else raise Error, "Unsupported association type: #{association_type}"
-        end
-
         @local_column  = local_column
         @remote_column = remote_column
 
@@ -49,6 +43,19 @@ module Prelay
           else
             raise Error, "Unsupported association type: #{association_type}"
           end
+        end
+
+        error_msg = "Specified a #{association_type} association (#{parent}##{name})"
+
+        case association_type
+        when :one_to_many
+          raise "#{error_msg} with a :nullable option, which is not allowed" unless nullable.nil?
+          raise "#{error_msg} without an :order option, which is not allowed" if order.nil?
+        when :many_to_one, :one_to_one
+          raise "#{error_msg} without a :nullable option, which is required" if nullable.nil?
+          raise "#{error_msg} with an :order option, which is not allowed" unless order.nil?
+        else
+          raise Error, "Unsupported association type: #{association_type}"
         end
 
         case @association_type
