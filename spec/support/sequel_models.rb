@@ -46,4 +46,9 @@ end
 
 class Publisher < Sequel::Model
   many_to_one :album
+  many_to_one :compilation
+
+  def release
+    album || compilation
+  end
 end

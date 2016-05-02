@@ -39,9 +39,9 @@ class InterfaceConnectionQuerySpec < PrelaySpec
 
       assert_sqls [
         %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" FROM "albums" ORDER BY "created_at" DESC LIMIT 5),
-        %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
+        %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "id"),
         %(SELECT "compilations"."id", "compilations"."name", "compilations"."artist_id", "compilations"."created_at" FROM "compilations" ORDER BY "created_at" DESC LIMIT 5),
-        %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{compilations.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
+        %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{compilations.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "id"),
       ]
 
       assert_result \
@@ -102,7 +102,7 @@ class InterfaceConnectionQuerySpec < PrelaySpec
 
       assert_sqls [
         %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" FROM "albums" ORDER BY "created_at" DESC LIMIT 5),
-        %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "artists"."id"),
+        %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "id"),
       ]
 
       assert_result \

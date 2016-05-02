@@ -97,11 +97,16 @@ end
 DB.create_table :publishers do
   uuid :id, primary_key: true, default: Sequel.function(:uuid_generate_v4)
 
-  uuid :album_id, null: false
+  uuid :release_id, null: false
+  uuid :album_id
+  uuid :compilation_id
 
   text :name, null: false
 
   foreign_key [:album_id], :albums
 
   unique :album_id
+
+  constraint(:compilation_presence) { Sequel.~({{album_id: nil} => {compilation_id: nil}}) }
+  constraint(:compilation_validity) { {release_id: coalesce(:album_id, :compilation_id)} }
 end

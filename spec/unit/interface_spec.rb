@@ -46,12 +46,6 @@ class InterfaceSpec < PrelaySpec
   end
 
   describe "when introspected" do
-    mock_schema do
-      ReleaseInterface.class_eval do
-        one_to_one :publisher, "The publisher responsible for releasing the release.", target: PublisherType, nullable: true, remote_column: :publisher_id
-      end
-    end
-
     let(:graphql_object) { schema.find_type("Release").graphql_object }
 
     it "should translate it to a GraphQL object" do
@@ -98,7 +92,33 @@ class InterfaceSpec < PrelaySpec
     end
   end
 
-  describe "when implemented by a type that doesn't actually fulfill all the criteria of the interface" do
+  describe "when implemented by a type" do
+    it "should receive the attributes and associations of the interface" do
+      s = Prelay::Schema.new(temporary: true)
+
+      a = Class.new(Prelay::Type(schema: s)) do
+        name "AssociationTargetType"
+        string :column_1, "My Column #1", nullable: false
+      end
+
+      i = Class.new(Prelay::Interface(schema: s)) do
+        name "ImplementedInterface"
+        string :column_1, "Column #1", nullable: false
+        string :column_2, "Column #2", nullable: false
+
+        one_to_many :associated_things, target: a, local_column: :test_local_column, remote_column: :test_remote_column
+      end
+
+      t = Class.new(Prelay::Type(schema: s)) do
+        name "InterfaceInheritingType"
+        interface i
+        string :column_1, "My Column #1", nullable: false
+      end
+
+      assert_equal [:column_1, :column_2], t.attributes.keys
+      assert_equal [:associated_things], t.associations.keys
+    end
+
     describe "attributes" do
       it "when the type is missing an attribute should raise an error" do
         s = Prelay::Schema.new(temporary: true)
@@ -110,9 +130,10 @@ class InterfaceSpec < PrelaySpec
 
         t = Class.new(Prelay::Type(schema: s)) do
           name "BadType"
-          string :column_1, "My Column #1", nullable: false
           interface i
         end
+
+        t.attributes.delete(:column_2)
 
         error = assert_raises(Prelay::Error) { s.graphql_schema }
         assert_equal "BadType claims to implement UnimplementedInterface but doesn't have a column_2 attribute", error.message
@@ -127,8 +148,8 @@ class InterfaceSpec < PrelaySpec
 
         t = Class.new(Prelay::Type(schema: s)) do
           name "BadType"
-          integer :column_1, "My Column #1", nullable: false
           interface i
+          integer :column_1, "My Column #1", nullable: false
         end
 
         error = assert_raises(Prelay::Error) { s.graphql_schema }
@@ -144,8 +165,8 @@ class InterfaceSpec < PrelaySpec
 
         t = Class.new(Prelay::Type(schema: s)) do
           name "BadType"
-          string :column_1, "My Column #1", nullable: true
           interface i
+          string :column_1, "My Column #1", nullable: true
         end
 
         error = assert_raises(Prelay::Error) { s.graphql_schema }
@@ -172,11 +193,13 @@ class InterfaceSpec < PrelaySpec
           interface i
         end
 
+        t.associations.delete(:things)
+
         error = assert_raises(Prelay::Error) { s.graphql_schema }
         assert_equal "BadType claims to implement UnimplementedInterface but doesn't have a things association", error.message
       end
 
-      it "when the type is missing an association should raise an error" do
+      it "when the type has a wrong association should raise an error" do
         s = Prelay::Schema.new(temporary: true)
 
         a = Class.new(Prelay::Type(schema: s)) do

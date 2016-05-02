@@ -185,7 +185,6 @@ module Prelay
         remote_column = association.remote_column
 
         ids = results.map{|r| r.record.send(local_column)}.compact.uniq
-
         order = association.derived_order
         block = association.sequel_association&.dig(:block)
 

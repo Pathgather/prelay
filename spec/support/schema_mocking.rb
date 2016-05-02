@@ -23,8 +23,9 @@ module SchemaMocking
       boolean :high_quality, "Whether the release is good or not."
       float   :popularity,   "The normalized popularity of the release, on a scale from 0 to 1."
 
-      many_to_one :artist,    "The artist who released the release.", target: artist_type, nullable: false, local_column: :artist_id, remote_column: :id
-      one_to_many :tracks,    "The tracks on this release.", target: track_type, order: :created_at, local_column: :id, remote_column: :release_id
+      many_to_one :artist,    "The artist who released the release.",                 target: artist_type, nullable: false, local_column: :artist_id
+      one_to_many :tracks,    "The tracks on this release.",                          target: track_type, order: :created_at, remote_column: :release_id
+      one_to_one  :publisher, "The publisher responsible for releasing the release.", target: publisher_type, nullable: true, remote_column: :release_id
     end
 
     genre_type.class_eval do
@@ -63,15 +64,6 @@ module SchemaMocking
 
       description "An album released by a musician"
 
-      string  :name,         "The name of the album"
-      integer :upvotes,      "How many people voted up the album."
-      boolean :high_quality, "Whether the album is good or not."
-      float   :popularity,   "The normalized popularity of the album, on a scale from 0 to 1."
-
-      many_to_one :artist,    "The artist who released the album.", nullable: false
-      one_to_many :tracks,    "The tracks on this album.", order: :created_at
-      one_to_one  :publisher, "The publisher responsible for releasing the album.", nullable: true
-
       one_to_one  :first_track,       "The first track on the album.", nullable: true
       one_to_many :first_five_tracks, "The first five tracks on the album", order: :created_at
     end
@@ -82,14 +74,6 @@ module SchemaMocking
       interface release_interface
 
       description "A release of an artist's best songs"
-
-      string  :name,         "The name of the compilation"
-      integer :upvotes,      "How many people voted up the compilation."
-      boolean :high_quality, "Whether the compilation is good or not."
-      float   :popularity,   "The normalized popularity of the compilation, on a scale from 0 to 1."
-
-      many_to_one :artist, "The artist who released the compilation.", nullable: false
-      one_to_many :tracks, "The tracks on this compilation.", order: :created_at
     end
 
     track_type.class_eval do
@@ -114,7 +98,7 @@ module SchemaMocking
 
       string :name, "The name of the company."
 
-      many_to_one :album, "The album this company was responsible for.", nullable: false
+      many_to_one :release, "The album this company was responsible for.", target: release_interface, nullable: false, local_column: :release_id
     end
 
     target_class = self.class

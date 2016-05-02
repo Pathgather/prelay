@@ -33,7 +33,7 @@ class SingularObjectQuerySpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" ORDER BY random() LIMIT 1),
-      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist.id}')) ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN ('#{album.artist.id}')) ORDER BY "id"),
     ]
 
     assert_result \

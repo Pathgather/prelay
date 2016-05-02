@@ -35,9 +35,9 @@ genre_ids = DB[:genres].multi_insert(
 )
 
 artist_ids = DB[:artists].multi_insert(
-  15.times.map {
+  (genre_ids * 2 + [nil] * 5).map { |genre_id|
     {
-      genre_id:   (genre_ids.sample if rand > 0.5),
+      genre_id:   genre_id,
       first_name: Faker::Name.first_name,
       last_name:  Faker::Name.last_name,
       upvotes:    rand(10000),
@@ -124,10 +124,12 @@ track_ids = DB[:tracks].multi_insert(
 )
 
 publisher_ids = DB[:publishers].multi_insert(
-  album_ids.map { |album_id|
+  release_ids.map { |type, id|
     {
-      album_id: album_id,
-      name:     Faker::Company.name
+      release_id:     id,
+      album_id:       (id if type == :album),
+      compilation_id: (id if type == :compilation),
+      name:           Faker::Company.name,
     }
   },
   return: :primary_key

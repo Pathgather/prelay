@@ -37,7 +37,7 @@ class OneToOneAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "publishers"."id", "publishers"."name", "publishers"."album_id" FROM "publishers" WHERE ("publishers"."album_id" IN ('#{album.id}')) ORDER BY "publishers"."id")
+      %(SELECT "publishers"."id", "publishers"."name", "publishers"."release_id" FROM "publishers" WHERE ("publishers"."release_id" IN ('#{album.id}')) ORDER BY "id")
     ]
   end
 
@@ -72,7 +72,7 @@ class OneToOneAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "publishers"."id", "publishers"."name", "publishers"."album_id" FROM "publishers" WHERE ("publishers"."album_id" IN ('#{album.id}')) ORDER BY "publishers"."id")
+      %(SELECT "publishers"."id", "publishers"."name", "publishers"."release_id" FROM "publishers" WHERE ("publishers"."release_id" IN ('#{album.id}')) ORDER BY "id")
     ]
   end
 end

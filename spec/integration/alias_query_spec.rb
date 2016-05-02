@@ -58,9 +58,9 @@ class AliasQuerySpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album1.id}')),
-      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN ('#{album1.artist.id}')) ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN ('#{album1.artist.id}')) ORDER BY "id"),
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."id" = '#{album2.id}')),
-      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN ('#{album2.artist.id}')) ORDER BY "artists"."id"),
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN ('#{album2.artist.id}')) ORDER BY "id"),
     ]
   end
 
@@ -141,8 +141,8 @@ class AliasQuerySpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id" FROM "albums" WHERE ("albums"."id" = '#{album1.id}')),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album1.id}')) ORDER BY "created_at" LIMIT 5),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN ('#{album1.id}')) ORDER BY "created_at" DESC LIMIT 5),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE ("tracks"."release_id" IN ('#{album1.id}')) ORDER BY "created_at" LIMIT 5),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE ("tracks"."release_id" IN ('#{album1.id}')) ORDER BY "created_at" DESC LIMIT 5),
     ]
   end
 end

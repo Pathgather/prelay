@@ -33,19 +33,38 @@ module Prelay
       end
 
       def attribute(*args)
-        attribute = Attribute.new(self, *args)
-        name = attribute.name
-        attributes[name] = attribute
-        define_method(name){@record.send(name)}
+        define_attribute(Attribute.new(self, *args))
       end
 
       [:string, :integer, :boolean, :float, :timestamp].each do |datatype|
         define_method(datatype){|name, *args| attribute(name, datatype, *args)}
       end
 
+      [:one_to_one, :one_to_many, :many_to_one].each do |association_type|
+        define_method(association_type) do |*args|
+          define_association(Association.new(self, association_type, *args))
+        end
+      end
+
       def interface(interface)
         interface.covered_types << self
         interfaces << interface
+
+        # Don't let the interface's attributes or associations change once we
+        # copy them.
+        interface.attributes.freeze
+        interface.associations.freeze
+
+        [:attribute, :association].each do |field_type|
+          target_fields = interface.send("#{field_type}s")
+          target_fields.freeze
+
+          target_fields.each do |name, field|
+            copy = field.dup
+            copy.send :instance_variable_set, :@parent, self
+            send("define_#{field_type}", copy)
+          end
+        end
       end
 
       def interfaces
@@ -78,15 +97,6 @@ module Prelay
 
       def associated_models
         @associated_models ||= []
-      end
-
-      [:one_to_one, :one_to_many, :many_to_one].each do |association_type|
-        define_method(association_type) do |*args|
-          association = Association.new(self, association_type, *args)
-          name = association.name
-          associations[name] = association
-          define_method(name) { @associations.fetch(name) { raise "Association #{name} not loaded for #{inspect}" } }
-        end
       end
 
       def graphql_object
@@ -218,6 +228,20 @@ module Prelay
             end
           end
         end
+      end
+
+      private
+
+      def define_attribute(attribute)
+        name = attribute.name
+        attributes[name] = attribute
+        define_method(name){@record.send(name)}
+      end
+
+      def define_association(association)
+        name = association.name
+        associations[name] = association
+        define_method(name) { @associations.fetch(name) { raise "Association #{name} not loaded for #{inspect}" } }
       end
     end
   end

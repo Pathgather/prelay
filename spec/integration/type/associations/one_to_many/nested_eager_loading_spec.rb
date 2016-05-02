@@ -72,8 +72,8 @@ class OneToManyNestedEagerLoadingSpec < PrelaySpec
       %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
       %(SELECT "artist_id", count(*) AS "count" FROM (SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}'))) AS "t1" GROUP BY "artist_id"),
       %(SELECT "albums"."id", "albums"."name", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 3),
-      %(SELECT "album_id", count(*) AS "count" FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN (#{albums.map{|a| "'#{a.id}'"}.join(', ')}))) AS "t1" GROUP BY "album_id"),
-      %(SELECT * FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."album_id", row_number() OVER (PARTITION BY "tracks"."album_id" ORDER BY "created_at") AS "prelay_row_number" FROM "tracks" WHERE ("tracks"."album_id" IN (#{albums.map{|a| "'#{a.id}'"}.join(', ')}))) AS "t1" WHERE ("prelay_row_number" <= 5)),
+      %(SELECT "release_id", count(*) AS "count" FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE ("tracks"."release_id" IN (#{albums.map{|a| "'#{a.id}'"}.join(', ')}))) AS "t1" GROUP BY "release_id"),
+      %(SELECT * FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."release_id", row_number() OVER (PARTITION BY "tracks"."release_id" ORDER BY "created_at") AS "prelay_row_number" FROM "tracks" WHERE ("tracks"."release_id" IN (#{albums.map{|a| "'#{a.id}'"}.join(', ')}))) AS "t1" WHERE ("prelay_row_number" <= 5)),
     ]
   end
 
@@ -152,10 +152,10 @@ class OneToManyNestedEagerLoadingSpec < PrelaySpec
       %(SELECT "artists"."id" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
       %(SELECT "artist_id", count(*) AS "count" FROM (SELECT "albums"."id", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}'))) AS "t1" GROUP BY "artist_id"),
       %(SELECT "albums"."id", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 3),
-      %(SELECT "album_id", count(*) AS "count" FROM (SELECT "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN (#{albums.map{|a| "'#{a.id}'"}.join(', ')}))) AS "t1" GROUP BY "album_id"),
+      %(SELECT "release_id", count(*) AS "count" FROM (SELECT "tracks"."release_id" FROM "tracks" WHERE ("tracks"."release_id" IN (#{albums.map{|a| "'#{a.id}'"}.join(', ')}))) AS "t1" GROUP BY "release_id"),
 
       # Extraneous query, could be optimized away:
-      %(SELECT "tracks"."album_id" FROM "tracks" WHERE ("tracks"."album_id" IN (#{albums.map{|a| "'#{a.id}'"}.join(', ')})) ORDER BY "created_at")
+      %(SELECT "tracks"."release_id" FROM "tracks" WHERE ("tracks"."release_id" IN (#{albums.map{|a| "'#{a.id}'"}.join(', ')})) ORDER BY "created_at")
     ]
   end
 end
