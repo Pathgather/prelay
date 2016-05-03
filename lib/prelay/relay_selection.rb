@@ -138,7 +138,7 @@ module Prelay
       when Sequel::SQL::AliasedExpression
         [exp.expression, exp.aliaz]
       when Sequel::SQL::QualifiedIdentifier
-        raise Error, "Not sure what to do here :("
+        [exp, exp.column]
       else
         [exp, nil]
       end
@@ -150,12 +150,9 @@ module Prelay
         Sequel.qualify(table_name, column)
       when Sequel::SQL::AliasedExpression
         Sequel.as(qualify_column(table_name, column.expression), column.aliaz)
-      when Sequel::SQL::QualifiedIdentifier
-        # TODO: Figure out when/how this happens and stop it.
-        raise "Table qualification mismatch: #{column.table.inspect}, #{table_name.inspect}" unless column.table == table_name
-        column
       else
-        # Could be any arbitrary expression, like a function call or an SQL subquery.
+        # Could be any arbitrary expression, like a function call or an SQL
+        # subquery, or a Sequel::SQL::QualifiedIdentifier.
         column
       end
     end

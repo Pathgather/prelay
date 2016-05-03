@@ -67,13 +67,17 @@ module Prelay
 
       records = {}
       remote_column = association.remote_column
+      unqualified_remote_column = unqualify_column(remote_column)
 
       @paginated_datasets.each do |type, ds|
-        qualified_remote_column = Sequel.qualify(type.model.table_name, remote_column)
+        qualified_remote_column = qualify_column(remote_column, type.model.table_name)
 
         counts =
           if @asts[type].count_requested?
-            @datasets[type].unlimited.unordered.from_self.group_by(remote_column).select_hash(remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
+
+            @datasets[type].unlimited.unordered.from_self.
+              group_by(unqualified_remote_column).
+              select_hash(unqualified_remote_column, Sequel.as(Sequel.function(:count, Sequel.lit('*')), :count))
           else
             EMPTY_HASH
           end
@@ -93,7 +97,7 @@ module Prelay
 
         if association.returns_array?
           results.each do |result|
-            fk = result.record.send(remote_column)
+            fk = result.record[unqualified_remote_column]
             (records[fk] ||= ResultArray.new([])) << result
           end
 
@@ -102,7 +106,7 @@ module Prelay
           end
         else
           results.each do |result|
-            fk = result.record.send(remote_column)
+            fk = result.record[unqualified_remote_column]
             records[fk] = result
           end
         end
@@ -118,6 +122,24 @@ module Prelay
     end
 
     private
+
+    def unqualify_column(exp)
+      case exp
+      when Sequel::SQL::QualifiedIdentifier
+        exp.column
+      else
+        exp
+      end
+    end
+
+    def qualify_column(exp, qualifier)
+      case exp
+      when Sequel::SQL::QualifiedIdentifier
+        exp
+      else
+        Sequel.qualify(qualifier, exp)
+      end
+    end
 
     def overall_order
       @overall_order ||=
@@ -189,7 +211,7 @@ module Prelay
         block = association.block
 
         resolver = relay_processor.to_resolver(order: order, supplemental_columns: [remote_column]) do |ds|
-          qualified_remote_column = Sequel.qualify(ds.model.table_name, remote_column)
+          qualified_remote_column = qualify_column(remote_column, ds.model.table_name)
           ds = ds.where(qualified_remote_column => ids)
           ds = block.call(ds) if block
           ds
