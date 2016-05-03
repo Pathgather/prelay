@@ -212,8 +212,8 @@ module Prelay
 
         resolver = relay_processor.to_resolver(order: order, supplemental_columns: [remote_column]) do |ds|
           qualified_remote_column = qualify_column(remote_column, ds.model.table_name)
-          ds = ds.where(qualified_remote_column => ids)
           ds = block.call(ds) if block
+          ds = ds.where(qualified_remote_column => ids)
           ds
         end
 

@@ -49,8 +49,8 @@ class OneToManyFilteredAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "release_id", count(*) AS "count" FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE (("tracks"."release_id" IN ('#{album.id}')) AND ("number" >= 1) AND ("number" <= 5))) AS "t1" GROUP BY "release_id"),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE (("tracks"."release_id" IN ('#{album.id}')) AND ("number" >= 1) AND ("number" <= 5)) ORDER BY "created_at" LIMIT 50),
+      %(SELECT "release_id", count(*) AS "count" FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."release_id" IN ('#{album.id}')))) AS "t1" GROUP BY "release_id"),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."release_id" IN ('#{album.id}'))) ORDER BY "created_at" LIMIT 50),
     ]
   end
 
@@ -93,8 +93,8 @@ class OneToManyFilteredAssociationSpec < PrelaySpec
 
     assert_sqls [
       %(SELECT "albums"."id", "albums"."name" FROM "albums" WHERE ("albums"."id" = '#{album.id}')),
-      %(SELECT "release_id", count(*) AS "count" FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE (("tracks"."release_id" IN ('#{album.id}')) AND ("number" >= 1) AND ("number" <= 5))) AS "t1" GROUP BY "release_id"),
-      %(SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE (("tracks"."release_id" IN ('#{album.id}')) AND ("number" >= 1) AND ("number" <= 5)) ORDER BY "created_at" LIMIT 50),
+      %(SELECT "release_id", count(*) AS "count" FROM (SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."release_id" IN ('#{album.id}')))) AS "t1" GROUP BY "release_id"),
+      %(SELECT "tracks"."id", "tracks"."name", "tracks"."release_id" FROM "tracks" WHERE (("number" >= 1) AND ("number" <= 5) AND ("tracks"."release_id" IN ('#{album.id}'))) ORDER BY "created_at" LIMIT 50),
     ]
   end
 end
