@@ -46,7 +46,7 @@ module Prelay
 
       ds = ds.reverse_order if arguments[:last]
 
-      column_set = columns + supplemental_columns
+      column_set = (ds.opts[:select] || EMPTY_ARRAY) + columns + supplemental_columns
       column_set.uniq!
 
       if cursor_requested? || need_cursor
@@ -63,7 +63,7 @@ module Prelay
         end
       end
 
-      selections = (ds.opts[:select] || EMPTY_ARRAY) + column_set.map{|c| qualify_column(ds.model.table_name, c)}
+      selections = column_set.map{|c| qualify_column(ds.model.table_name, c)}
 
       if selections.count > 0
         ds = ds.select(*selections)
