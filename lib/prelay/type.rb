@@ -132,6 +132,8 @@ module Prelay
                       argument name, Query::Argument.new(nil, name, type).graphql_type
                     end
 
+                    argument :types, GraphQL::STRING_TYPE.to_list_type
+
                     resolve -> (obj, args, ctx) {
                       node = ctx.ast_node
                       key = (node.alias || node.name).to_sym

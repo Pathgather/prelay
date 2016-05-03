@@ -213,4 +213,64 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
       %(SELECT "compilations"."id", "compilations"."upvotes", "compilations"."high_quality", "compilations"."artist_id", "compilations"."created_at" FROM "compilations" WHERE ("compilations"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 5),
     ]
   end
+
+  it "should respect a types argument when retrieving a connection on an interface type" do
+    artist = Artist.first!
+
+    id = id_for(artist)
+
+    execute_query <<-GRAPHQL
+      query Query {
+        node(id: "#{id}") {
+          id,
+          ... on Artist {
+            first_name,
+            releases(first: 200, types: ["Album"]) {
+              count
+              edges {
+                node {
+                  __typename,
+                  id,
+                  upvotes,
+                  ... on Album {
+                    name
+                  },
+                  ... on Compilation {
+                    high_quality
+                  },
+                }
+              }
+            }
+          }
+        }
+      }
+    GRAPHQL
+
+    assert_result \
+      'data' => {
+        'node' => {
+          'id' => id,
+          'first_name' => artist.first_name,
+          'releases' => {
+            'count' => artist.albums.count,
+            'edges' => artist.albums.map { |r|
+              {
+                'node' => {
+                  '__typename' => "Album",
+                  'id' => id_for(r),
+                  'upvotes' => r.upvotes,
+                  'name' => r.name,
+                }
+              }
+            }
+          }
+        }
+      }
+
+    assert_sqls [
+      %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
+      %(SELECT "artist_id", count(*) AS "count" FROM (SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}'))) AS "t1" GROUP BY "artist_id"),
+      %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 200),
+    ]
+  end
 end

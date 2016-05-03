@@ -30,7 +30,13 @@ module Prelay
             @selections[key] = FieldSelection.new(s, type: type)
           elsif association = type.associations[name]
             entry_point = association.returns_array? ? :connection : :field
-            @selections[key] = RelayProcessor.new(s, target_types: association.target_types, entry_point: entry_point)
+            target_types = association.target_types
+
+            if types = s.arguments[:types]
+              target_types = target_types.select { |tt| types.include?(tt.name) }
+            end
+
+            @selections[key] = RelayProcessor.new(s, target_types: target_types, entry_point: entry_point)
           else
             case name
             when :id
