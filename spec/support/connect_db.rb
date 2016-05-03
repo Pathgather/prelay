@@ -4,6 +4,10 @@ DB = Sequel.connect(ENV['DATABASE_URL'] || 'postgres:///prelay-test')
 
 DB.extension :pg_json
 
+# Check that we don't request the same column multiple times.
+DB.extension :duplicate_columns_handler
+DB.opts[:on_duplicate_columns] = :raise
+
 # Simple way to spec what queries are being run.
 logger = Object.new
 
