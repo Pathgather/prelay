@@ -273,4 +273,67 @@ class OneToManyInterfaceAssociationSpec < PrelaySpec
       %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 200),
     ]
   end
+
+  describe "when given custom association options for different types" do
+    # mock_schema do
+    #   GenreType.one_to_many :good_things, target: :ReleaseInterface,
+    #     target_types: {
+    #       :AlbumType => {
+    #         order: Sequel.qualify(:albums, :created_at),
+    #         remote_column: :album_genre_id,
+    #         dataset_block: proc { |ds|
+    #           ds.association_join(:genre).where{popularity > 0.6}
+    #         },
+    #       },
+    #       :CompilationType => {
+    #         order: Sequel.qualify(:compilations, :created_at),
+    #         remote_column: :compilation_genre_id,
+    #         dataset_block: proc { |ds|
+    #           ds.association_join(:genre).where{popularity > 0.8}
+    #         }
+    #       }
+    #     }
+    # end
+
+    it "should use them" do
+      skip
+
+      artist = Artist.first!
+
+      id = id_for(artist)
+
+      execute_query <<-GRAPHQL
+        query Query {
+          node(id: "#{id}") {
+            id,
+            ... on Artist {
+              first_name,
+              good_things(first: 5) {
+                count
+                edges {
+                  node {
+                    __typename,
+                    id,
+                    upvotes,
+                    ... on Album {
+                      name
+                    },
+                    ... on Compilation {
+                      high_quality
+                    },
+                  }
+                }
+              }
+            }
+          }
+        }
+      GRAPHQL
+
+      assert_sqls [
+        %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" = '#{artist.id}')),
+        %(SELECT "albums"."id", "albums"."name", "albums"."upvotes", "albums"."artist_id", "albums"."created_at" FROM "albums" WHERE ("albums"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 5),
+        %(SELECT "compilations"."id", "compilations"."upvotes", "compilations"."high_quality", "compilations"."artist_id", "compilations"."created_at" FROM "compilations" WHERE ("compilations"."artist_id" IN ('#{artist.id}')) ORDER BY "created_at" LIMIT 5),
+      ]
+    end
+  end
 end
