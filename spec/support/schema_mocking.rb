@@ -64,8 +64,8 @@ module SchemaMocking
 
       description "An album released by a musician"
 
-      one_to_one  :first_track,       "The first track on the album.", target: track_type, remote_column: :release_id, nullable: true, &:is_first
-      one_to_many :first_five_tracks, "The first five tracks on the album", target: track_type, remote_column: :release_id, order: :created_at, &:in_first_five
+      one_to_one  :first_track,       "The first track on the album.", target: track_type, remote_column: :release_id, nullable: true, dataset_block: proc(&:is_first)
+      one_to_many :first_five_tracks, "The first five tracks on the album", target: track_type, remote_column: :release_id, order: :created_at, dataset_block: proc(&:in_first_five)
     end
 
     compilation_type.class_eval do

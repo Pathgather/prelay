@@ -3,9 +3,9 @@
 module Prelay
   class Type
     class Association
-      attr_reader :parent, :name, :sequel_association, :sequel_association_name, :description, :nullable, :order, :association_type, :local_column, :remote_column, :block
+      attr_reader :parent, :name, :sequel_association, :sequel_association_name, :description, :nullable, :order, :association_type, :local_column, :remote_column, :dataset_block
 
-      def initialize(parent, association_type, name, description = nil, target: nil, sequel_association_name: nil, target_types: nil, nullable: nil, order: nil, local_column: nil, remote_column: nil, &block)
+      def initialize(parent, association_type, name, description = nil, target: nil, sequel_association_name: nil, target_types: nil, nullable: nil, order: nil, local_column: nil, remote_column: nil, dataset_block: nil)
         @parent                  = parent
         @name                    = name
         @description             = description
@@ -13,7 +13,7 @@ module Prelay
         @association_type        = association_type
         @order                   = order
         @sequel_association_name = sequel_association_name || name
-        @block                   = block
+        @dataset_block           = dataset_block
 
         if target
           @specified_target       = target
