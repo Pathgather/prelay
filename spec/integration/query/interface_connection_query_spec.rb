@@ -65,6 +65,56 @@ class InterfaceConnectionQuerySpec < PrelaySpec
           }
         }
     end
+
+    it "should support a 'types' argument on the connection" do
+      execute_query <<-GRAPHQL
+        query Query {
+          connections {
+            releases(first: 5, types: ["Album"]) {
+              edges {
+                cursor
+                node {
+                  id,
+                  name,
+                  artist {
+                    id,
+                    first_name
+                  }
+                }
+              }
+            }
+          }
+        }
+      GRAPHQL
+
+      albums = Album.order(Sequel.desc(:created_at)).limit(5).all
+
+      assert_sqls [
+        %(SELECT "albums"."id", "albums"."name", "albums"."artist_id", "albums"."created_at" FROM "albums" ORDER BY "created_at" DESC LIMIT 5),
+        %(SELECT "artists"."id", "artists"."first_name" FROM "artists" WHERE ("artists"."id" IN (#{albums.map{|a| "'#{a.artist_id}'"}.uniq.join(', ')})) ORDER BY "id"),
+      ]
+
+      assert_result \
+        'data' => {
+          'connections' => {
+            'releases' => {
+              'edges' => albums.map { |album|
+                {
+                  'cursor' => to_cursor(album.created_at),
+                  'node' => {
+                    'id' => id_for(album),
+                    'name' => album.name,
+                    'artist' => {
+                      'id' => id_for(album.artist),
+                      'first_name' => album.artist.first_name,
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+    end
   end
 
   describe "with target_types" do

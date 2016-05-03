@@ -4,6 +4,7 @@ module Prelay
   module Connection
     def self.included(base)
       base.extend ClassMethods
+      base.arguments[:types] = Query::Argument.new(base, :types, GraphQL::STRING_TYPE.to_list_type)
     end
 
     module ClassMethods
@@ -38,9 +39,18 @@ module Prelay
       end
 
       def resolve
+        types = (target_types || [type]).map(&:covered_types).flatten.uniq
+
         -> (obj, args, ctx) {
           ast = GraphQLProcessor.process(ctx, schema: type.schema)
-          RelayProcessor.new(ast, target_types: target_types || [type], entry_point: :connection).
+
+          if selected_types = args['types']
+            types = types.select do |tt|
+              selected_types.include?(tt.name)
+            end
+          end
+
+          RelayProcessor.new(ast, target_types: types, entry_point: :connection).
             to_resolver(order: order).resolve
         }
       end
