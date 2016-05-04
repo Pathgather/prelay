@@ -184,7 +184,7 @@ module Prelay
         return c unless c.zero?
       end
 
-      raise Error, "Couldn't determine a stable sort for records #{r1.inspect} and #{r2.inspect}! Be sure to sort on a unique set of columns!"
+      warn "Couldn't determine a stable sort for records #{r1.inspect} and #{r2.inspect}! Be sure to sort on a unique set of columns!"
     end
 
     def results_for_dataset(ds, type:)
