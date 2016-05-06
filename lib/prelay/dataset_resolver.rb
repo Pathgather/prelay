@@ -185,6 +185,7 @@ module Prelay
       end
 
       warn "Couldn't determine a stable sort for records #{r1.inspect} and #{r2.inspect}! Be sure to sort on a unique set of columns!"
+      0
     end
 
     def results_for_dataset(ds, type:)
