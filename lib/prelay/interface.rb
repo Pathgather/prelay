@@ -91,6 +91,11 @@ module Prelay
                   connection association.name do
                     type -> { association.graphql_type.connection_type }
                     description(association.description)
+
+                    association.target_type.filters.each do |name, (type, _)|
+                      argument name, Query::Argument.new(nil, name, type).graphql_type
+                    end
+
                     resolve -> (obj, args, ctx) {
                       node = ctx.ast_node
                       key = (node.alias || node.name).to_sym
