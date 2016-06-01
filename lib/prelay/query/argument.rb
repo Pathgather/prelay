@@ -18,6 +18,7 @@ module Prelay
         when :string           then GraphQL::STRING_TYPE
         when :boolean          then GraphQL::BOOLEAN_TYPE
         when :integer          then GraphQL::INT_TYPE
+        when :id               then GraphQL::ID_TYPE
         else raise "Unsupported type: #{@type}"
         end
       end
